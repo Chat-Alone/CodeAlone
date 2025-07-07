@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAlone</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/lib/marked.umd.js"></script>
+    <script>
+        marked.setOptions({
+            gfm: true,
+            pedantic: false,
+            highlight(code, lang) {
+                const language = lang && hljs.getLanguage(lang) ? lang : 'plaintext';
+                return hljs.highlight(code, { language: language }).value;
+            },
+            langPrefix: 'hljs language-'
+        });
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: '#3b82f6', secondary: '#64748b' }, borderRadius: { 'none': '0', 'sm': '4px', DEFAULT: '8px', 'md': '12px', 'lg': '16px', 'xl': '20px', '2xl': '24px', '3xl': '32px', 'full': '9999px', 'button': '8px' } } } }
+    </script>
+    <script>
+        (function () {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    <style>
+        @font-face {
+            font-family: 'Maple Mono';
+            src: url('/font') format('truetype');
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f9fafb;
+            --bg-tertiary: #f3f4f6;
+            --text-primary: #1f2937;
+            --text-secondary: #4b5563;
+            --text-tertiary: #6b7280;
+            --border-color: #e5e7eb;
+            --code-bg: #f8fafc;
+            --code-border: #e2e8f0;
+            --code-text: #334155;
+            --code-inline-bg: #f1f5f9;
+            --code-inline-text: #6366f1;
+        }
+
+        .dark {
+            --bg-primary: #0f0f0f;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #262626;
+            --text-primary: #f3f4f6;
+            --text-secondary: #d1d5db;
+            --text-tertiary: #9ca3af;
+            --border-color: #374151;
+            --code-bg: #1e1e1e;
+            --code-border: #374151;
+            --code-text: #e5e7eb;
+            --code-inline-bg: #2d2d2d;
+            --code-inline-text: #818cf8;
+        }
+
+        .doc-content h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
+            line-height: 1.2;
+            letter-spacing: -0.025em;
+        }
+
+        .doc-content h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+            letter-spacing: -0.02em;
+        }
+
+        .doc-content h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 2rem;
+            margin-bottom: 0.875rem;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .doc-content h4,
+        .doc-content h5,
+        .doc-content h6 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+
+        .doc-content p {
+            margin-bottom: 1rem;
+            line-height: 1.75;
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
+        }
+
+        .doc-content ul,
+        .doc-content ol {
+            margin-bottom: 1rem;
+            padding-left: 1.5rem;
+        }
+
+        .doc-content ul {
+            list-style-type: disc;
+        }
+
+        .doc-content ol {
+            list-style-type: decimal;
+        }
+
+        .doc-content li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            font-size: 0.9375rem;
+        }
+
+        .doc-content pre {
+            background-color: var(--code-bg);
+            padding: 0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--code-border);
+            position: relative;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        .doc-content pre code {
+            font-family: 'Maple Mono', Consolas, monospace;
+            font-variant-ligatures: none;
+            color: var(--code-text);
+            background-color: transparent;
+            padding: 1rem;
+            display: block;
+            overflow-x: auto;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            white-space: pre;
+            word-wrap: normal;
+            min-width: 0;
+        }
+
+        .doc-content code:not(pre code) {
+            font-family: 'Maple Mono', Consolas, monospace;
+            font-variant-ligatures: none;
+            color: var(--code-inline-text);
+            background-color: var(--code-inline-bg);
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .doc-content pre code em {
+            font-family: inherit;
+            font-style: italic;
+        }
+
+        .doc-content blockquote {
+            border-left: 3px solid #3b82f6;
+            padding-left: 1rem;
+            font-style: italic;
+            color: var(--text-tertiary);
+            margin: 1.5rem 0;
+            background-color: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 0 0.375rem 0.375rem 0;
+            font-size: 0.9375rem;
+        }
+
+        .doc-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 0.5rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .doc-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            display: block;
+        }
+
+        .doc-content th,
+        .doc-content td {
+            padding: 0.625rem;
+            border: 1px solid var(--border-color);
+            white-space: nowrap;
+        }
+
+        .doc-content th {
+            background-color: var(--bg-secondary);
+            font-weight: 600;
+            text-align: left;
+            color: var(--text-primary);
+        }
+
+        .doc-content td {
+            color: var(--text-secondary);
+            background-color: var(--bg-primary);
+        }
+
+        .doc-content hr {
+            margin: 2.5rem 0;
+            border: 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .doc-content strong {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .doc-content em {
+            font-style: italic;
+            color: var(--text-primary);
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.375rem;
+            background-color: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s, opacity 0.3s ease-in-out;
+            opacity: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+        }
+
+        .doc-content pre:hover .copy-button {
+            opacity: 1;
+        }
+
+        .copy-button:hover {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .copy-button.copied {
+            color: #10b981;
+        }
+
+        .copy-button i {
+            font-size: 0.875rem;
+        }
+
+        .part-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-tertiary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        body::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+
+        body::-webkit-scrollbar-thumb {
+            background: var(--text-tertiary);
+            border-radius: 8px;
+        }
+
+        body::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        .doc-content pre::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .doc-content pre::-webkit-scrollbar-track {
+            background: var(--code-bg);
+            border-radius: 0 0 0.5rem 0.5rem;
+        }
+
+        .doc-content pre::-webkit-scrollbar-thumb {
+            background: var(--code-border);
+            border-radius: 6px;
+        }
+
+        .doc-content pre::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        .doc-content pre code::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .doc-content pre code::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .doc-content pre code::-webkit-scrollbar-thumb {
+            background: var(--code-border);
+            border-radius: 6px;
+        }
+
+        .doc-content pre code::-webkit-scrollbar-thumb:hover {
+            background: var(--text-tertiary);
+        }
+
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--text-tertiary) var(--bg-secondary);
+        }
+
+        *:hover {
+            scrollbar-color: var(--text-secondary) var(--bg-secondary);
+        }
+
+        .doc-content pre,
+        .doc-content pre code {
+            scrollbar-width: thin;
+            scrollbar-color: var(--code-border) transparent;
+        }
+
+        .doc-content pre:hover,
+        .doc-content pre code:hover {
+            scrollbar-color: var(--text-tertiary) transparent;
+        }
+
+        .nav-link {
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            margin-left: 1.5rem;
+        }
+
+        .nav-link.active {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        .dark .nav-link.active {
+            background-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .nav-link.active-parent {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
+        .dark .nav-link.active-parent {
+            color: #60a5fa;
+        }
+
+        .nav-part {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-tertiary);
+            padding: 0.375rem 0.625rem;
+            margin-top: 0.75rem;
+            margin-bottom: 0.375rem;
+        }
+
+        .nav-part:first-child {
+            margin-top: 0;
+        }
+
+        .chapter-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .chapter-nav-button {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.625rem 1.25rem;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 0.5rem;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .chapter-nav-button:hover {
+            background-color: var(--bg-tertiary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .chapter-nav-button.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        #sidebar {
+            max-width: 16rem;
+            width: 100%;
+        }
+
+        .hljs-comment,
+        .hljs-quote {
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .hljs-keyword,
+        .hljs-selector-tag,
+        .hljs-built_in,
+        .hljs-name,
+        .hljs-tag {
+            color: #7c3aed;
+        }
+
+        .hljs-string,
+        .hljs-title,
+        .hljs-section,
+        .hljs-attribute,
+        .hljs-literal,
+        .hljs-template-tag,
+        .hljs-template-variable,
+        .hljs-type,
+        .hljs-addition {
+            color: #059669;
+        }
+
+        .hljs-meta,
+        .hljs-selector-attr,
+        .hljs-selector-pseudo {
+            color: #0891b2;
+        }
+
+        .hljs-symbol,
+        .hljs-bullet,
+        .hljs-link {
+            color: #dc2626;
+        }
+
+        .hljs-deletion {
+            color: #dc2626;
+            background-color: #fee2e2;
+        }
+
+        .hljs-number,
+        .hljs-regexp,
+        .hljs-literal,
+        .hljs-bullet,
+        .hljs-link {
+            color: #0891b2;
+        }
+
+        .hljs-function,
+        .hljs-selector-class,
+        .hljs-selector-id {
+            color: #2563eb;
+        }
+
+        .hljs-emphasis {
+            font-style: italic;
+        }
+
+        .hljs-strong {
+            font-weight: bold;
+        }
+
+        .dark .hljs-comment,
+        .dark .hljs-quote {
+            color: #9ca3af;
+        }
+
+        .dark .hljs-keyword,
+        .dark .hljs-selector-tag,
+        .dark .hljs-built_in,
+        .dark .hljs-name,
+        .dark .hljs-tag {
+            color: #a78bfa;
+        }
+
+        .dark .hljs-string,
+        .dark .hljs-title,
+        .dark .hljs-section,
+        .dark .hljs-attribute,
+        .dark .hljs-literal,
+        .dark .hljs-template-tag,
+        .dark .hljs-template-variable,
+        .dark .hljs-type,
+        .dark .hljs-addition {
+            color: #34d399;
+        }
+
+        .dark .hljs-meta,
+        .dark .hljs-selector-attr,
+        .dark .hljs-selector-pseudo {
+            color: #22d3ee;
+        }
+
+        .dark .hljs-symbol,
+        .dark .hljs-bullet,
+        .dark .hljs-link {
+            color: #f87171;
+        }
+
+        .dark .hljs-deletion {
+            color: #f87171;
+            background-color: #450a0a;
+        }
+
+        .dark .hljs-number,
+        .dark .hljs-regexp,
+        .dark .hljs-literal,
+        .dark .hljs-bullet,
+        .dark .hljs-link {
+            color: #22d3ee;
+        }
+
+        .dark .hljs-function,
+        .dark .hljs-selector-class,
+        .dark .hljs-selector-id {
+            color: #60a5fa;
+        }
+
+        @media (min-width: 640px) {
+            .doc-content h1 {
+                font-size: 2.25rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .doc-content h2 {
+                font-size: 1.875rem;
+                margin-top: 3rem;
+                margin-bottom: 1.25rem;
+                padding-bottom: 0.75rem;
+            }
+
+            .doc-content h3 {
+                font-size: 1.375rem;
+                margin-top: 2.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .doc-content h4,
+            .doc-content h5,
+            .doc-content h6 {
+                font-size: 1.25rem;
+                margin-top: 2rem;
+                margin-bottom: 0.875rem;
+            }
+
+            .doc-content p {
+                margin-bottom: 1.25rem;
+                line-height: 1.8;
+                font-size: 1rem;
+            }
+
+            .doc-content ul,
+            .doc-content ol {
+                margin-bottom: 1.25rem;
+                padding-left: 1.75rem;
+            }
+
+            .doc-content li {
+                margin-bottom: 0.625rem;
+                line-height: 1.75;
+                font-size: 1rem;
+            }
+
+            .doc-content pre {
+                border-radius: 0.75rem;
+                margin-bottom: 1.75rem;
+            }
+
+            .doc-content pre code {
+                padding: 1.25rem;
+                font-size: 0.9rem;
+                line-height: 1.6;
+            }
+
+            .doc-content code:not(pre code) {
+                border-radius: 0.375rem;
+                font-size: 0.9rem;
+            }
+
+            .doc-content blockquote {
+                border-left: 4px solid #3b82f6;
+                padding-left: 1.25rem;
+                margin: 2rem 0;
+                padding: 1.25rem;
+                border-radius: 0 0.5rem 0.5rem 0;
+                font-size: 1rem;
+            }
+
+            .doc-content img {
+                border-radius: 0.75rem;
+                margin: 2rem 0;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }
+
+            .doc-content table {
+                margin: 2rem 0;
+                font-size: 0.95rem;
+                display: table;
+            }
+
+            .doc-content th,
+            .doc-content td {
+                padding: 0.875rem;
+                white-space: normal;
+            }
+
+            .doc-content hr {
+                margin: 3rem 0;
+            }
+
+            .copy-button {
+                top: 0.75rem;
+                right: 0.75rem;
+            }
+
+            .nav-link {
+                font-size: 0.925rem;
+            }
+
+            .nav-part {
+                padding: 0.5rem 0.75rem;
+                margin-top: 1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .chapter-nav {
+                margin-top: 4rem;
+                padding-top: 2rem;
+                gap: 1rem;
+            }
+
+            .chapter-nav-button {
+                gap: 0.5rem;
+                padding: 0.75rem 1.5rem;
+                border-radius: 0.75rem;
+                font-size: 0.95rem;
+            }
+        }
+
+        @media (max-width: 639px) {
+            .chapter-nav {
+                flex-direction: column;
+            }
+
+            .chapter-nav-button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .doc-content table {
+                font-size: 0.8125rem;
+            }
+
+            .doc-content th,
+            .doc-content td {
+                padding: 0.5rem;
+                font-size: 0.8125rem;
+            }
+
+            .doc-content pre code {
+                font-size: 0.75rem;
+                padding: 0.75rem;
+            }
+        }
+
+        @media (max-width: 374px) {
+            .doc-content h1 {
+                font-size: 1.75rem;
+            }
+
+            .doc-content h2 {
+                font-size: 1.375rem;
+            }
+
+            .doc-content h3 {
+                font-size: 1.125rem;
+            }
+
+            .doc-content h4 {
+                font-size: 1rem;
+            }
+
+            .doc-content p,
+            .doc-content li {
+                font-size: 0.875rem;
+            }
+
+            .doc-content pre code {
+                font-size: 0.7rem;
+                padding: 0.625rem;
+            }
+
+            .doc-content code:not(pre code) {
+                font-size: 0.8125rem;
+                padding: 0.0625rem 0.25rem;
+            }
+
+            .nav-link {
+                font-size: 0.8125rem;
+                padding: 0.5rem 0.625rem;
+            }
+
+            .nav-part {
+                font-size: 0.6875rem;
+                padding: 0.25rem 0.5rem;
+            }
+
+            .chapter-nav-button {
+                font-size: 0.8125rem;
+                padding: 0.5rem 1rem;
+            }
+
+            .copy-button {
+                width: 1.75rem;
+                height: 1.75rem;
+                padding: 0.25rem;
+            }
+
+            .copy-button i {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-[#0f0f0f] transition-colors duration-200">
+    <div class="flex min-h-screen">
+        <div id="sidebar-overlay"
+            class="fixed inset-0 bg-gray-900 bg-opacity-50 z-30 hidden transition-opacity duration-300 ease-in-out lg:hidden">
+        </div>
+        <aside id="sidebar"
+            class="fixed inset-y-0 left-0 z-40 w-64 transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out bg-white dark:bg-[#1a1a1a] border-r border-gray-200 dark:border-[#374151] shadow-sm overflow-hidden flex flex-col">
+            <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-[#374151] flex items-center justify-between">
+                <h1 id="doc-title"
+                    class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 truncate pr-2"></h1>
+                <button id="close-sidebar"
+                    class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626] lg:hidden flex-shrink-0">
+                    <div
+                        class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                        <i class="ri-close-line ri-lg"></i>
+                    </div>
+                </button>
+            </div>
+            <div class="sidebar-nav flex-1 overflow-y-auto p-3 sm:p-4"></div>
+        </aside>
+        <main class="flex-1 lg:ml-64 w-full min-w-0">
+            <header
+                class="sticky top-0 z-20 bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-[#374151] shadow-sm">
+                <div class="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 lg:px-6">
+                    <div class="flex items-center min-w-0">
+                        <button id="open-sidebar"
+                            class="p-1.5 sm:p-2 mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626] lg:hidden flex-shrink-0">
+                            <div
+                                class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                <i class="ri-menu-line ri-lg"></i>
+                            </div>
+                        </button>
+                        <h1 id="mobile-doc-title"
+                            class="text-base sm:text-lg font-semibold text-gray-900 dark:text-gray-100 lg:hidden truncate">
+                        </h1>
+                    </div>
+                    <div class="flex items-center flex-shrink-0">
+                        <div class="relative mr-3 sm:mr-4 hidden min-[480px]:block">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-2.5 sm:pl-3 pointer-events-none">
+                                <div class="w-3.5 h-3.5 sm:w-4 sm:h-4 flex items-center justify-center text-gray-400"><i
+                                        class="ri-search-line"></i></div>
+                            </div>
+                            <input type="text"
+                                class="py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 w-32 min-[540px]:w-48 sm:w-full text-xs sm:text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-[#262626] rounded-lg border-none focus:ring-2 focus:ring-primary focus:ring-opacity-20 focus:outline-none"
+                                placeholder="搜索文档...">
+                        </div>
+                        <button id="theme-toggle"
+                            class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
+                            <div
+                                class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                <i class="ri-sun-line dark:hidden"></i><i class="ri-moon-line hidden dark:block"></i>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <div class="max-w-5xl mx-auto px-3 py-6 sm:px-4 sm:py-8 lg:px-8 lg:py-12">
+                <div class="doc-content"></div>
+            </div>
+        </main>
+    </div>
+    <button id="back-to-top"
+        class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 p-2.5 sm:p-3 rounded-full bg-primary text-white shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center"><i class="ri-arrow-up-line"></i></div>
+    </button>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebar-overlay');
+            const openSidebarBtn = document.getElementById('open-sidebar');
+            const closeSidebarBtn = document.getElementById('close-sidebar');
+            const backToTopButton = document.getElementById('back-to-top');
+            const themeToggle = document.getElementById('theme-toggle');
+            const htmlElement = document.documentElement;
+
+            let parts = [];
+            let chapters = [];
+            let currentChapterIndex = 0;
+
+            function openSidebar() {
+                sidebar.classList.remove('-translate-x-full');
+                sidebarOverlay.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden', 'lg:overflow-auto');
+                setTimeout(() => sidebarOverlay.classList.add('opacity-100'), 10);
+            }
+
+            function closeSidebar() {
+                sidebar.classList.add('-translate-x-full');
+                sidebarOverlay.classList.remove('opacity-100');
+                setTimeout(() => {
+                    sidebarOverlay.classList.add('hidden');
+                    document.body.classList.remove('overflow-hidden', 'lg:overflow-auto');
+                }, 300);
+            }
+
+            if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
+            if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+            if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+            function toggleBackToTopButton() {
+                if (window.scrollY > 300) {
+                    backToTopButton.classList.remove('translate-y-20', 'opacity-0');
+                } else {
+                    backToTopButton.classList.add('translate-y-20', 'opacity-0');
+                }
+            }
+
+            backToTopButton.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+            window.addEventListener('scroll', toggleBackToTopButton);
+            toggleBackToTopButton();
+
+            themeToggle.addEventListener('click', () => {
+                htmlElement.classList.toggle('dark');
+                localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+            });
+
+            function generateSidebar() {
+                const sidebarNav = document.querySelector('.sidebar-nav');
+                sidebarNav.innerHTML = '';
+                const navContainer = document.createElement('div');
+                navContainer.className = 'space-y-0';
+
+                parts.forEach((part) => {
+                    const partDiv = document.createElement('div');
+                    partDiv.className = 'nav-part';
+                    partDiv.textContent = part.title;
+                    navContainer.appendChild(partDiv);
+
+                    part.chapters.forEach((chapter) => {
+                        const link = document.createElement('a');
+                        link.href = '#';
+                        link.setAttribute('data-chapter-index', chapter.globalIndex);
+                        link.className = 'nav-link block px-3 py-2 text-sm font-medium rounded-lg hover:bg-gray-100 dark:hover:bg-[#262626] text-gray-700 dark:text-gray-300 mb-1';
+                        link.textContent = chapter.title;
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            loadChapter(chapter.globalIndex);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            if (window.innerWidth < 1024) closeSidebar();
+                        });
+                        navContainer.appendChild(link);
+                    });
+                });
+
+                sidebarNav.appendChild(navContainer);
+            }
+
+            function updateActiveSection() {
+                const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (parseInt(link.getAttribute('data-chapter-index')) === currentChapterIndex) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            function loadChapter(index) {
+                currentChapterIndex = index;
+                const chapter = chapters[index];
+                const docContentEl = document.querySelector('.doc-content');
+
+                let content = '';
+
+                if (chapter.partTitle) {
+                    const partIndex = parts.findIndex(p => p.title === chapter.partTitle);
+                    if (partIndex !== -1) {
+                        const partTitleText = `${chapter.partTitle}`;
+                        content += `<div class="part-title">${partTitleText}</div>`;
+                    }
+                }
+
+                content += marked.parse(chapter.content);
+
+                const chapterNav = document.createElement('div');
+                chapterNav.className = 'chapter-nav';
+
+                const prevButton = document.createElement('a');
+                prevButton.href = '#';
+                prevButton.className = 'chapter-nav-button';
+                if (index > 0) {
+                    prevButton.innerHTML = `<i class="ri-arrow-left-line"></i> <span class="hidden min-[375px]:inline">上一章:</span> ${chapters[index - 1].title}`;
+                    prevButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        loadChapter(index - 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                } else {
+                    prevButton.classList.add('disabled');
+                    prevButton.innerHTML = `<i class="ri-arrow-left-line"></i> 上一章`;
+                }
+
+                const nextButton = document.createElement('a');
+                nextButton.href = '#';
+                nextButton.className = 'chapter-nav-button';
+                if (index < chapters.length - 1) {
+                    nextButton.innerHTML = `<span class="hidden min-[375px]:inline">下一章:</span> ${chapters[index + 1].title} <i class="ri-arrow-right-line"></i>`;
+                    nextButton.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        loadChapter(index + 1);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    });
+                } else {
+                    nextButton.classList.add('disabled');
+                    nextButton.innerHTML = `下一章 <i class="ri-arrow-right-line"></i>`;
+                }
+
+                chapterNav.appendChild(prevButton);
+                chapterNav.appendChild(nextButton);
+
+                docContentEl.innerHTML = content;
+                docContentEl.appendChild(chapterNav);
+
+                updateActiveSection();
+                initializeCopyButtons();
+                document.querySelectorAll('.doc-content pre code').forEach(hljs.highlightElement);
+            }
+
+            function initializeCopyButtons() {
+                document.querySelectorAll('.doc-content pre code').forEach(block => {
+                    const pre = block.parentElement;
+                    if (pre.querySelector('.copy-button')) return;
+
+                    const button = document.createElement('button');
+                    button.className = 'copy-button';
+                    button.innerHTML = '<i class="ri-file-copy-line"></i>';
+                    button.addEventListener('click', async () => {
+                        try {
+                            await navigator.clipboard.writeText(block.textContent);
+                            button.innerHTML = '<i class="ri-check-line"></i>';
+                            button.classList.add('copied');
+                            setTimeout(() => {
+                                button.innerHTML = '<i class="ri-file-copy-line"></i>';
+                                button.classList.remove('copied');
+                            }, 2000);
+                        } catch {
+                            alert('复制失败');
+                        }
+                    });
+                    pre.appendChild(button);
+                });
+            }
+
+            async function initializeCoursePage() {
+                const docContentEl = document.querySelector('.doc-content');
+                docContentEl.innerHTML = `<div class="text-center p-8"><p class="text-gray-500">正在加载课程内容...</p></div>`;
+
+                try {
+                    const pathParts = window.location.pathname.split('/');
+                    const courseName = decodeURIComponent(pathParts.pop() || pathParts.pop());
+
+                    if (!courseName || pathParts[pathParts.length - 1] !== 'course') {
+                        throw new Error("无效的课程URL。URL格式应为 /course/课程名称");
+                    }
+
+                    const coursesResponse = await fetch('/api/courses');
+                    if (!coursesResponse.ok) throw new Error(`获取课程列表失败: ${coursesResponse.status}`);
+                    const allCourses = await coursesResponse.json();
+
+                    const courseMeta = allCourses.find(c => c.name === courseName);
+                    if (!courseMeta) {
+                        throw new Error(`未找到名为 "${courseName}" 的课程。`);
+                    }
+                    const filename = courseMeta.api_name;
+
+                    const markdownResponse = await fetch(`/class/${filename}`);
+                    if (!markdownResponse.ok) throw new Error(`获取课程文件失败: ${markdownResponse.status}`);
+                    const markdown = await markdownResponse.text();
+
+                    document.title = `CodeAlone - ${courseName}`;
+                    document.getElementById('doc-title').textContent = courseName;
+                    document.getElementById('mobile-doc-title').textContent = courseName;
+
+                    parts = [];
+                    chapters = [];
+                    let currentPart = null;
+                    let currentChapter = null;
+                    let currentContent = '';
+                    let globalChapterIndex = 0;
+
+                    let inCodeBlock = false;
+                    const lines = markdown.split('\n');
+
+                    for (const line of lines) {
+                        const trimmedLine = line.trim();
+
+                        if (trimmedLine.startsWith('```')) {
+                            inCodeBlock = !inCodeBlock;
+                        }
+
+                        if (!inCodeBlock && trimmedLine.startsWith('# ') && !trimmedLine.startsWith('##')) {
+                            if (currentChapter) {
+                                currentChapter.content = currentContent;
+                                chapters.push(currentChapter);
+                                currentContent = '';
+                            }
+                            currentPart = { title: trimmedLine.substring(2).trim(), chapters: [] };
+                            parts.push(currentPart);
+                            currentChapter = null;
+                        }
+                        else if (!inCodeBlock && trimmedLine.startsWith('## ')) {
+                            if (currentChapter) {
+                                currentChapter.content = currentContent;
+                                chapters.push(currentChapter);
+                                currentContent = '';
+                            }
+                            if (!currentPart) {
+                                currentPart = { title: courseName, chapters: [] };
+                                parts.push(currentPart);
+                            }
+                            currentChapter = {
+                                title: trimmedLine.substring(3).trim(),
+                                partTitle: currentPart.title,
+                                content: '',
+                                globalIndex: globalChapterIndex++
+                            };
+                            currentPart.chapters.push(currentChapter);
+                            currentContent += line + '\n';
+                        } else {
+                            currentContent += line + '\n';
+                        }
+                    }
+
+                    if (currentChapter) {
+                        currentChapter.content = currentContent;
+                        chapters.push(currentChapter);
+                    }
+
+                    if (chapters.length === 0 && markdown.trim().length > 0) {
+                        if (!currentPart) {
+                            currentPart = { title: courseName, chapters: [] };
+                            parts.push(currentPart);
+                        }
+                        currentChapter = {
+                            title: courseName,
+                            partTitle: courseName,
+                            content: markdown,
+                            globalIndex: 0
+                        };
+                        currentPart.chapters.push(currentChapter);
+                        chapters.push(currentChapter);
+                    }
+
+                    generateSidebar();
+                    if (chapters.length > 0) {
+                        loadChapter(0);
+                    } else {
+                        docContentEl.innerHTML = `<div class="text-center p-8"><p class="text-gray-500">课程内容为空。</p></div>`;
+                    }
+
+                } catch (error) {
+                    docContentEl.innerHTML = `<div class="text-center p-6 sm:p-8"><h1 class="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">内容加载失败</h1><p class="mt-3 sm:mt-4 text-gray-500 dark:text-gray-400 text-sm sm:text-base">无法加载课程内容，请检查URL或稍后再试。</p><p class="mt-2 text-xs sm:text-sm text-secondary dark:text-tertiary font-mono bg-tertiary dark:bg-code-bg p-2 rounded-md">${error.toString()}</p></div>`;
+                    console.error("加载课程失败:", error);
+                }
+            }
+
+            initializeCoursePage();
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeAlone</title>
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <style>
+        :where([class^="ri-"])::before {
+            content: "\f3c2";
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .dark .dark\:shadow-dark {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+        }
+
+        .course-card {
+            transition: all 0.2s ease;
+        }
+
+        .course-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #3b82f6;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            animation: rotation 1s linear infinite;
+        }
+
+        @keyframes rotation {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: '#3b82f6', secondary: '#64748b' }, borderRadius: { 'none': '0', 'sm': '4px', DEFAULT: '8px', 'md': '12px', 'lg': '16px', 'xl': '20px', '2xl': '24px', '3xl': '32px', 'full': '9999px', 'button': '8px' } } } }
+    </script>
+    <script>
+            (function () {
+                const theme = localStorage.getItem('theme');
+                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.remove('light');
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                }
+            })();
+    </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-black min-h-screen transition-colors duration-300">
+    <header
+        class="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-zinc-900 shadow-sm dark:shadow-dark z-10 transition-colors duration-300 border-b border-transparent dark:border-zinc-800">
+        <div class="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+            <div class="flex items-center">
+                <h1 class="text-2xl font-bold text-primary">CodeAlone</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <button id="theme-toggle"
+                    class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 transition-colors duration-300">
+                    <i class="ri-sun-line ri-lg dark:hidden"></i>
+                    <i class="ri-moon-line ri-lg hidden dark:block"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 pt-24 pb-12">
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">课程列表</h2>
+            <p class="text-secondary dark:text-zinc-400 mt-2">探索我们精心准备的编程课程，开启您的编程之旅</p>
+        </div>
+
+        <div id="loading" class="flex justify-center items-center py-20">
+            <div class="loader"></div>
+        </div>
+
+        <div id="error" class="hidden flex flex-col items-center justify-center py-20">
+            <div class="w-16 h-16 flex items-center justify-center rounded-full bg-red-100 text-red-500 mb-4">
+                <i class="ri-error-warning-line ri-2x"></i>
+            </div>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">加载失败</h3>
+            <p class="text-secondary dark:text-zinc-400 mb-4 text-center">无法获取课程列表，请检查网络连接</p>
+            <button id="retry-button"
+                class="px-4 py-2 bg-primary text-white rounded-button hover:bg-blue-600 transition-colors duration-200 whitespace-nowrap">
+                重新加载
+            </button>
+        </div>
+
+        <div id="courses-container" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        </div>
+    </main>
+
+    <script id="theme-script">
+        document.addEventListener('DOMContentLoaded', function () {
+            const themeToggle = document.getElementById('theme-toggle');
+            const html = document.documentElement;
+
+            themeToggle.addEventListener('click', function () {
+                if (html.classList.contains('dark')) {
+                    html.classList.remove('dark');
+                    html.classList.add('light');
+                    localStorage.setItem('theme', 'light');
+                } else {
+                    html.classList.remove('light');
+                    html.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                }
+            });
+        });
+    </script>
+
+    <script id="courses-script">
+        document.addEventListener('DOMContentLoaded', function () {
+            const coursesContainer = document.getElementById('courses-container');
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+            const retryButton = document.getElementById('retry-button');
+
+            function formatDate(dateString) {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+
+            async function loadCourses() {
+                loadingElement.classList.remove('hidden');
+                errorElement.classList.add('hidden');
+                coursesContainer.classList.add('hidden');
+
+                try {
+                    const response = await fetch('/api/courses');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    const courses = await response.json();
+                    renderCourses(courses);
+                    coursesContainer.classList.remove('hidden');
+                } catch (error) {
+                    console.error("Failed to load courses:", error);
+                    errorElement.classList.remove('hidden');
+                } finally {
+                    loadingElement.classList.add('hidden');
+                }
+            }
+
+            function renderCourses(courses) {
+                coursesContainer.innerHTML = '';
+
+                courses.forEach(course => {
+                    let statusBadge = '';
+                    if (course.status === '已完成') {
+                        statusBadge = `<span class="px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 dark:text-green-200 dark:bg-green-900 rounded-full">${course.status}</span>`;
+                    } else if (course.status === '未完成') {
+                        statusBadge = `<span class="px-2 py-0.5 text-xs font-semibold text-yellow-800 bg-yellow-100 dark:text-yellow-200 dark:bg-yellow-900 rounded-full">${course.status}</span>`;
+                    }
+
+                    const courseCardLink = document.createElement('a');
+                    courseCardLink.href = `/course/${encodeURIComponent(course.name)}`;
+                    courseCardLink.className = 'course-card block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded p-6 hover:border-primary dark:hover:border-primary transition-all duration-200 shadow-sm hover:shadow';
+
+                    courseCardLink.innerHTML = `
+                        <div class="flex flex-col h-full">
+                            <div class="flex items-baseline justify-between mb-2">
+                                <h3 class="text-xl font-bold text-gray-900 dark:text-white">${course.name}</h3>
+                                ${statusBadge}
+                            </div>
+                            <p class="text-secondary dark:text-zinc-400 text-sm mb-4 line-clamp-3 flex-grow">${course.description}</p>
+                            <div class="h-px bg-gray-200 dark:bg-zinc-800 my-4"></div>
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center">
+                                    <div class="w-6 h-6 flex items-center justify-center text-primary">
+                                        <i class="ri-user-line"></i>
+                                    </div>
+                                    <span class="text-sm text-gray-700 dark:text-zinc-300 ml-1">${course.author}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-6 h-6 flex items-center justify-center text-secondary">
+                                        <i class="ri-calendar-line"></i>
+                                    </div>
+                                    <span class="text-sm text-secondary dark:text-zinc-400 ml-1">${formatDate(course.completion_time)}</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 w-full py-2 bg-primary text-white text-center rounded-button hover:bg-blue-600 transition-colors duration-200 whitespace-nowrap">
+                                查看课程
+                            </div>
+                        </div>
+                    `;
+                    coursesContainer.appendChild(courseCardLink);
+                });
+            }
+
+            retryButton.addEventListener('click', loadCourses);
+
+            loadCourses();
+        });
+    </script>
+</body>
+
+</html>
