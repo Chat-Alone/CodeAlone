@@ -21,6 +21,14 @@ COURSES_LIST = [
         "status": "未完成"
     },
     {
+        "name": "清蒸🦀",
+        "description": "高端的食材往往只需要最朴素的烹饪方式",
+        "author": "刘子",
+        "completion_time": "1970-01-01",
+        "api_name": "🦀.md",
+        "status": "未完成"
+    },
+    {
         "name": "C++基础课",
         "description": "C++从入门到弃坑",
         "author": "浮玉人",
@@ -40,6 +48,7 @@ COURSES_LIST = [
 COURSES_MAP = {course["name"]: course for course in COURSES_LIST}
 ALLOWED_FILES = {course["api_name"] for course in COURSES_LIST}
 
+
 @app.route("/")
 def index():
     return render_template('index.html')
@@ -51,9 +60,11 @@ def course_page(course_name):
         return render_template('class.html')
     return jsonify({"error": "Not Found", "message": "The requested course does not exist."}), 404
 
+
 @app.route("/api/courses")
 def get_courses():
     return jsonify(COURSES_LIST)
+
 
 @app.route("/class/<path:filename>")
 def get_class_file(filename):
@@ -64,6 +75,7 @@ def get_class_file(filename):
             mimetype='text/markdown; charset=utf-8'
         )
     return jsonify({"error": "Not Found", "message": "The requested course file does not exist."}), 404
+
 
 @app.route("/font")
 def get_font():
