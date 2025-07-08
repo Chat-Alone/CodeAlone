@@ -313,8 +313,8 @@ int main() {
 using namespace ____;   // (2)
 
 int main() {
-    cout << "Hello, C++!";  // (3)
-    ____;                   // (4)
+    cout << "Hello, C++!";
+    ____;                   // (3)
 }
 ```
 
@@ -325,8 +325,7 @@ int main() {
 
 1. `<iostream>`
 2. `std`
-3. `std::cout`已因第 (2) 句而省略`std::`，此行无需改动
-4. `return 0`
+3. `return 0`
 
 **解析**
 
@@ -838,36 +837,84 @@ unsigned int的最大值是: 4294967295
 
 #### 显式转换（强制转换）
 
-有时，我们希望明确地告诉编译器：“我知道这里有风险，但我就是要进行这个转换”。这种由程序员主动发起的转换，称为**显式转换**（Explicit Conversion），或**强制类型转换**（Casting）。
+有时，我们希望明确地告诉编译器："我知道这里有风险，但我就是要进行这个转换"。这种由程序员主动发起的转换，称为**显式转换**（Explicit Conversion），或**强制类型转换**（Casting）。
 
-在C++中，推荐使用`static_cast`来进行显式转换，它的语法更清晰，也更安全。
+##### C++中的两种主要强制转换方式
 
-**语法格式**：`static_cast<目标数据类型>(要转换的变量或值);`
+**1. C风格的强制转换（不推荐）**
 
-**最经典的用例：整数除法**
-*   **问题**：两个整数相除，结果仍然是整数，小数部分会被舍弃。
-    ```cpp
-    int total_score = 100;
-    int num_students = 3;
-    double average_score = total_score / num_students; // 100/3结果是33, 然后33被赋给double，变成33.0
-    cout << "错误的平均分: " << average_score << endl; // 输出 33
-    ```
-*   **解决方案**：在计算**之前**，将其中一个整数强制转换为`double`。
-    ```cpp
-    int total_score = 100;
-    int num_students = 3;
+这是从C语言继承而来的转换方式，语法简单但不够安全。
 
-    // 使用static_cast强制转换类型
-    double correct_average = static_cast<double>(total_score) / num_students;
-    
-    // 详细执行步骤：
-    // 1. static_cast<double>(total_score)将total_score(100)临时变成double(100.0)
-    // 2. 表达式变为 100.0 / num_students
-    // 3. 编译器发现一个是double，一个是int，根据隐式转换规则，将num_students也提升为double
-    // 4. 最终计算的是 100.0 / 3.0，得到浮点数结果 33.3333...
-    
-    cout << "正确的平均分: " << correct_average << endl;
-    ```
+语法格式：`(目标类型)表达式` 或 `表达式(目标类型)`
+
+```cpp
+double pi = 3.14159;
+int truncated = (int)pi;       // 结果是3
+int also_truncated = int(pi);  // 结果也是3
+```
+
+**不推荐这种写法：**
+- 转换意图不明确，代码可读性差
+- 编译器无法进行充分的类型检查
+- 可能隐藏潜在的错误
+
+**2. C++风格的强制转换（推荐）**
+
+C++提供了四种更安全、更明确的转换操作符，其中最常用的是`static_cast`。
+
+语法格式：`static_cast<目标类型>(表达式)`
+
+```cpp
+double pi = 3.14159;
+int truncated = static_cast<int>(pi);  // 结果是3
+```
+
+**static_cast的优势：**
+- 转换意图明确，提高代码可读性
+- 编译器会进行类型检查，更安全
+- 在搜索代码时更容易找到所有的类型转换
+
+##### 最经典的应用场景：整数除法
+
+**问题演示：**
+```cpp
+int total_score = 100;
+int num_students = 3;
+
+// 错误的做法：整数除法的结果仍是整数
+double wrong_average = total_score / num_students;  // 100/3=33，然后33→33.0
+cout << "错误的平均分: " << wrong_average << endl;  // 输出: 33
+```
+
+**解决方案对比：**
+```cpp
+// 方法1：使用C风格转换
+double average1 = (double)total_score / num_students;  // 100.0/3 = 33.333...
+double average2 = double(total_score) / num_students;  // 功能相同
+
+// 方法2：使用static_cast
+double average3 = static_cast<double>(total_score) / num_students;  // 100.0/3 = 33.333...
+
+cout << "正确的平均分: " << average3 << endl;  // 输出: 33.3333
+```
+
+##### 其他常见的强制转换场景
+
+```cpp
+// 1. 浮点数转整数（截断小数部分）
+double price = 19.99;
+int whole_price = static_cast<int>(price);  // 结果是19
+
+// 2. 字符与ASCII码转换
+char letter = 'A';
+int ascii_code = static_cast<int>(letter);  // 结果是65
+
+// 3. 不同大小整数类型之间的转换
+long long big_number = 1000000;
+int smaller = static_cast<int>(big_number);  // 可能溢出，需谨慎
+```
+
+**记住：** 虽然C风格的转换在语法上更简洁，但在现代C++编程中，始终优先使用`static_cast`，它让你的代码更安全、更易维护。
 
 ---
 
@@ -6376,6 +6423,8 @@ int main() {
 *   `数组名`：你为这块内存空间起的名字。
 *   `[常量表达式]`：数组的大小，必须是一个在**编译时**就能确定其值的**常量**。
 
+> 长度为0的数组在标准C++中是**非法**的；数组长度必须是编译期常量且≥1。只有极少数编译器在扩展模式下才允许零长数组，这不是可移植写法。
+
 ```cpp
 // 声明一个能存放10个整数的数组
 int scores[10];
@@ -6668,7 +6717,189 @@ double findMin(const double scores[], int size) {
 
 ---
 
+### 本章课后习题
+#### 习题一：数组的基本操作
 
+##### 问题描述
+编写一个C++程序，完成以下关于整数数组的基本操作：
+
+##### 要求
+1.  声明一个大小为5的 `int` 类型数组 `scores`。
+2.  使用循环从键盘读取5个整数，并将它们依次存入 `scores` 数组。
+3.  遍历数组，计算并输出数组中所有元素的总和与平均值。平均值应为 `double` 类型。
+
+##### 示例交互
+```
+请输入5个分数:
+分数 1: 88
+分数 2: 92
+分数 3: 75
+分数 4: 98
+分数 5: 85
+
+总分是: 438
+平均分是: 87.6
+```
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    const int ARRAY_SIZE = 5;
+    int scores[ARRAY_SIZE];
+    int sum = 0;
+
+    cout << "请输入" << ARRAY_SIZE << "个分数:" << endl;
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        cout << "分数 " << i + 1 << ": ";
+        cin >> scores[i];
+    }
+
+    for (int i = 0; i < ARRAY_SIZE; i++) {
+        sum += scores[i];
+    }
+    
+    double average = static_cast<double>(sum) / ARRAY_SIZE;
+
+    cout << endl;
+    cout << "总分是: " << sum << endl;
+    cout << "平均分是: " << average << endl;
+
+    return 0;
+}
+```
+
+##### 代码解析
+1.  **数组声明**: `int scores[ARRAY_SIZE];` 创建了一个能存放5个整数的数组。
+2.  **通过下标访问**: `scores[i]` 是访问数组元素的核心语法。在第一个循环中，它被用作左值（`cin >> scores[i];`）来接收输入；在第二个循环中，它被用作右值（`sum += scores[i];`）来读取元素的值。
+3.  **循环遍历**: `for (int i = 0; i < ARRAY_SIZE; i++)` 是遍历数组的标准模式。循环从下标`0`开始，到`ARRAY_SIZE - 1`结束，正好覆盖所有元素，避免了下标越界。
+
+</details>
+
+---
+
+#### 习题二：函数与数组
+
+##### 问题描述
+编写一个程序，其中包含一个函数 `find_max`，该函数用于寻找一个整数数组中的最大值。
+
+##### 要求
+1.  定义一个数组，其中存储五个整型：10, 55, 23, 8, 99, 42
+2.  函数应返回数组中的最大值。
+3.  调用 `find_max` 函数，并打印返回的最大值。
+4.  思考题：在 `find_max` 函数能不能使用 `sizeof(arr) / sizeof(arr[0])` 来获取数组大小？
+
+##### 示例
+```cpp
+数组中的最大值是: 99
+```
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+using namespace std;
+
+int find_max(int arr[], int size);
+
+int main() {
+    const int SIZE = 6;
+    int my_array[SIZE] = {10, 55, 23, 8, 99, 42};
+    int max_value = find_max(my_array, SIZE);
+    cout << "数组中的最大值是: " << max_value << endl;
+
+    return 0;
+}
+
+int find_max(int arr[], int size) {
+    int max_val = arr[0];
+
+    for (int i = 1; i < size; i++) {
+        if (arr[i] > max_val) {
+            max_val = arr[i];
+        }
+    }
+
+    return max_val;
+}
+```
+
+##### 代码解析
+1.  **数组作为函数参数**: `int find_max(int arr[], int size)` 定义了函数。当 `my_array` 被传递给 `find_max` 时，实际上传递的是数组的起始地址。函数内部的 `arr` 只是一个指向该地址的指针。
+2.  **显式传递大小**: 因为函数内部无法知道原始数组的大小，所以必须将大小 `SIZE` 作为一个独立的参数 `size` 传递进去，以便 `for` 循环能正确地遍历。
+3.  **4. 思考题解答**:
+    当数组作为函数参数时，它会 **“退化”（decay）为一个指针** 。在 `find_max` 函数内部，`arr` 实际上是一个 `int*` 类型的指针，它只存储了数组第一个元素的内存地址。
+    *   `sizeof(arr)` 在函数内部计算的将是**指针自身的大小**（在64位系统上通常是8字节），而不是整个数组所占用的内存大小。
+    *   因此，`sizeof(arr) / sizeof(arr[0])` 在函数内会得到一个无意义的错误结果，这就是为什么必须显式传递数组大小的原因。
+
+</details>
+
+---
+
+#### 习题三：数组元素逆序
+
+##### 问题描述
+编写一个程序，将一个数组中的元素原地逆序。例如，如果数组是 `{1, 2, 3, 4, 5}`，逆序后应变为 `{5, 4, 3, 2, 1}`。
+
+##### 要求
+1.  在 `main` 函数中定义一个数组并初始化。
+2.  使用一个 `for` 循环完成逆序操作，**不要**使用第二个数组作为辅助。
+3.  打印逆序后的数组。
+
+##### 示例
+```cpp
+// 初始数组: int arr[] = {10, 20, 30, 40, 50};
+// 期望输出:
+逆序后的数组: 50 40 30 20 10 
+```
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+int main() {
+    const int SIZE = 5;
+    int arr[SIZE] = {10, 20, 30, 40, 50};
+
+    for (int i = 0; i < SIZE / 2; i++) {
+        int temp = arr[i];
+        
+        arr[i] = arr[SIZE - 1 - i];
+        arr[SIZE - 1 - i] = temp;
+    }
+
+    cout << "逆序后的数组: ";
+    for (int i = 0; i < SIZE; i++) {
+        cout << arr[i] << " ";
+    }
+    cout << endl;
+
+    return 0;
+}
+```
+
+##### 代码解析
+1.  **原地逆序算法**:
+    *   我们使用两个下标：一个从头开始的 `i`，一个从尾部开始的 `SIZE - 1 - i`。
+    *   当 `i=0` 时，它与 `SIZE-1` 交换。
+    *   当 `i=1` 时，它与 `SIZE-2` 交换。
+    *   这个过程持续进行。
+2.  **循环次数**: 循环的条件是 `i < SIZE / 2`。我们只需要遍历数组的前半部分，因为每遍历一个元素，它都会和后半部分对应的元素交换。如果遍历整个数组，就会把刚刚换好的元素又换回去，等于没做操作。
+3.  **元素交换**: 交换两个变量的值需要一个临时变量 `temp`。`temp` 先保存 `arr[i]` 的值，然后 `arr[i]` 可以被安全地覆盖，最后 `arr[SIZE - 1 - i]` 再从 `temp` 中取回原来的值。
+
+</details>
 
 ## 第13章：多维数组
 
@@ -7184,6 +7415,198 @@ int main() {
 }
 ```
 
+---
+
+### 本章课后习题
+#### 题目一：寻找矩阵中的最大值
+
+**题目描述**：
+编写一个C++程序，首先在 `main` 函数中定义并初始化一个 3x4（3行4列）的 `int` 类型二维数组。然后，设计并实现一个函数 `findMax`，返回该数组中所有元素的最大值。在 `main` 函数中调用 `findMax` 函数，并打印出找到的最大值。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+using namespace std;
+
+const int COLS = 4;
+const int ROWS = 3;
+
+int findMax(const int arr[][COLS], int rows) {
+    int maxVal = arr[0][0];
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < COLS; ++j) {
+            if (arr[i][j] > maxVal) {
+                maxVal = arr[i][j];
+            }
+        }
+    }
+
+    return maxVal;
+}
+
+int main() {
+    int matrix[ROWS][COLS] = {
+        {1, 5, 22, 4},
+        {9, -3, 8, 15},
+        {12, 0, 17, 6}
+    };
+
+    int maxValue = findMax(matrix, ROWS);
+
+    cout << "矩阵中的最大值是: " << maxValue << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+这道题主要考察了本章的两个核心知识点：
+1.  **二维数组作为函数参数的传递**：函数 `findMax` 的形参 `const int arr[][COLS]` 是本章的重中之重。它表明，在传递二维数组时，我们必须明确指定除第一维之外的所有维度的大小（这里是列数 `COLS`），而行数 `rows` 则需要作为另一个独立的参数传入。在参数前使用 `const` 是一个好习惯，表明函数不会修改传入的数组。
+2.  **使用嵌套循环遍历二维数组**：通过外层循环控制行（`i` 从 `0` 到 `rows-1`），内层循环控制列（`j` 从 `0` 到 `COLS-1`），我们可以用 `arr[i][j]` 的形式依次访问到数组中的每一个元素，从而进行比较和查找。
+
+</details>
+
+---
+
+#### 题目二：矩阵转置
+
+**题目描述**：
+矩阵的转置操作是指将矩阵的行和列互换。请编写一个程序，实现对一个 3x3 的方阵（行数和列数相等的矩阵）进行原地转置。你需要：
+1.  在 `main` 函数中定义并初始化一个 3x3 的 `int` 矩阵。
+2.  编写一个 `printMatrix` 函数，用于按矩阵格式打印二维数组的内容。
+3.  编写一个 `transposeMatrix` 函数，该函数接收一个二维数组，并对其进行原地转置（即直接修改原数组，不创建新数组）。
+4.  在 `main` 函数中，先调用 `printMatrix` 打印原始矩阵，然后调用 `transposeMatrix` 进行转置，最后再次调用 `printMatrix` 打印转置后的矩阵，以验证操作的正确性。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
+const int SIZE = 3;
+
+void printMatrix(const int matrix[][SIZE], int size) {
+    for (int i = 0; i < size; ++i) {
+        for (int j = 0; j < size; ++j) {
+            cout << setw(4) << matrix[i][j]; // setw(4)让输出更整齐
+        }
+        cout << endl;
+    }
+}
+
+void transposeMatrix(int matrix[][SIZE], int size) {
+    for (int i = 0; i < size; ++i) {
+        for (int j = i + 1; j < size; ++j) {
+            int temp = matrix[i][j];
+            matrix[i][j] = matrix[j][i];
+            matrix[j][i] = temp;
+        }
+    }
+}
+
+int main() {
+    int myMatrix[SIZE][SIZE] = {
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9}
+    };
+
+    cout << "原始矩阵:" << endl;
+    printMatrix(myMatrix, SIZE);
+
+    transposeMatrix(myMatrix, SIZE);
+
+    cout << "\n转置后的矩阵:" << endl;
+    printMatrix(myMatrix, SIZE);
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题在考察二维数组作为函数参数和嵌套循环的基础上，增加了对数组元素**修改**的考察：
+1.  **数组的“引用”效果**：当数组作为参数传递给函数时，虽然形式上类似值传递，但由于传递的是数组首地址的副本，函数内部对数组元素的修改会直接影响到 `main` 函数中的原始数组。这道题的“原地转置”就利用了这一特性。注意 `transposeMatrix` 的参数 `int matrix[][SIZE]` 没有 `const`，因为它需要修改数组。
+2.  **转置算法的逻辑**：转置的核心是交换 `matrix[i][j]` 和 `matrix[j][i]`。关键在于循环的优化：内层循环 `for (int j = i + 1; ...)` 确保了我们只处理矩阵的“上三角”部分（不包括对角线）。这样可以避免将元素换过去又换回来，同时也能避免对角线元素与自身的无效交换，提高了效率。
+3.  **代码复用**：通过编写 `printMatrix` 函数，我们避免了在 `main` 函数中重复编写打印代码，体现了函数封装和代码复用的良好编程习惯。
+
+</details>
+
+---
+
+#### 题目三：学生成绩统计
+
+**题目描述**：
+假设一个班级有4名学生，每名学生有3门课程的成绩。请编写一个程序，完成以下任务：
+1.  在 `main` 函数中定义一个二维数组 `scores` 用于存储成绩。
+2.  使用嵌套循环，提示用户逐个输入每位学生的每门课程成绩，并存入 `scores` 数组。
+3.  输入完成后，再次使用嵌套循环计算每位学生的总分和平均分，并按以下格式输出结果（平均分保留两位小数）。
+
+**输出格式示例**：
+```
+第 1 位学生的总分是: 270.00, 平均分是: 90.00
+第 2 位学生的总分是: 240.00, 平均分是: 80.00
+...
+```
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <iomanip>
+using namespace std;
+
+const int STUDENTS = 4;
+const int SUBJECTS = 3;
+
+int main() {
+    double scores[STUDENTS][SUBJECTS];
+
+    cout << "请输入 " << STUDENTS << " 位学生的 " << SUBJECTS << " 门课程成绩：" << endl;
+    for (int i = 0; i < STUDENTS; ++i) {
+        cout << "请输入第 " << i + 1 << " 位学生的成绩 (共 " << SUBJECTS << " 门):" << endl;
+        for (int j = 0; j < SUBJECTS; ++j) {
+            cout << "  课程 " << j + 1 << ": ";
+            cin >> scores[i][j];
+        }
+    }
+
+    cout << "\n--- 成绩统计结果 ---" << endl;
+
+    cout << fixed << setprecision(2); // 美化输出
+
+    for (int i = 0; i < STUDENTS; ++i) {
+        double totalScore = 0.0;
+        for (int j = 0; j < SUBJECTS; ++j) {
+            totalScore += scores[i][j];
+        }
+        
+        double averageScore = totalScore / SUBJECTS;
+
+        cout << "第 " << i + 1 << " 位学生的总分是: " << totalScore
+             << ", 平均分是: " << averageScore << endl;
+    }
+
+    return 0;
+}
+```
+
+##### 答案解析
+这道题是一道综合应用题，它将本章知识与之前学过的I/O和计算紧密结合，考察的是解决实际问题的能力：
+1.  **二维数组建模**：本题展示了二维数组最常见的用途之一——表示表格数据。每一行代表一个实体（学生），每一列代表该实体的一个属性（课程成绩）。
+2.  **按行处理数据**：程序的核心逻辑是按行处理数据。外层循环 `for (int i = 0; ...)` 锁定了一位学生。在该循环体内，我们声明了一个局部变量 `totalScore`，然后通过内层循环 `for (int j = 0; ...)` 遍历该学生的所有课程成绩，累加到 `totalScore` 中。内层循环结束后，`totalScore` 就准确地存储了当前学生的总分，随即可以计算平均分并输出。
+3.  **知识整合**：本题不仅用到了二维数组的声明、嵌套循环输入和访问，还复习了 `cin` 接收用户输入，以及 `<iomanip>` 库中的 `fixed` 和 `setprecision` 来格式化浮点数输出。这体现了编程知识的融会贯通。
+
+</details>
+
 # 第四部分：数据结构入门
 ## 第14章：栈
 
@@ -7550,6 +7973,197 @@ int main() {
     return 0;
 }
 ```
+
+---
+
+### 本章课后习题
+
+#### 题目一：手动实现一个整数栈
+
+**题目描述**：
+请不要使用任何现成的库，而是基于本章所学的知识，使用一个固定大小的数组和一个整型变量 `top` 来手动实现一个栈。你需要编写一个完整的程序，包含以下几个功能函数：
+1.  `push(int stack[], int& top, int value, int capacity)`: 将一个整数 `value`压入栈中。入栈前需检查栈是否已满（栈溢出）。
+2.  `pop(int stack[], int& top)`: 从栈顶弹出一个元素。出栈前需检查栈是否为空（栈下溢）。
+3.  `peek(const int stack[], int top)`: 查看栈顶元素的值，但不弹出它。查看前需检查栈是否为空。
+4.  `isEmpty(int top)`: 检查栈是否为空。
+
+在 `main` 函数中，声明一个容量为5的整数数组作为栈，并对你实现的以上所有功能进行充分测试，包括正常操作和边界条件（如对满栈进行push，对空栈进行pop）。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+using namespace std;
+
+bool isEmpty(int top) {
+    return top == -1;
+}
+
+bool isFull(int top, int capacity) {
+    return top == capacity - 1;
+}
+
+void push(int stack[], int& top, int value, int capacity) {
+    if (isFull(top, capacity)) {
+        cout << "错误：栈溢出！无法压入 " << value << endl;
+        return;
+    }
+    top++;
+    stack[top] = value;
+    cout << "成功压入: " << value << endl;
+}
+
+void pop(int stack[], int& top) {
+    if (isEmpty(top)) {
+        cout << "错误：栈下溢！无法弹出元素。" << endl;
+        return;
+    }
+    cout << "成功弹出: " << stack[top] << endl;
+    top--;
+}
+
+void peek(const int stack[], int top) {
+    if (isEmpty(top)) {
+        cout << "栈为空，没有栈顶元素。" << endl;
+        return;
+    }
+    cout << "栈顶元素是: " << stack[top] << endl;
+}
+
+int main() {
+    const int STACK_CAPACITY = 5;
+    int myStack[STACK_CAPACITY];
+    int top = -1;
+
+    cout << "--- 测试栈操作 ---" << endl;
+
+    // 测试空栈
+    peek(myStack, top);
+    pop(myStack, top);
+
+    // 压入元素
+    push(myStack, top, 10, STACK_CAPACITY);
+    push(myStack, top, 20, STACK_CAPACITY);
+    push(myStack, top, 30, STACK_CAPACITY);
+
+    // 查看栈顶
+    peek(myStack, top);
+
+    // 继续压入直到栈满
+    push(myStack, top, 40, STACK_CAPACITY);
+    push(myStack, top, 50, STACK_CAPACITY);
+
+    // 测试栈溢出
+    push(myStack, top, 60, STACK_CAPACITY);
+
+    // 弹出所有元素
+    cout << "\n--- 开始弹出所有元素 ---" << endl;
+    while (!isEmpty(top)) {
+        pop(myStack, top);
+    }
+    
+    // 测试栈下溢
+    pop(myStack, top);
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题是对本章核心知识**“使用数组和`top`索引实现栈”**的直接考察。
+1.  **`top` 索引的管理**：`top` 是栈实现的核心。`top = -1` 是判断栈为空的关键标志。每次 `push`，`top` 先自增再赋值；每次 `pop`，`top` 直接自减，这清晰地体现了栈顶的动态变化。
+2.  **通过引用传递`top`**：在 `push` 和 `pop` 函数中，参数 `int& top` 使用了引用传递。这是因为这两个函数需要修改 `main` 函数中 `top` 变量的实际值。如果不使用引用，函数内对 `top` 的修改将不会影响到 `main` 函数，栈的状态也就无法被正确更新。
+3.  **错误处理**：通过 `isFull` 和 `isEmpty` 函数进行前置检查，程序能够优雅地处理栈溢出和栈下溢这两种经典错误，这是健壮程序设计的重要体现。
+
+</details>
+
+---
+
+#### 题目二：括号匹配检查
+
+**题目描述**：
+栈在解析表达式时非常有用。请编写一个函数 `bool areBracketsBalanced(const char expression[])`，用于检查一个包含 `( )`, `[ ]`, `{ }` 三种括号的字符串，判断其中的括号是否配对且正确嵌套。
+-   例如 `"{[()]}"` 和 `"(a + b) * [c]"` 是合法的。
+-   而 `"{[(])}"`, `"(("`, 和 `"}}"` 是非法的。
+
+在 `main` 函数中，测试你的函数至少包含以上提到的合法与非法示例，并打印出每个表达式的检查结果（`true` 或 `false`）。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+using namespace std;
+
+const int MAX_LEN = 100;
+
+bool areBracketsBalanced(const char expression[]) {
+    char stack[MAX_LEN];
+    int top = -1;
+
+    for (int i = 0; expression[i] != '\0'; ++i) {
+        char currentChar = expression[i];
+
+        if (currentChar == '(' || currentChar == '[' || currentChar == '{') {
+            if (top >= MAX_LEN - 1) {
+                cout << "错误：表达式过长，栈溢出！" << endl;
+                return false; 
+            }
+            stack[++top] = currentChar;
+        }
+        
+        else if (currentChar == ')' || currentChar == ']' || currentChar == '}') {
+            if (top == -1) {
+                return false;
+            }
+            
+            char topChar = stack[top--];
+
+            if ( (currentChar == ')' && topChar != '(') ||
+                 (currentChar == ']' && topChar != '[') ||
+                 (currentChar == '}' && topChar != '{') ) {
+                return false;
+            }
+        }
+    }
+
+    return top == -1;
+}
+
+int main() {
+    cout << boolalpha;
+
+    const char* expr1 = "{[()]}";
+    cout << "表达式 '" << expr1 << "' 是否平衡? " << areBracketsBalanced(expr1) << endl;
+
+    const char* expr2 = "{[(])}";
+    cout << "表达式 '" << expr2 << "' 是否平衡? " << areBracketsBalanced(expr2) << endl;
+
+    const char* expr3 = "((a+b)";
+    cout << "表达式 '" << expr3 << "' 是否平衡? " << areBracketsBalanced(expr3) << endl;
+    
+    const char* expr4 = "())";
+    cout << "表达式 '" << expr4 << "' 是否平衡? " << areBracketsBalanced(expr4) << endl;
+
+    const char* expr5 = "int main() { return 0; }";
+    cout << "表达式 '" << expr5 << "' 是否平衡? " << areBracketsBalanced(expr5) << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题是栈应用的绝佳范例，深刻体现了其**处理嵌套结构和“最近匹配”**的能力。
+1.  **核心逻辑**：
+    *   **遇到开括号**：就好像许下一个“承诺”，需要一个对应的闭括号来“兑现”。我们将这个“承诺”（开括号）压入栈中保存起来。
+    *   **遇到闭括号**：我们立即检查栈顶的“承诺”。如果栈是空的（没有承诺），或者栈顶的承诺与当前闭括号不匹配，说明语法错误。如果匹配，就兑现承诺，将开括号从栈中弹出。
+2.  **LIFO的体现**：由于括号可以嵌套，例如 `{[()]}`，最里面的 `(` 最先遇到对应的 `)`，这正是“后进先出”的原则。栈顶永远是最近遇到的、尚未匹配的开括号。
+3.  **最终检查**：遍历完整个字符串后，一个合法的表达式应该所有的“承诺”都已被“兑现”，即栈应该为空。如果栈不为空，说明有未被闭合的开括号，同样是错误的。
+
+</details>
 
 ## 第15章：字符数组与C风格字符串
 
@@ -8194,6 +8808,221 @@ int main() {
 }
 ```
 
+---
+
+### 本章课后习题
+#### 题目一：字典序比较器
+
+**题目描述**：
+请编写一个程序，循环提示用户输入两个单词。程序需要使用 `<cstring>` 库中的 `strcmp` 函数来比较这两个单词的字典序，并打印出明确的比较结果（例如，“'apple' 在字典中先于 'banana'”）。当用户为第一个单词输入 "quit" 时，程序结束。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+int main() {
+    const int WORD_BUFFER_SIZE = 50;
+    char word1[WORD_BUFFER_SIZE];
+    char word2[WORD_BUFFER_SIZE];
+
+    cout << "欢迎使用单词比较器！输入 'quit' 作为第一个单词以退出。" << endl;
+
+    while (true) {
+        cout << "\n请输入第一个单词: ";
+        cin >> word1;
+
+        if (strcmp(word1, "quit") == 0) {
+            cout << "程序已退出。" << endl;
+            break;
+        }
+
+        cout << "请输入第二个单词: ";
+        cin >> word2;
+
+        int result = strcmp(word1, word2);
+
+        if (result < 0) {
+            cout << "结果: '" << word1 << "' 在字典中先于 '" << word2 << "'" << endl;
+        } else if (result > 0) {
+            cout << "结果: '" << word2 << "' 在字典中先于 '" << word1 << "'" << endl;
+        } else {
+            cout << "结果: 两个单词完全相同。" << endl;
+        }
+    }
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题主要考察 **`strcmp` 函数** 的使用，这是C风格字符串比较的核心。
+1.  **`strcmp` 的返回值**：你需要牢记 `strcmp(s1, s2)` 的三种返回值含义：
+    *   返回负数：`s1` 的字典序在 `s2` 之前。
+    *   返回 `0`：`s1` 和 `s2` 完全相同。
+    *   返回正数：`s1` 的字典序在 `s2` 之后。
+2.  **循环与终止条件**：通过 `while(true)` 和 `break` 结合 `strcmp(word1, "quit") == 0` 的判断，我们构建了一个可交互的、有明确退出条件的程序，这是之前章节循环控制知识的应用。
+
+</details>
+
+---
+
+#### 题目二：格式化个人名片
+
+**题目描述**：
+编写一个程序，用于创建一张简单的文本名片。程序需要：
+1.  提示用户输入姓名（可能包含空格）。
+2.  提示用户输入职位。
+3.  定义一个足够大的字符数组 `card` 作为名片缓冲区（例如容量为100）。
+4.  使用 `strcpy()` 和 `strcat()` 函数，将姓名和职位信息格式化为 `"姓名: [用户姓名] | 职位: [用户职位]"` 的形式，并存入 `card` 数组中。
+5.  最后，打印出 `card` 的全部内容，并使用 `strlen()` 打印出这张名片的总长度。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+int main() {
+    const int BUFFER_SIZE = 100;
+    char name[BUFFER_SIZE];
+    char title[BUFFER_SIZE];
+    char card[BUFFER_SIZE];
+
+    cout << "请输入姓名: ";
+    cin.getline(name, BUFFER_SIZE);
+
+    cout << "请输入职位: ";
+    cin.getline(title, BUFFER_SIZE);
+
+    strcpy(card, "姓名: ");
+    strcat(card, name);
+    strcat(card, " | 职位: ");
+    strcat(card, title);
+
+    cout << "\n--- 生成的名片 ---" << endl;
+    cout << card << endl;
+    cout << "名片总长度: " << strlen(card) << " 个字符。" << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题是一道综合应用题，考察了本章的多个核心知识点：
+1.  **安全输入 `cin.getline()`**：对于可能包含空格的输入（如姓名"San Zhang"），必须使用 `cin.getline()` 而不是 `cin`，这是本章强调的重点。
+2.  **`strcpy` 与 `strcat` 的区别与配合**：`strcpy` 用于“初始化”目标字符串（它会覆盖原有内容），而 `strcat` 用于在现有字符串的**末尾**追加内容。本题通过先 `strcpy` 再多次 `strcat` 的方式，展示了如何一步步构建一个复杂的字符串。
+3.  **缓冲区容量意识**：定义一个“足够大”的缓冲区 `card`，在使用 `strcpy` 和 `strcat` 时，程序员有责任确保目标数组不会溢出。
+
+</details>
+
+---
+
+#### 题目三：实现安全的字符串拼接函数
+
+**题目描述**：
+标准库函数 `strcat` 因为不检查边界，是导致缓冲区溢出的常见原因。请你亲自实现一个更安全的版本，函数原型为 `bool safeStrcat(char dest[], int capacity, const char src[])`。
+这个函数将尝试把 `src` 字符串拼接到 `dest` 字符串的末尾。
+-   `dest` 是目标字符数组。
+-   `capacity` 是 `dest` 数组的**总容量**。
+-   `src` 是源字符数组。
+
+函数逻辑应该是：
+1.  计算 `dest` 的当前长度和 `src` 的长度。
+2.  检查 `dest` 的总容量 `capacity` 是否足以容纳拼接后的字符串（即 `dest` 当前长度 + `src` 长度 + 1个 `\0` 字符）。
+3.  如果容量足够，则执行拼接操作，并将 `\0` 放到新字符串的末尾，然后返回 `true`。
+4.  如果容量不足，则不进行任何修改，并返回 `false`。
+
+在 `main` 函数中，对你的 `safeStrcat` 函数进行测试，展示一次成功拼接和一次因容量不足而导致拼接失败的场景。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+bool safeStrcat(char dest[], int capacity, const char src[]) {
+    int len_dest = strlen(dest);
+    int len_src = strlen(src);
+
+    if (len_dest + len_src + 1 > capacity) {
+        return false;
+    }
+
+    int current_pos = len_dest;
+    for (int i = 0; i < len_src; ++i) {
+        dest[current_pos] = src[i];
+        current_pos++;
+    }
+
+    dest[current_pos] = '\0';
+
+    return true;
+}
+
+int main() {
+    cout << boolalpha; // 让cout直接输出 true/false
+
+    // --- 测试成功场景 ---
+    char buffer1[20] = "Hello, ";
+    const char* world = "World!";
+    cout << "场景1：缓冲区足够大" << endl;
+    cout << "拼接前: \"" << buffer1 << "\"" << endl;
+    bool success1 = safeStrcat(buffer1, 20, world);
+    cout << "safeStrcat 调用结果: " << success1 << endl;
+    cout << "拼接后: \"" << buffer1 << "\"" << endl;
+
+    cout << "\n-----------------\n" << endl;
+
+    // --- 测试失败场景 ---
+    char buffer2[15] = "C++ is ";
+    const char* fun = "powerful!";
+    cout << "场景2：缓冲区不足" << endl;
+    cout << "拼接前: \"" << buffer2 << "\"" << endl;
+
+    bool success2 = safeStrcat(buffer2, 15, fun);
+    cout << "safeStrcat 调用结果: " << success2 << endl;
+    cout << "拼接后 (未被修改): \"" << buffer2 << "\"" << endl;
+
+    return 0;
+}
+```
+
+**输出结果：**
+```
+场景1：缓冲区足够大
+拼接前: "Hello, "
+safeStrcat 调用结果: true
+拼接后: "Hello, World!"
+
+-----------------
+
+场景2：缓冲区不足
+拼接前: "C++ is "
+safeStrcat 调用结果: false
+拼接后 (未被修改): "C++ is "
+```
+
+##### 答案解析
+本体涉及到本章最重要的安全概念——**缓冲区溢出**。
+1.  **风险的量化**：通过 `len_dest + len_src + 1 > capacity` 这个判断，我们将“缓冲区溢出”这个抽象的风险，转化为了一个具体的、可计算的检查。`+1` 是为了给字符串终结符 `\0` 预留空间，这是最容易被忽略的细节。
+2.  **函数设计的健壮性**：通过返回一个 `bool` 值来报告操作是否成功，而不是直接让程序崩溃或产生未定义行为，这是一种健壮的函数设计模式。
+
+</details>
+
 ## 第16章：string类入门
 
 在上一章，我们费了很大的力气来学习C风格字符串，包括手动管理内存、警惕缓冲区溢出、使用像`strcpy`和`strcmp`这样略显笨拙的函数。这些都是C++为了兼容C语言而保留的传统。然而，现代C++提供了一种更强大、更安全、更直观的工具来处理文本——**`string`类**。
@@ -8768,6 +9597,172 @@ int main() {
 }
 ```
 
+---
+
+### 本章课后习题
+#### 题目一：现代个人名片（重制版）
+
+**题目描述**：
+还记得上一章我们用 `strcpy` 和 `strcat` 费力构建的名片吗？现在，请使用 `std::string` 类来重做这个任务，你会发现它变得很简单。
+程序需要：
+1.  声明 `std::string` 类型的变量来存储姓名、职位和最终的名片。
+2.  使用 `getline(cin, my_string)` 分别获取用户输入的姓名和职位。
+3.  使用 `+` 或 `+=` 运算符将各部分信息拼接成一张完整的名片，格式为 `"姓名: [用户姓名] | 职位: [用户职位]"`。
+4.  最后，打印出这张名片，并使用 `.length()` 方法打印其总长度。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+int main() {
+    string name;
+    string title;
+    string card;
+
+    cout << "请输入姓名: ";
+    getline(cin, name);
+
+    cout << "请输入职位: ";
+    getline(cin, title);
+
+    card = "姓名: " + name + " | 职位: " + title;
+
+    cout << "\n--- 生成的名片 ---" << endl;
+    cout << card << endl;
+    cout << "名片总长度: " << card.length() << " 个字符。" << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+解析个毛，看看string有多好用`:>`
+
+</details>
+
+---
+
+#### 题目二：电子邮件地址解析器
+
+**题目描述**：
+编写一个程序，接收一个包含电子邮件地址的 `std::string`，然后将其分解为用户名和域名两部分。
+例如，如果输入是 `"student@example.com"`，程序应输出：
+```
+用户名: student
+域名: example.com
+```
+如果输入的字符串中不包含 `@` 符号，则应输出一条错误信息。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+int main() {
+    string email;
+
+    cout << "请输入一个电子邮件地址: ";
+    cin >> email;
+
+    size_t at_pos = email.find('@');
+
+    if (at_pos == string::npos) {
+        cout << "错误：这不是一个有效的电子邮件地址格式。" << endl;
+    } else {
+        string username = email.substr(0, at_pos);
+        string domain = email.substr(at_pos + 1);
+
+        cout << "用户名: " << username << endl;
+        cout << "域名: " << domain << endl;
+    }
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题考察的是 `std::string` 强大的文本处理能力，特别是查找和提取功能。
+1.  使用 `string::npos` 来判断搜索是否成功。
+2.  本题展示了 `.substr()` 的两种常用形式：
+    *   `substr(起始位置, 长度)`：用于提取用户名。
+    *   `substr(起始位置)`：当省略第二个参数时，默认提取从起始位置到字符串末尾的所有内容。
+
+</details>
+
+---
+
+#### 题目三：简易文本审查工具
+
+**题目描述**：
+编写一个程序，实现一个简单的文本审查功能。程序需要：
+1.  提示用户输入一个完整的句子。
+2.  提示用户输入一个需要被审查的“敏感词”。
+3.  程序需要将句子中所有出现的“敏感词”替换为等长的星号（`*`）。
+例如，输入句子 `"the quick brown fox jumps over the lazy dog"` 和敏感词 `"the"`，输出应为 `"*** quick brown fox jumps over *** lazy dog"`。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+int main() {
+    string sentence;
+    string sensitive_word;
+
+    cout << "请输入一个句子: ";
+    getline(cin, sentence);
+
+    cout << "请输入要审查的敏感词: ";
+    cin >> sensitive_word;
+
+    if (sensitive_word.empty()) {
+        cout << "敏感词不能为空。" << endl;
+        return 1;
+    }
+
+    // 创建一个与敏感词等长的星号字符串
+    string replacement(sensitive_word.length(), '*');
+
+    size_t pos = sentence.find(sensitive_word);
+    while (pos != string::npos) {
+        // 执行替换
+        sentence.replace(pos, sensitive_word.length(), replacement);
+        // 从上一次找到的位置之后继续查找，防止无限循环
+        pos = sentence.find(sensitive_word, pos + replacement.length());
+    }
+
+    cout << "\n审查后的句子:" << endl;
+    cout << sentence << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题是一个更综合的挑战，考察了如何结合循环与 `string` 成员函数来解决一个实际问题。
+1.  **循环查找与替换**：单个 `.find()` 只能找到第一个匹配项。为了替换所有匹配项，我们必须使用一个 `while` 循环。循环的条件是 `.find()` 的结果不为 `string::npos`，这意味着只要还能找到，循环就继续。
+2.  **`.replace()` 函数**：该函数是实现替换的核心，其参数 `(起始位置, 被替换的长度, 替换用的字符串)` 非常直观，完美地契合了本题的需求。
+3.  在循环体内，`pos = sentence.find(sensitive_word, pos + replacement.length());` 很关键。`find` 函数的第二个参数指定了开始搜索的位置。我们从刚替换完的区域**之后**开始下一次搜索，这既能保证效率，又能避免因替换内容中包含敏感词（本例不会，但通用场景可能）而导致的无限循环。
+4.  `string replacement(sensitive_word.length(), '*');` 这行代码展示了 `string` 一个方便的构造函数，可以快速创建一个包含N个重复字符的字符串。比写一个循环来拼接 `*` 要简洁得多。
+
+</details>
+
 # 第五部分：指针与动态内存
 ## 第17章：指针基础
 欢迎来到C++学习中一个里程碑式的章节！指针是C++的灵魂，它赋予了我们直接与计算机内存对话的能力。初学时可能会觉得它有些抽象，但请不要担心，一旦你理解了它的核心思想，你将解锁C++的强大威力。本章的目标就是为你打下坚实、清晰的指针基础。
@@ -9175,6 +10170,152 @@ int main() {
     return 0;
 }
 ```
+---
+
+### 本章课后习题
+
+#### 题目一：指针基础操作展示
+
+**题目描述**：
+编写一个C++程序，完成以下步骤：
+1.  在 `main` 函数中定义一个 `int` 类型的变量 `num` 并初始化为 `10`。
+2.  定义一个 `int` 类型的指针 `ptr`，并将其初始化为指向 `num` 的地址。
+3.  打印出 `num` 的值。
+4.  打印出 `num` 的内存地址。
+5.  打印出指针 `ptr` 本身存储的值（即 `num` 的地址）。
+6.  通过解引用指针 `ptr`，打印出它所指向的值。
+7.  通过解引用指针 `ptr`，将 `num` 的值修改为 `20`。
+8.  最后，再次打印 `num` 的值，以验证它是否已被间接修改。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+int main() {
+    int num = 10;
+    
+    int* ptr = &num;
+
+    cout << "--- 初始状态 ---" << endl;
+    cout << "变量 num 的值是: " << num << endl;
+    cout << "变量 num 的地址是: " << &num << endl;
+    cout << "指针 ptr 存储的地址是: " << ptr << endl;
+    cout << "通过解引用指针 ptr 得到的值是: " << *ptr << endl;
+
+    cout << "\n--- 通过指针修改数据 ---" << endl;
+    *ptr = 20;
+    cout << "已执行 *ptr = 20;" << endl;
+
+    cout << "修改后，变量 num 的值是: " << num << endl;
+
+    return 0;
+}
+```
+
+</details>
+
+---
+
+#### 题目二：识别错误
+
+**题目描述**：
+分析以下两段在 `main` 函数中的代码片段。请分别指出每一段代码中存在的严重错误，解释错误的原因，并说明可能导致的后果。
+
+**代码片段 A**:
+```cpp
+int* wild_ptr;
+*wild_ptr = 100;
+cout << *wild_ptr << endl;
+```
+
+**代码片段 B**:
+```cpp
+int* null_ptr = nullptr;
+*null_ptr = 50; 
+```
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 答案解析
+
+**对于代码片段 A**:
+*   **错误**：解引用一个**未初始化的指针**（也称为“野指针”）。
+*   **原因**：指针 `wild_ptr` 被定义了，但没有被赋予一个有效的内存地址（既没有指向一个已存在的变量，也没有被设为 `nullptr`）。它里面存储的是一个随机的、不确定的内存地址。
+*   **后果**：对这个不确定的地址进行写入操作（`*wild_ptr = 100;`）会污染一块未知的内存区域，导致未定义行为。
+
+**对于代码片段 B**:
+*   **错误**：解引用一个**空指针**（`nullptr`）。
+*   **原因**：`nullptr` 是一个特殊的、明确定义的值，表示该指针“不指向任何地方”。它是一个有效的指针值，但它所代表的地址是受保护的，不允许用户程序进行读写。
+*   **后果**：任何尝试对 `nullptr` 进行解引用（无论是读还是写）的行为，在大多数现代操作系统上都会导致程序立即崩溃（通常是段错误，Segmentation Fault）。这虽然会导致程序终止，但因为其行为是确定的，所以相比野指针更容易被发现和调试。
+
+**总结**：本题考察了本章强调的两个核心禁忌——**禁止使用野指针**和**禁止解引用空指针**。永远要确保你的指针在被解引用之前，已经指向了一个有效的、可访问的内存地址。
+
+</details>
+
+---
+
+#### 题目三：指针的重定向
+
+**题目描述**：
+编写一个程序，在 `main` 函数中：
+1.  定义两个 `double` 类型的变量 `priceA` 和 `priceB`，并分别初始化为 `99.9` 和 `120.5`。
+2.  定义一个 `double` 类型的指针 `p_selectedPrice`。
+3.  使用 `if-else` 语句判断 `priceA` 和 `priceB` 的大小。将指针 `p_selectedPrice` 指向其中**价格较低**的那个变量。
+4.  通过解引用指针 `p_selectedPrice`，打印出被选中的较低价格。
+5.  通过解引用指针 `p_selectedPrice`，将那个较低的价格打九折（乘以 `0.9`）。
+6.  最后，分别打印 `priceA` 和 `priceB` 的最终值，以观察哪个变量被修改了。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <iomanip>
+
+using namespace std;
+
+int main() {
+    double priceA = 99.9;
+    double priceB = 120.5;
+
+    double* p_selectedPrice = nullptr;
+
+    cout << "原始价格: priceA = " << priceA << ", priceB = " << priceB << endl;
+
+    if (priceA < priceB) {
+        p_selectedPrice = &priceA;
+        cout << "priceA 价格更低，指针已指向 priceA。" << endl;
+    } else {
+        p_selectedPrice = &priceB;
+        cout << "priceB 价格更低或相等，指针已指向 priceB。" << endl;
+    }
+
+    cout << "选中的较低价格是: " << *p_selectedPrice << endl;
+
+    *p_selectedPrice = *p_selectedPrice * 0.9;
+    cout << "已对较低价格应用九折优惠。" << endl;
+
+    cout << fixed << setprecision(2);
+    cout << "最终价格: priceA = " << priceA << ", priceB = " << priceB << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题考察的是指针的灵活性以及与基本控制流（`if-else`）的结合。
+1.  **指针的动态指向**：指针变量 `p_selectedPrice` 的值（即它存储的地址）不是一成不变的。我们可以根据程序的逻辑，在运行时让它指向不同的变量。这体现了指针的“动态”特性。
+2.  **抽象操作**：在 `if-else` 块之后，所有的操作都是通过 `p_selectedPrice` 来完成的，代码无需关心指针**具体**指向的是 `priceA` 还是 `priceB`。`*p_selectedPrice` 这一表达式抽象地代表了“那个价格更低的变量”，这使得后续代码（如打折）可以被编写得更加通用和简洁。这是指针强大能力的一个初步体现。
+3.  **结合已有知识**：本题将指针与我们早已熟悉的 `if-else` 语句和基本算术运算结合起来，展示了如何将新学的概念融入到已有的知识体系中去解决问题。
+
+</details>
 
 ## 第18章：指针与数组
 
@@ -9883,6 +11024,108 @@ int main() {
 }
 ```
 
+---
+
+### 本章课后习题
+#### 题目一：使用指针算术遍历数组
+
+**题目描述**：
+在 `main` 函数中定义一个包含5个整数的静态数组。不要使用下标运算符 `[]`，而是完全通过指针算术（`*` 和 `+`）来完成以下操作：
+1.  声明一个整型指针 `ptr`，并使其指向数组的第一个元素。
+2.  使用一个 `for` 循环和指针算术，遍历数组并打印出所有元素。
+3.  在另一个循环中，同样只使用指针算术，计算并打印出数组所有元素的总和。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+int main() {
+    const int SIZE = 5;
+    int arr[SIZE] = {10, 20, 30, 40, 50};
+
+    int* ptr = arr; 
+
+    cout << "使用指针算术遍历数组元素: ";
+    for (int i = 0; i < SIZE; ++i) {
+        cout << *(arr + i) << " "; 
+    }
+    cout << endl;
+
+    int sum = 0;
+    cout << "使用移动指针的方式计算总和..." << endl;
+    for (int i = 0; i < SIZE; ++i) {
+        sum += *ptr;
+        ptr++;
+    }
+
+    cout << "数组元素的总和是: " << sum << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题旨在巩固本章最核心的两个概念：**数组名退化**和**指针算术**。
+1.  **数组名即指针**：`int* ptr = arr;` 这行代码能够成功，正是因为在赋值表达式中，数组名 `arr` 自动“退化”成了一个指向其首元素 `&arr[0]` 的指针。
+2.  **指针算术 `*(arr + i)`**：这是指针访问数组元素的标准方式。`arr + i` 计算出的不是简单的地址加`i`，而是 `arr` 的地址加上 `i * sizeof(int)`。编译器会自动处理步长，这使得我们可以像用下标一样方便地定位到第`i`个元素。
+3.  **移动指针 `ptr++`**：第二种遍历方式展示了直接修改指针变量本身。`ptr++` 会使 `ptr` 指向数组的下一个元素。这种方式在某些场景下更高效，也更符合指针编程的思维模式。
+
+</details>
+
+---
+
+#### 题目二：使用指针数组管理多个字符串
+
+**题目描述**：
+假设你有三句名言，存储在三个独立的C风格字符串（字符数组）中。请编写一个程序：
+1.  在 `main` 函数中定义这三个字符数组。
+2.  创建一个包含3个元素的**指针数组** `quotes`，使其每个元素分别指向这三句名言。
+3.  通过遍历这个指针数组 `quotes`，打印出所有的名言。
+4.  同样通过遍历指针数组，使用 `strcmp` 函数找到并打印出按字典序排列最后的那句名言（即字典序最大的名言）。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+int main() {
+    char quote1[] = "我玩原神";
+    char quote2[] = "我玩崩铁";
+    char quote3[] = "我玩绝区零";
+
+    const char* quotes[3] = {quote1, quote2, quote3};
+
+    cout << "--- 所有名言 ---" << endl;
+    for (int i = 0; i < 3; ++i) {
+        cout << quotes[i] << endl;
+    }
+
+    const char* longestQuote = quotes[0];
+    for (int i = 1; i < 3; ++i) {
+        if (strcmp(quotes[i], longestQuote) > 0) {
+            longestQuote = quotes[i];
+        }
+    }
+
+    cout << "\n--- 字典序最大的名言是 ---" << endl;
+    cout << longestQuote << endl;
+
+    return 0;
+}
+```
+
+</details>
+
 ## 第19章：动态内存管理
 
 在之前的章节中，我们已经初步接触了动态数组，知道了如何使用`new[]`和`delete[]`来创建和销毁大小在运行时才确定的数组。这种在程序运行时按需分配和释放内存的能力，就是**动态内存管理**。
@@ -10084,7 +11327,7 @@ using namespace std;
 int main() {
     // 尝试分配一个极大的数组
     // 使用 std::nothrow 来告诉 new 在失败时不要抛出异常
-    int* huge_array = new(std::nothrow) int[999999999];
+    int* huge_array = new(nothrow) int[999999999];
 
     // 必须检查返回的指针是否为 nullptr
     if (huge_array == nullptr) {
@@ -10229,6 +11472,140 @@ int main() {
     return 0;
 }
 ```
+
+---
+
+### 本章课后习题
+#### 题目一：动态对象的创建与销毁
+
+**题目描述**：
+编写一个程序，模拟创建一个动态的“玩家”对象。这个“玩家”仅仅是一个 `int` 类型的变量，用来存储其分数。请在 `main` 函数中完成以下操作：
+1.  使用 `new` 运算符在堆上动态分配一个 `int` 类型的内存空间，用来存储玩家的分数，并用一个指针 `playerScore` 指向它。
+2.  通过解引用指针，为这位玩家初始化一个分数，例如 `1000`。
+3.  打印出玩家的初始分数。
+4.  模拟玩家获得奖励，将分数增加 `500`。再次打印更新后的分数。
+5.  在程序结束前，使用 `delete` 运算符正确释放为玩家分数分配的内存。
+6.  释放内存后，将 `playerScore` 指针设置为 `nullptr`。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+int main() {
+    int* playerScore = new int;
+
+    *playerScore = 1000;
+
+    cout << "玩家初始分数: " << *playerScore << endl;
+
+    *playerScore += 500;
+    cout << "玩家获得奖励后，分数更新为: " << *playerScore << endl;
+
+    cout << "准备释放玩家分数所占用的内存..." << endl;
+    delete playerScore;
+    cout << "内存已释放。" << endl;
+
+    playerScore = nullptr;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题是对本章**单个动态对象生命周期管理**的完整演练，重点考察了以下知识点：
+1.  **`new` 与 `delete` 的配对**：`new int` 申请的内存，必须由 `delete playerScore` 来释放。这是最基本的配对规则。
+2.  **通过指针操作堆内存**：所有对动态分配的分数的读写操作，都必须通过解引用指针 `*playerScore` 来完成。
+3.  **避免悬垂指针**：在 `delete` 后将指针置为 `nullptr`，目的是将一个危险的悬垂指针转变为一个安全的空指针，从而避免后续的误用。
+
+</details>
+
+---
+
+#### 题目二：安全的动态数组拷贝
+
+**题目描述**：
+编写一个函数 `int* safeCreateCopy(const int* originalArray, int size)`，该函数的功能是创建一个与输入数组 `originalArray` 内容完全相同的动态数组副本。这个函数必须是“安全”的，需要处理内存分配可能失败的情况。
+函数逻辑如下：
+1.  使用 `new (nothrow)` 来尝试分配一个大小为 `size` 的 `int` 类型动态数组。
+2.  检查分配是否成功。如果返回了 `nullptr`（即内存不足），函数应直接返回 `nullptr` 以向上层调用者报告失败。
+3.  如果分配成功，则使用循环将 `originalArray` 的所有元素逐个拷贝到新的动态数组中。
+4.  返回新创建的动态数组的指针。
+
+在 `main` 函数中：
+1.  创建一个源数组。
+2.  调用 `safeCreateCopy` 函数来获取一个动态副本。
+3.  检查返回的指针是否为 `nullptr`。如果是，则打印错误信息并退出。
+4.  如果不是 `nullptr`，则打印原始数组和拷贝数组的内容以验证拷贝是否成功。
+5.  最后，不要忘记使用 `delete[]` 释放动态副本的内存。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+int* safeCreateCopy(const int* originalArray, int size) {
+    if (originalArray == nullptr || size <= 0) {
+        return nullptr;
+    }
+
+    int* copyArray = new (nothrow) int[size];
+
+    if (copyArray == nullptr) {
+        return nullptr;
+    }
+
+    for (int i = 0; i < size; ++i) {
+        copyArray[i] = originalArray[i];
+    }
+
+    return copyArray;
+}
+
+int main() {
+    const int SIZE = 5;
+    int source[SIZE] = {1, 2, 3, 4, 5};
+
+    cout << "源数组: ";
+    for (int i = 0; i < SIZE; ++i) {
+        cout << source[i] << " ";
+    }
+    cout << endl;
+
+    int* dynamicCopy = safeCreateCopy(source, SIZE);
+
+    if (dynamicCopy == nullptr) {
+        cout << "内存分配失败，无法创建副本。" << endl;
+        return 1;
+    }
+
+    cout << "动态副本: ";
+    for (int i = 0; i < SIZE; ++i) {
+        cout << dynamicCopy[i] << " ";
+    }
+    cout << endl;
+
+    delete[] dynamicCopy;
+    dynamicCopy = nullptr;
+
+    return 0;
+}
+```
+
+##### 答案解析
+1.  为数组申请内存使用 `new int[size]`，因此在 `main` 函数的末尾必须使用 `delete[] dynamicCopy` 来释放。混用 `delete` 将导致未定义行为。
+2.  常规的 `new` 在内存分配失败时会抛出异常，而我们还未学如何处理异常，因此我们需要`nothrow`，`new(nothrow)` 会返回 `nullptr`。这使得我们可以用一个简单的 `if (copyArray == nullptr)` 判断来优雅地处理内存分配失败的场景。
+3.  函数 `safeCreateCopy` 创建了动态内存，但它将这块内存的所有权（通过返回指针）**转移**给了调用者（`main` 函数）。因此，释放这块内存的责任也落在了 `main` 函数的肩上。这是手动内存管理中“谁申请，谁释放”原则的一个体现。
+
+</details>
 
 ## 第20章：指针与函数
 
@@ -10749,6 +12126,275 @@ int main() {
     return 0;
 }
 ```
+
+---
+
+#### 习题一：动态数组的创建与反转
+
+**题目描述**
+
+写两个函数：
+1.  `int* createArray(int size)`: 此函数接收一个整数 `size` 作为参数，在堆上动态分配一个能容纳 `size` 个整数的数组。然后从标准输入（`cin`）读取 `size` 个整数来填充这个数组，并最终返回指向该数组头部的指针。
+2.  `void reverseArray(int* arr, int size)`: 此函数接收一个指向整型数组的指针 `arr` 和该数组的大小 `size`。它应该在**原地**（in-place）反转数组元素的顺序。例如一个内容为 `{1, 2, 3, 4, 5}` 的数组，在调用此函数后，其内容应变为 `{5, 4, 3, 2, 1}`。
+
+在 `main` 函数中，调用 `createArray` 创建一个数组，打印原始数组，然后调用 `reverseArray` 将其反转，再次打印数组以验证结果。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+int* createArray(int size) {
+    if (size <= 0) {
+        return nullptr;
+    }
+    int* arr = new int[size];
+    cout << "请输入 " << size << " 个整数: ";
+    for (int i = 0; i < size; ++i) {
+        cin >> arr[i];
+    }
+    return arr;
+}
+
+void reverseArray(int* arr, int size) {
+    if (arr == nullptr || size <= 1) {
+        return;
+    }
+    int* start = arr;
+    int* end = arr + size - 1;
+    
+    while (start < end) {
+        int temp = *start;
+        *start = *end;
+        *end = temp;
+        
+        start++;
+        end--;
+    }
+}
+
+void printArray(const int* arr, int size) {
+    if (arr == nullptr) return;
+    for (int i = 0; i < size; ++i) {
+        cout << arr[i] << " ";
+    }
+    cout << endl;
+}
+
+int main() {
+    int size;
+    cout << "请输入数组的大小: ";
+    cin >> size;
+
+    int* myArray = createArray(size);
+
+    if (myArray != nullptr) {
+        cout << "原始数组: ";
+        printArray(myArray, size);
+
+        reverseArray(myArray, size);
+
+        cout << "反转后的数组: ";
+        printArray(myArray, size);
+
+        delete[] myArray;
+        myArray = nullptr;
+    }
+
+    return 0;
+}
+```
+
+##### 答案解析
+
+本题主要考察以下几个核心知识点：
+1.  `createArray` 函数在堆上使用 `new[]` 创建了一个数组，其生命周期独立于函数本身。函数返回这个指向堆内存的指针，使得 `main` 函数可以接管并使用这个数组。这是返回指针的正确用法（返回指向堆内存的指针）。
+2.  `reverseArray` 函数接收一个指针 `arr`。通过这个指针，函数可以直接访问和修改 `main` 函数中 `myArray` 指向的内存区域，实现了对函数外部数据的修改。代码中使用了两个指针 `start` 和 `end` 来完成原地反转，这叫**双指针算法**，也叫“首尾对撞指针”或“对撞双指针”。
+3.  我们在堆上创建了数组，因此必须在 `main` 函数中使用 `delete[]` 来释放内存。
+
+---
+
+#### 习题二：实现通用数组处理器（回调函数）
+
+**题目描述**
+
+编写一个名为 `applyToEachElement` 的通用函数。该函数应能接收一个整型数组、数组大小以及一个**回调函数**。这个回调函数用于定义要对数组中每个元素执行的具体操作。
+
+函数的原型为：
+`void applyToEachElement(int* arr, int size, void (*operation)(int&))`
+
+你需要：
+1.  实现 `applyToEachElement` 函数。它应该遍历数组，并对每个元素调用 `operation` 函数。
+2.  另外编写两个符合 `void (*)(int&)` 签名的函数：
+    *   `squareElement(int& n)`: 将传入的整数平方。
+    *   `incrementElement(int& n)`: 将传入的整数加一。
+3.  在 `main` 函数中，创建一个整型数组并初始化。先使用 `incrementElement` 作为回调函数调用 `applyToEachElement`，然后打印数组；接着再使用 `squareElement` 作为回调函数调用 `applyToEachElement`，并再次打印数组，以展示回调机制的灵活性。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+void incrementElement(int& n) {
+    n = n + 1;
+}
+
+void squareElement(int& n) {
+    n = n * n;
+}
+
+void applyToEachElement(int* arr, int size, void (*operation)(int&)) {
+    if (arr == nullptr || operation == nullptr) {
+        return;
+    }
+    for (int i = 0; i < size; ++i) {
+        operation(arr[i]);
+    }
+}
+
+void printArray(const int* arr, int size) {
+    for (int i = 0; i < size; ++i) {
+        cout << arr[i] << " ";
+    }
+    cout << endl;
+}
+
+int main() {
+    const int SIZE = 5;
+    int numbers[SIZE] = {1, 2, 3, 4, 5};
+
+    printArray(numbers, SIZE);
+
+    applyToEachElement(numbers, SIZE, incrementElement);
+    printArray(numbers, SIZE);
+
+    applyToEachElement(numbers, SIZE, squareElement);
+    printArray(numbers, SIZE);
+
+    return 0;
+}
+```
+
+##### 答案解析
+
+本题主要考察**函数指针**和**回调机制**这一核心概念：
+1.  **函数指针的定义**：题目明确要求了 `applyToEachElement` 的第三个参数是一个函数指针 `void (*operation)(int&)`。这里的 `*operation` 表示它是一个指针，而 `void` 和 `(int&)` 分别定义了它所指向的函数的返回类型和参数列表。
+2.  **函数指针作为参数（回调）**：`applyToEachElement` 函数本身不关心具体要执行什么操作，它只负责遍历数组的逻辑。具体的操作由调用者通过传递不同的函数（`incrementElement` 或 `squareElement`）来“注入”。这种将函数作为参数传递以定制另一个函数行为的模式，就是回调。
+3.  **逻辑解耦**：通过回调机制，我们将数据遍历的通用逻辑（在 `applyToEachElement` 中）与具体的数据处理逻辑（在 `incrementElement` 和 `squareElement` 中）分离开来，使得代码更加模块化、灵活且易于扩展。如果未来需要对数组元素执行新操作（如“减半”），我们只需再写一个新函数，而无需修改 `applyToEachElement`。
+
+---
+
+#### 习题三：使用函数指针数组实现菜单驱动
+
+**题目描述**
+
+模拟一个简单的文本处理工具。该工具提供三种操作：计算字符串长度、转换为大写、转换为小写。
+
+你需要：
+1.  编写三个函数，它们都接收一个C风格字符串（`char*`）作为参数，并返回 `void`：
+    *   `countLength(char* str)`: 计算并打印字符串的长度（不包括 `\0`）。
+    *   `toUpperCase(char* str)`: 将字符串中的所有小写字母转换为大写字母。
+    *   `toLowerCase(char* str)`: 将字符串中的所有大写字母转换为小写字母。
+    （提示：可以使用 `<cctype>` 库中的 `toupper` 和 `tolower` 函数，或者通过ASCII码进行转换，在ASCII码表中同一字母的大小写相差 32，因此把字符的码值加（或异或）32可将大写变小写，减（或再异或）32可将小写变大写。长度计算可以使用 `<cstring>` 库的 `strlen` 函数。）
+2.  定义一个**函数指针数组**，并将上述三个函数的地址存入该数组。
+3.  在 `main` 函数中，创建一个字符数组并存入一个测试字符串。然后显示一个菜单，让用户选择要执行的操作（例如，输入1执行`countLength`，2执行`toUpperCase`，3执行`toLowerCase`）。
+4.  根据用户的输入，使用数组下标直接调用对应的函数，并对测试字符串执行操作。每次操作后打印字符串的当前状态。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+#include <cstring> // For strlen
+#include <cctype>  // For toupper, tolower
+
+using namespace std;
+
+// 操作函数 1: 计算并打印长度
+void countLength(char* str) {
+    if (str == nullptr) return;
+    cout << "字符串长度为: " << strlen(str) << endl;
+}
+
+// 操作函数 2: 转换为大写
+void toUpperCase(char* str) {
+    if (str == nullptr) return;
+    for (int i = 0; str[i] != '\0'; ++i) {
+        str[i] = toupper(str[i]);
+    }
+    cout << "已转换为大写。" << endl;
+}
+
+// 操作函数 3: 转换为小写
+void toLowerCase(char* str) {
+    if (str == nullptr) return;
+    for (int i = 0; str[i] != '\0'; ++i) {
+        str[i] = tolower(str[i]);
+    }
+    cout << "已转换为小写。" << endl;
+}
+
+int main() {
+    // 定义一个函数指针类型，方便使用
+    typedef void (*StringOperation)(char*);
+
+    // 创建并初始化函数指针数组
+    StringOperation operations[] = {countLength, toUpperCase, toLowerCase};
+
+    char myString[100] = "Hello Cpp World! 123.";
+    int choice;
+
+    cout << "当前字符串: \"" << myString << "\"" << endl;
+    cout << "------------------------" << endl;
+    cout << "请选择操作:" << endl;
+    cout << "1. 计算长度" << endl;
+    cout << "2. 转换为大写" << endl;
+    cout << "3. 转换为小写" << endl;
+    cout << "0. 退出" << endl;
+    cout << "------------------------" << endl;
+
+    do {
+        cout << "\n请输入你的选择 (1-3, 0退出): ";
+        cin >> choice;
+
+        if (choice >= 1 && choice <= 3) {
+            // 使用用户选择-1作为数组索引来调用函数
+            operations[choice - 1](myString);
+            if (choice == 2 || choice == 3) {
+                cout << "操作后字符串: \"" << myString << "\"" << endl;
+            }
+        } else if (choice == 0) {
+            cout << "程序退出。" << endl;
+        } else {
+            cout << "无效的选择，请重新输入。" << endl;
+        }
+
+    } while (choice != 0);
+
+    return 0;
+}
+```
+
+##### 答案解析
+
+本题主要考察**函数指针数组**的应用：
+1.  **函数指针数组的声明与初始化**：代码中 `StringOperation operations[] = {countLength, toUpperCase, toLowerCase};` 这一行声明了一个名为 `operations` 的数组，其每个元素都是一个类型为 `StringOperation`（即 `void (*)(char*)`）的函数指针。我们直接用函数名（即函数的地址）来初始化这个数组。
+2.  **通过索引调用函数**：在 `main` 函数的 `if` 语句中，`operations[choice - 1](myString);` 这一行是关键。它根据用户的输入 `choice` 计算出数组的索引，然后直接通过该索引取出对应的函数指针并执行函数调用。
+3.  **替代 `if-else` 或 `switch`**：这种方法优雅地替代了冗长的 `if-else if-else` 或 `switch` 结构。如果有很多选项，使用函数指针数组可以让代码更简洁、更具可扩展性。若要增加新功能，只需编写新函数并将其添加到数组中，再更新菜单即可，逻辑分支代码几乎无需改动。
+
+</details>
 
 # 第六部分：结构体与自定义类型
 ## 第21章：结构体基础
