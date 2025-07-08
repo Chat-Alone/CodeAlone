@@ -130,7 +130,7 @@ int score = 100; // 也可以用在代码行的末尾，用于解释这行代码
 ```
 
 #### 多行注释 `/* */`
-以`/*`开始，以`*/`结束，可以跨越多行。
+以`/*`开始，以`*/`结束，可以跨越多行。**不可嵌套使用**。
 ```cpp
 /*
 床前明月光，
@@ -303,7 +303,73 @@ int main() {
   Hello! 
 ```
 
-现在，请你亲自动手，在你的编译器中输入、编译并运行这些代码。尝试修改它们，比如输出你自己的名字，或者设计一个属于你的ASCII图案。实践是最好的老师！在下一章，我们将学习如何使用变量来存储和处理数据。
+### 本章课后习题
+
+#### 习题 1　基础填空  
+以下代码中，用“____”标出的空缺处应填写什么才能正常输出 `Hello, C++!`？
+
+```cpp
+#include ____   // (1)
+using namespace ____;   // (2)
+
+int main() {
+    cout << "Hello, C++!";  // (3)
+    ____;                   // (4)
+}
+```
+
+<details>
+<summary>参考答案与解析</summary>
+
+**答案**
+
+1. `<iostream>`
+2. `std`
+3. `std::cout`已因第 (2) 句而省略`std::`，此行无需改动
+4. `return 0`
+
+**解析**
+
+(1) 将标准输入输出库引入；
+(2) 命名空间简化；
+(3) 已可直接用`cout`；
+(4) `main`必须返回一个整型值，0 代表程序正常结束。
+</details>
+
+#### 习题 2　输出两行文本  
+编写一个完整的 C++ 程序，依次输出下列两行文字，每行后换行：
+```
+我喜欢初音未来
+但是我更喜欢洛天依
+```
+
+<details>
+<summary>参考答案与解析</summary>
+
+```cpp
+#include <iostream>
+using namespace std;
+
+int main() {
+    cout << "我喜欢初音未来"  << endl;
+    cout << "但是我更喜欢洛天依" << endl;
+    return 0;
+}
+```
+</details>
+
+
+#### 习题 3　判断正误  
+下列说法是否正确？
+a)`//`与`/* */`两种注释可以互相嵌套使用。
+b) 在`main`函数中省略`return 0;`会导致编译失败。
+
+<details>
+<summary>参考答案与解析</summary>
+
+a) 不对。注释不能嵌套；多行注释内再出现`/*`会造成编译错误。  
+b) **一般情况下**不对。C++11及以后若`main`末尾无显式`return`，编译器会隐式返回0。显式写出有助可读性。  
+</details>
 
 ## 第2章：变量和数据类型
 
@@ -14939,17 +15005,848 @@ int main() {
 这个例子展示了如何组织和使用模板代码。`MyMath.hpp`可以被任何需要这些通用数学函数的项目复用，只需一个`#include`即可。
 
 ## 第32章：类模板
-**知识点**：
-- 类模板的定义
-- 类模板的使用
-- 模板类的成员函数
-- 模板参数的默认值
-- 模板的嵌套
-- 类模板特化
-- 部分特化
-- 模板与友元
-- 模板与继承
-- **示例程序**：通用容器类、智能指针简单实现
+
+**学习目标**：
+- 理解类模板的用途，例如创建通用的容器类。
+- 掌握定义和实例化类模板的语法。
+- 学会如何实现类模板的成员函数，无论是在类内还是类外。
+- 了解如何通过特化为特定类型定制类的实现。
+- 探索模板与友元、继承等特性的结合使用。
+
+---
+如果我们想创建一个可以存储一组数据的动态数组类，可能会先写一个`IntArray`类。但很快我们就会发现，还需要`DoubleArray`、`StringArray`等等。这正是类模板大显身手的舞台。**类模板**是创建类的蓝图，它允许我们定义一个通用的类结构，而将具体的数据类型作为参数，在创建对象时再指定。
+
+### 类模板的定义
+
+定义一个类模板的语法与函数模板非常相似，在`class`声明前加上`template`关键字和模板参数列表。
+
+**语法格式**：
+```cpp
+template <typename T>
+class ClassName {
+    // 成员变量，可以使用 T 作为类型
+    T memberVariable;
+    // 成员函数
+    // ...
+};
+```
+让我们来创建一个简单的`Box`类，它可以存放任何类型的单个物品。
+
+```cpp
+#include <iostream>
+#include <string>
+
+// 定义一个类模板 Box
+template <typename T>
+class Box {
+public:
+    // 构造函数
+    Box() : m_content() {} // 使用默认构造函数初始化内容
+
+    // 设置内容的函数
+    void setContent(const T& content) {
+        m_content = content;
+    }
+
+    // 获取内容的函数
+    T getContent() const {
+        return m_content;
+    }
+
+private:
+    T m_content; // 成员变量的类型是模板参数T
+};
+```
+这个`Box`类模板本身并不是一个具体的类，而是一个用于生成具体类的“模具”。
+
+### 类模板的使用
+
+与函数模板不同，编译器**无法**为类模板自动推导模板参数类型。因此，在使用类模板创建对象时，我们**必须**显式地在尖括号中指定具体的类型。这个过程也叫**类模板的实例化**。
+
+**语法**：`ClassName<具体类型> objectName;`
+
+```cpp
+int main() {
+    // 1. 实例化一个用于存放 int 的 Box
+    // 此时，编译器会根据 <int> 生成一个具体的类，可以看作是：
+    // class Box_int { ... int m_content; ... };
+    Box<int> intBox;
+    intBox.setContent(123);
+    std::cout << "Content of intBox: " << intBox.getContent() << std::endl;
+
+    // 2. 实例化一个用于存放 std::string 的 Box
+    Box<std::string> stringBox;
+    stringBox.setContent("Hello, Templates!");
+    std::cout << "Content of stringBox: " << stringBox.getContent() << std::endl;
+
+    // 3. 错误示范：不指定类型
+    // Box myBox; // 这会导致编译错误！编译器不知道 T 应该是什么类型。
+    
+    return 0;
+}
+```
+
+### 模板类的成员函数
+
+类模板的成员函数本身也是模板。我们可以像普通类一样在类定义内部实现它们，也可以在类定义外部实现。当在外部实现时，语法会稍微复杂一些。
+
+**在类外定义成员函数的语法**：
+```cpp
+template <typename T>
+返回类型 类名<T>::函数名(参数列表) {
+    // 函数体
+}
+```
+-   `template <typename T>`：必须再次声明模板参数列表。
+-   `类名<T>`：必须用模板参数`T`来限定类名，表示这是`类名`这个模板的一个成员函数。
+
+让我们把`Box`类的成员函数移到类外实现：
+```cpp
+#include <iostream>
+
+// --- 类模板的声明 ---
+template <typename T>
+class Box {
+public:
+    Box();
+    void setContent(const T& content);
+    T getContent() const;
+private:
+    T m_content;
+};
+
+// --- 成员函数的定义 ---
+
+// 构造函数
+template <typename T>
+Box<T>::Box() : m_content() {}
+
+// setContent 函数
+template <typename T>
+void Box<T>::setContent(const T& content) {
+    m_content = content;
+}
+
+// getContent 函数
+template <typename T>
+T Box<T>::getContent() const {
+    return m_content;
+}
+
+// 注意：和函数模板一样，类模板的声明和实现通常都应该放在同一个头文件(.hpp)中，
+// 以避免链接错误。
+```
+尽管语法看起来有些重复，但这是告诉编译器：“以下是名为`Box<T>`这个类模板的成员函数的实现”。
+
+### 模板参数的默认值
+
+就像函数的参数可以有默认值一样，模板参数也可以有默认值。这使得在使用模板时，如果默认类型符合我们的需求，就可以省略指定类型。
+
+```cpp
+#include <iostream>
+#include <string>
+
+// 为模板参数T提供一个默认类型 std::string
+// 第二个参数是一个非类型模板参数，也提供了默认值
+template <typename T = std::string, int Capacity = 10>
+class Bucket {
+public:
+    Bucket() {
+        std::cout << "Created a Bucket with capacity " << Capacity 
+                  << " for type " << typeid(T).name() << std::endl;
+    }
+private:
+    T m_data[Capacity];
+};
+
+int main() {
+    // 使用所有默认参数: T=std::string, Capacity=10
+    Bucket<> defaultBucket;
+
+    // 指定第一个参数，使用第二个默认参数: T=int, Capacity=10
+    Bucket<int> intBucket;
+
+    // 指定所有参数: T=double, Capacity=20
+    Bucket<double, 20> doubleBucket;
+    
+    return 0;
+}
+```
+
+### 模板的嵌套
+
+类模板可以嵌套使用，就像普通类型一样。例如，我们可以创建一个`Box`来存放另一个`Box`。
+
+```cpp
+#include <iostream>
+
+// (此处省略Box类的定义...)
+
+int main() {
+    // 创建一个能存放 int 的 Box
+    Box<int> innerBox;
+    innerBox.setContent(999);
+
+    // 创建一个能存放 Box<int> 的 Box
+    // 注意 C++11 之前，需要写成 Box<Box<int> >，两个 > 之间需要一个空格
+    // 以免被编译器误认为是右移运算符 >>。
+    // 现代 C++ 编译器已无此问题。
+    Box<Box<int>> outerBox; 
+    outerBox.setContent(innerBox);
+
+    std::cout << "The value in the inner box is: " 
+              << outerBox.getContent().getContent() << std::endl;
+              
+    return 0;
+}
+```
+
+### 类模板特化
+
+与函数模板一样，通用版本的类模板可能不适用于所有类型。例如，一个通用的`Comparer`类可能对大多数类型都适用，但对于`const char*`，我们希望比较字符串内容而不是指针地址。这时就需要**类模板特化（Class Template Specialization）**。
+
+#### 全特化 (Full Specialization)
+
+全特化是为一个特定的类型提供一个完全独立的、定制的类定义。
+
+**语法**：`template <> class ClassName<特化类型> { ... };`
+
+```cpp
+#include <iostream>
+#include <cstring>
+
+// 通用模板
+template <typename T>
+class Comparer {
+public:
+    static bool areEqual(const T& a, const T& b) {
+        std::cout << "[Generic Comparer] ";
+        return a == b;
+    }
+};
+
+// 针对 const char* 的全特化版本
+template <>
+class Comparer<const char*> {
+public:
+    static bool areEqual(const char* a, const char* b) {
+        std::cout << "[const char* Specialization] ";
+        return std::strcmp(a, b) == 0;
+    }
+};
+
+int main() {
+    // 使用通用模板
+    std::cout << "Comparing integers: " << Comparer<int>::areEqual(10, 10) << std::endl;
+
+    const char* s1 = "hello";
+    const char* s2 = "hello";
+    const char* s3 = "world";
+
+    // 编译器发现有 const char* 的特化版本，会优先使用它
+    std::cout << "Comparing strings: " << Comparer<const char*>::areEqual(s1, s2) << std::endl;
+    std::cout << "Comparing strings: " << Comparer<const char*>::areEqual(s1, s3) << std::endl;
+    
+    return 0;
+}
+```
+
+### 部分特化 (Partial Specialization)
+
+部分特化是模板特化的一种形式，它允许我们为一类符合特定模式的类型提供特殊实现，而不是为单个具体类型。这是一个非常强大的特性，让我们能够针对某些类型族进行优化。
+
+#### 什么是部分特化？
+
+假设你有一个通用的模板类，但你发现对于某些类型（比如所有指针类型、所有数组类型等）需要不同的实现。部分特化就是为这种需求而生的。
+
+让我们通过一个实际的例子来理解：
+
+```cpp
+#include <iostream>
+#include <type_traits>
+
+// 通用模板：用于存储和显示数据
+template <typename T>
+class DataHolder {
+public:
+    DataHolder(T value) : data(value) {}
+    
+    void print() const {
+        std::cout << "Value: " << data << std::endl;
+    }
+    
+    T get() const { return data; }
+    
+private:
+    T data;
+};
+
+// 部分特化1：针对所有指针类型
+template <typename T>
+class DataHolder<T*> {
+public:
+    DataHolder(T* ptr) : data(ptr) {}
+    
+    void print() const {
+        if (data) {
+            std::cout << "Pointer to value: " << *data 
+                      << " (address: " << data << ")" << std::endl;
+        } else {
+            std::cout << "Null pointer" << std::endl;
+        }
+    }
+    
+    T* get() const { return data; }
+    
+private:
+    T* data;
+};
+
+// 部分特化2：针对所有数组类型
+template <typename T, size_t N>
+class DataHolder<T[N]> {
+public:
+    DataHolder(const T (&arr)[N]) {
+        for (size_t i = 0; i < N; ++i) {
+            data[i] = arr[i];
+        }
+    }
+    
+    void print() const {
+        std::cout << "Array[" << N << "]: ";
+        for (size_t i = 0; i < N; ++i) {
+            std::cout << data[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+    
+    const T* get() const { return data; }
+    
+private:
+    T data[N];
+};
+
+int main() {
+    // 使用通用模板
+    DataHolder<int> holder1(42);
+    holder1.print();  // 输出: Value: 42
+    
+    // 使用指针部分特化
+    int value = 100;
+    DataHolder<int*> holder2(&value);
+    holder2.print();  // 输出: Pointer to value: 100 (address: 0x...)
+    
+    // 使用数组部分特化
+    int arr[] = {1, 2, 3, 4, 5};
+    DataHolder<int[5]> holder3(arr);
+    holder3.print();  // 输出: Array[5]: 1 2 3 4 5
+    
+    return 0;
+}
+```
+
+### 部分特化的常见模式
+
+#### 1. 指针类型特化
+```cpp
+template <typename T>
+class MyClass<T*> { /* 针对所有指针类型的实现 */ };
+```
+
+#### 2. 引用类型特化
+```cpp
+template <typename T>
+class MyClass<T&> { /* 针对所有引用类型的实现 */ };
+```
+
+#### 3. const 类型特化
+```cpp
+template <typename T>
+class MyClass<const T> { /* 针对所有 const 类型的实现 */ };
+```
+
+#### 4. 多参数模板的部分特化
+```cpp
+// 原始模板
+template <typename T1, typename T2>
+class Pair { /* ... */ };
+
+// 当两个参数类型相同时的部分特化
+template <typename T>
+class Pair<T, T> { /* ... */ };
+
+// 当第二个参数是指针时的部分特化
+template <typename T1, typename T2>
+class Pair<T1, T2*> { /* ... */ };
+```
+
+### 实际应用示例：智能指针的优化
+
+让我们看一个更实际的例子，展示如何使用部分特化来优化内存管理：
+
+```cpp
+#include <iostream>
+#include <memory>
+
+// 通用的引用计数器
+template <typename T>
+class RefCounter {
+public:
+    RefCounter(T* ptr) : ptr_(ptr), count_(new size_t(1)) {}
+    
+    void addRef() { ++(*count_); }
+    void release() { 
+        if (--(*count_) == 0) {
+            delete ptr_;
+            delete count_;
+        }
+    }
+    
+    T* get() const { return ptr_; }
+    size_t useCount() const { return *count_; }
+    
+private:
+    T* ptr_;
+    size_t* count_;
+};
+
+// 针对数组类型的部分特化（使用 delete[] 而不是 delete）
+template <typename T>
+class RefCounter<T[]> {
+public:
+    RefCounter(T* ptr) : ptr_(ptr), count_(new size_t(1)) {}
+    
+    void addRef() { ++(*count_); }
+    void release() { 
+        if (--(*count_) == 0) {
+            delete[] ptr_;  // 注意这里使用 delete[]
+            delete count_;
+        }
+    }
+    
+    T* get() const { return ptr_; }
+    size_t useCount() const { return *count_; }
+    
+private:
+    T* ptr_;
+    size_t* count_;
+};
+
+// 使用示例
+int main() {
+    // 单个对象
+    RefCounter<int> single(new int(42));
+    std::cout << "Single object value: " << *single.get() << std::endl;
+    
+    // 数组对象
+    int* arr = new int[5]{1, 2, 3, 4, 5};
+    RefCounter<int[]> array(arr);
+    std::cout << "Array values: ";
+    for (int i = 0; i < 5; ++i) {
+        std::cout << array.get()[i] << " ";
+    }
+    std::cout << std::endl;
+    
+    return 0;
+}
+```
+
+### 部分特化的规则和限制
+
+1. **只能用于类模板**：函数模板不支持部分特化（但可以使用重载）
+2. **必须更特殊化**：部分特化版本必须比原始模板更特殊
+3. **参数数量必须一致**：部分特化的模板参数数量可以少于原始模板，但实例化时的参数数量必须相同
+
+### 部分特化 vs 完全特化
+
+```cpp
+template <typename T>
+class Container { /* 通用版本 */ };
+
+template <typename T>
+class Container<T*> { /* 部分特化：所有指针类型 */ };
+
+template <>
+class Container<int*> { /* 完全特化：仅 int* 类型 */ };
+
+// 使用时的匹配优先级：
+// Container<int*> 会匹配完全特化版本
+// Container<double*> 会匹配部分特化版本
+// Container<int> 会匹配通用版本
+```
+
+### 模板与友元
+
+在类模板中使用友元（`friend`）关系时，情况会变得有趣。
+1.  **非模板友元**：一个普通函数或类可以成为一个类模板所有实例的友元。
+2.  **模板友元**：一个函数模板或类模板可以成为另一个类模板的友元。
+
+最常见的情况是，我们希望一个函数模板成为类模板的友元，并且类型要匹配。例如，为`Box<T>`类重载`operator<<`，使其能够方便地输出。
+
+```cpp
+#include <iostream>
+
+// 必须先声明类模板，这样函数模板才能引用它
+template <typename T>
+class Box;
+
+// 必须先声明函数模板，这样类模板才能将它声明为友元
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Box<T>& box);
+
+template <typename T>
+class Box {
+public:
+    Box(const T& content) : m_content(content) {}
+
+    // 声明一个函数模板的特定实例为友元
+    // <> 表示这是一个模板
+    friend std::ostream& operator<< <>(std::ostream& os, const Box<T>& box);
+
+private:
+    T m_content;
+};
+
+// 实现友元函数模板
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Box<T>& box) {
+    os << "Box contains: " << box.m_content;
+    return os;
+}
+
+int main() {
+    Box<int> intBox(42);
+    Box<std::string> stringBox("C++");
+
+    std::cout << intBox << std::endl;     // 调用 operator<<<int>
+    std::cout << stringBox << std::endl; // 调用 operator<<<std::string>
+
+    return 0;
+}
+```
+
+### 模板与继承
+
+类模板也可以参与继承体系，有以下几种常见模式：
+1.  **类模板继承自普通类**：
+    ```cpp
+    class Base { /* ... */ };
+    template <typename T>
+    class Derived : public Base { /* ... */ };
+    ```
+2.  **普通类继承自类模板的实例**：
+    ```cpp
+    template <typename T>
+    class Base { /* ... */ };
+    class Derived : public Base<int> { /* ... */ }; // 继承了一个具体的基类 Base<int>
+    ```
+3.  **类模板继承自类模板**：
+    ```cpp
+    template <typename T>
+    class Base { protected: T m_baseData; };
+    
+    template <typename T>
+    class Derived : public Base<T> { // 继承时使用相同的模板参数 T
+    public:
+        void someFunc() {
+            // 注意：访问基类成员时，需要使用 this-> 或者 Base<T>::
+            this->m_baseData = T();
+        }
+    };
+    ```
+
+---
+### 常见问题
+1.  **忘记在实例化时指定类型**
+    -   **问题**：`MyClass obj;` 导致编译错误 "missing template arguments"。
+    -   **原因**：类模板实例化必须显式提供模板参数。
+    -   **解决方案**：写成 `MyClass<int> obj;` 或 `MyClass<SomeType> obj;`。
+
+2.  **在`.cpp`文件中定义成员函数导致的链接错误**
+    -   **问题**：和函数模板一样，收到 "unresolved external symbol" 链接错误。
+    -   **原因**：编译器在编译调用点的`.cpp`文件时，看不到模板的实现，无法生成代码。
+    -   **解决方案**：将类模板的声明和成员函数的定义全部放在头文件（`.h`或`.hpp`）中。
+
+3.  **访问模板基类的成员**
+    -   **问题**：在派生模板类中直接访问基类模板的成员时报错。
+    -   **原因**：由于模板可能被特化，编译器在解析派生类模板时，无法确定基类`Base<T>`到底有哪些成员。
+    -   **解决方案**：使用 `this->` 或 `Base<T>::` 来明确告诉编译器该成员来自依赖于模板参数的基类。例如：`this->baseMember`。
+
+### 章节总结
+-   **类模板**是创建类的“蓝图”，通过`template <typename T> class ...`定义。
+-   使用类模板时**必须显式实例化**，如 `MyClass<int> obj;`。
+-   类模板的成员函数定义在类外时，需要同时写出模板声明和类作用域，如 `template <typename T> void MyClass<T>::func() {}`。
+-   模板参数可以有**默认值**，简化实例化过程。
+-   通过**全特化** (`template <> class MyClass<SpecificType>`) 和**部分特化** (`template <typename T> class MyClass<T*>`)，可以为特定类型或类型模式提供定制实现。
+-   模板可以与**友元**和**继承**结合使用，但语法上需要特别注意。
+-   **最重要的规则**：将类模板的所有内容（声明和定义）都放在头文件中。
+
+---
+### 示例程序
+
+#### 1. 通用容器类 (动态数组)
+
+我们将创建一个名为`Vector`的简单动态数组类模板，它能存放任何类型的元素，并能自动管理内存。
+
+**文件: `Vector.hpp`**
+```cpp
+#ifndef VECTOR_HPP
+#define VECTOR_HPP
+
+#include <iostream>
+#include <stdexcept> // 用于 std::out_of_range
+
+template <typename T>
+class Vector {
+public:
+    // 默认构造函数
+    Vector() : m_data(nullptr), m_size(0), m_capacity(0) {}
+
+    // 析构函数，负责释放内存
+    ~Vector() {
+        delete[] m_data;
+    }
+
+    // 拷贝构造函数 (深拷贝)
+    Vector(const Vector<T>& other) : m_size(other.m_size), m_capacity(other.m_capacity) {
+        m_data = new T[m_capacity];
+        for (size_t i = 0; i < m_size; ++i) {
+            m_data[i] = other.m_data[i];
+        }
+    }
+
+    // 拷贝赋值运算符 (深拷贝, Copy-and-Swap Idiom)
+    Vector<T>& operator=(Vector<T> other) {
+        swap(*this, other);
+        return *this;
+    }
+
+    // 添加元素到末尾
+    void push_back(const T& value) {
+        if (m_size >= m_capacity) {
+            // 如果容量不足，则扩容 (通常是2倍)
+            size_t newCapacity = (m_capacity == 0) ? 1 : m_capacity * 2;
+            reserve(newCapacity);
+        }
+        m_data[m_size++] = value;
+    }
+
+    // 访问元素，带边界检查
+    T& operator[](size_t index) {
+        if (index >= m_size) {
+            throw std::out_of_range("Vector index out of range");
+        }
+        return m_data[index];
+    }
+
+    const T& operator[](size_t index) const {
+        if (index >= m_size) {
+            throw std::out_of_range("Vector index out of range");
+        }
+        return m_data[index];
+    }
+    
+    // 获取当前元素数量
+    size_t size() const {
+        return m_size;
+    }
+
+private:
+    T* m_data;       // 指向动态分配的数组
+    size_t m_size;     // 当前存储的元素数量
+    size_t m_capacity; // 当前分配的内存容量
+
+    // 预分配内存
+    void reserve(size_t newCapacity) {
+        if (newCapacity <= m_capacity) return;
+        T* newData = new T[newCapacity];
+        for (size_t i = 0; i < m_size; ++i) {
+            newData[i] = m_data[i];
+        }
+        delete[] m_data;
+        m_data = newData;
+        m_capacity = newCapacity;
+    }
+    
+    // 友元函数，用于交换两个Vector的内容，支持拷贝赋值
+    friend void swap(Vector<T>& first, Vector<T>& second) noexcept {
+        using std::swap;
+        swap(first.m_data, second.m_data);
+        swap(first.m_size, second.m_size);
+        swap(first.m_capacity, second.m_capacity);
+    }
+};
+
+#endif // VECTOR_HPP
+```
+
+**文件: `main.cpp`**
+```cpp
+#include <iostream>
+#include <string>
+#include "Vector.hpp" // 包含我们的通用Vector类
+
+struct Point {
+    int x, y;
+};
+
+// 为 Point 重载 <<，方便打印
+std::ostream& operator<<(std::ostream& os, const Point& p) {
+    os << "(" << p.x << ", " << p.y << ")";
+    return os;
+}
+
+int main() {
+    // 1. 创建一个存放 int 的 Vector
+    Vector<int> intVec;
+    intVec.push_back(10);
+    intVec.push_back(20);
+    intVec.push_back(30);
+
+    std::cout << "Integer Vector: ";
+    for (size_t i = 0; i < intVec.size(); ++i) {
+        std::cout << intVec[i] << " ";
+    }
+    std::cout << std::endl;
+    intVec[1] = 99; // 修改元素
+    std::cout << "After modification: " << intVec[1] << std::endl;
+
+    std::cout << "\n-----------------------------\n";
+
+    // 2. 创建一个存放 std::string 的 Vector
+    Vector<std::string> stringVec;
+    stringVec.push_back("Generic");
+    stringVec.push_back("Programming");
+    stringVec.push_back("is");
+    stringVec.push_back("powerful!");
+
+    std::cout << "String Vector: ";
+    for (size_t i = 0; i < stringVec.size(); ++i) {
+        std::cout << stringVec[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "\n-----------------------------\n";
+
+    // 3. 创建一个存放自定义结构体 Point 的 Vector
+    Vector<Point> pointVec;
+    pointVec.push_back({1, 2});
+    pointVec.push_back({3, 4});
+    
+    std::cout << "Point Vector: ";
+    for (size_t i = 0; i < pointVec.size(); ++i) {
+        std::cout << pointVec[i] << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+
+#### 2. 智能指针简单实现
+
+我们将实现一个简单的智能指针`UniquePtr`，它能接管一个动态分配的对象的内存管理，确保在智能指针对象离开作用域时，其管理的内存会被自动释放。这可以极大地防止内存泄漏。
+
+**文件: `UniquePtr.hpp`**
+```cpp
+#ifndef UNIQUE_PTR_HPP
+#define UNIQUE_PTR_HPP
+
+#include <iostream>
+
+template <typename T>
+class UniquePtr {
+public:
+    // 构造函数：获取并管理一个原始指针
+    // explicit 防止隐式转换，例如 UniquePtr<int> p = new int(5); 是不允许的
+    explicit UniquePtr(T* ptr = nullptr) : m_ptr(ptr) {
+        if (m_ptr) {
+            std::cout << "UniquePtr taking ownership of a new object." << std::endl;
+        }
+    }
+
+    // 析构函数：释放所管理的内存
+    ~UniquePtr() {
+        if (m_ptr) {
+            std::cout << "UniquePtr destroying the managed object." << std::endl;
+            delete m_ptr;
+            m_ptr = nullptr;
+        }
+    }
+
+    // 禁用拷贝构造函数，因为所有权是唯一的
+    UniquePtr(const UniquePtr&) = delete;
+
+    // 禁用拷贝赋值运算符
+    UniquePtr& operator=(const UniquePtr&) = delete;
+
+    // 解引用操作符，使其行为像一个指针
+    T& operator*() const {
+        return *m_ptr;
+    }
+
+    // 箭头操作符，使其行为像一个指针
+    T* operator->() const {
+        return m_ptr;
+    }
+
+    // 检查是否持有有效指针
+    bool is_valid() const {
+        return m_ptr != nullptr;
+    }
+
+private:
+    T* m_ptr; // 唯一的内部原始指针
+};
+
+#endif // UNIQUE_PTR_HPP
+```
+
+**文件: `main.cpp`**
+```cpp
+#include <iostream>
+#include <string>
+#include "UniquePtr.hpp" // 包含我们的智能指针
+
+class MyResource {
+public:
+    MyResource() { std::cout << "MyResource constructed." << std::endl; }
+    ~MyResource() { std::cout << "MyResource destructed." << std::endl; }
+    void do_something() { std::cout << "Doing something important..." << std::endl; }
+};
+
+void process_resource() {
+    std::cout << "--- Entering process_resource function ---" << std::endl;
+    // 使用 UniquePtr 管理动态分配的 MyResource 对象
+    // 当 p 离开作用域时（函数结束），其析构函数会自动被调用
+    // 从而自动 delete 其管理的 MyResource 对象
+    UniquePtr<MyResource> p(new MyResource());
+
+    if (p.is_valid()) {
+        p->do_something(); // 使用 -> 操作符
+        (*p).do_something(); // 使用 * 操作符
+    }
+    
+    // 无需手动调用 delete p;
+    std::cout << "--- Exiting process_resource function ---" << std::endl;
+}
+
+int main() {
+    std::cout << "--- Calling process_resource ---" << std::endl;
+    process_resource();
+    std::cout << "--- Returned from process_resource ---" << std::endl;
+
+    std::cout << "\n----------------------------------\n";
+
+    // 演示管理基本类型
+    { // 使用代码块创建局部作用域
+        UniquePtr<int> intPtr(new int(100));
+        std::cout << "Value managed by intPtr: " << *intPtr << std::endl;
+    } // intPtr 在这里被销毁，它管理的 int 也被 delete
+
+    return 0;
+}
+```
 
 # 第十部分：STL标准模板库
 **部分描述**：学习使用C++标准库提供的强大工具，提高编程效率。
