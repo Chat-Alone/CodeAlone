@@ -1026,6 +1026,8 @@ int main() {
 ```cpp
 #include <iostream>
 
+using namespace std;
+
 int main() {
     // 问题1
     int 1st_score = 95;
@@ -1040,7 +1042,7 @@ int main() {
     // 问题4
     double average_score = (98 + 95) / 2;
 
-    std::cout << "平均分是: " << average_score << std::endl;
+    cout << "平均分是: " << average_score << endl;
 
     return 0;
 }
@@ -1078,6 +1080,8 @@ int main() {
 ```cpp
 #include <iostream>
 
+using namespace std;
+
 int main() {
     // 修正1: 变量名修改为以字母开头
     int first_score = 95;
@@ -1094,7 +1098,7 @@ int main() {
     // 方法二：使用 static_cast 进行显式类型转换
     // double average_score = static_cast<double>(98 + 95) / 2;
 
-    std::cout << "平均分是: " << average_score << std::endl; // 预期输出: 96.5
+    cout << "平均分是: " << average_score << endl; // 预期输出: 96.5
 
     return 0;
 }
@@ -1119,6 +1123,8 @@ int main() {
 ```cpp
 #include <iostream>
 
+using namespace std;
+
 int main() {
     long long student_id = 20230101001LL; 
     unsigned short age = 19; 
@@ -1126,22 +1132,22 @@ int main() {
     bool is_league_member = true;
     double cpp_course_score = 92.5;
 
-    std::cout << "------ 学生信息 ------" << std::endl;
-    std::cout << "学号: " << student_id << std::endl;
-    std::cout << "年龄: " << age << std::endl;
-    std::cout << "性别: " << gender << std::endl;
-    std::cout << "是否团员: " << is_league_member << std::endl;
-    std::cout << "C++成绩: " << cpp_course_score << std::endl;
-    std::cout << "----------------------" << std::endl << std::endl;
+    cout << "------ 学生信息 ------" << endl;
+    cout << "学号: " << student_id << endl;
+    cout << "年龄: " << age << endl;
+    cout << "性别: " << gender << endl;
+    cout << "是否团员: " << is_league_member << endl;
+    cout << "C++成绩: " << cpp_course_score << endl;
+    cout << "----------------------" << endl << endl;
 
 
-    std::cout << "------ 各数据类型占用内存大小 ------" << std::endl;
-    std::cout << "long long: " << sizeof(long long) << " bytes" << std::endl;
-    std::cout << "unsigned short: " << sizeof(unsigned short) << " bytes" << std::endl;
-    std::cout << "char: " << sizeof(char) << " bytes" << std::endl;
-    std::cout << "bool: " << sizeof(bool) << " bytes" << std::endl;
-    std::cout << "double: " << sizeof(double) << " bytes" << std::endl;
-    std::cout << "----------------------------------" << std::endl;
+    cout << "------ 各数据类型占用内存大小 ------" << endl;
+    cout << "long long: " << sizeof(long long) << " bytes" << endl;
+    cout << "unsigned short: " << sizeof(unsigned short) << " bytes" << endl;
+    cout << "char: " << sizeof(char) << " bytes" << endl;
+    cout << "bool: " << sizeof(bool) << " bytes" << endl;
+    cout << "double: " << sizeof(double) << " bytes" << endl;
+    cout << "----------------------------------" << endl;
 
     return 0;
 }
@@ -1157,7 +1163,6 @@ int main() {
 2.  **`sizeof`运算符**:
     *   `sizeof`是一个编译时运算符，用于查询一个数据类型或一个变量所占用的内存空间大小，单位是字节（byte）。
     *   代码中通过`sizeof(数据类型)`的方式，可以获取到不同类型在当前系统和编译器下的具体大小，这有助于理解内存布局和进行性能优化。注意，`sizeof`的结果在不同平台或编译器上可能不同。
-3.  **`std::boolalpha`**: 这是一个输出流操纵符，用于让`std::cout`在打印`bool`类型时输出 "true" 或 "false" 字符串，而不是默认的 "1" 或 "0"，使输出更具可读性。
 
 </details>
 
@@ -1184,7 +1189,7 @@ int main() {
     const double PI = 3.14159;
     int r = 10;
     double volume = 4.0 / 3 * PI * (r * r * r);
-    std::cout << "半径为 " << r << " 的球体体积是: " << volume << std::endl;
+    cout << "半径为 " << r << " 的球体体积是: " << volume << endl;
 
     return 0;
 }
@@ -1278,6 +1283,103 @@ int main() {
 请输入您的身高(cm)和体重(kg)，用空格分隔: 180 75.5  <-- 用户输入两个值，中间用空格
 您的信息已记录：身高 180cm, 体重 75.5kg。
 ```
+
+### 使用转义字符控制输出
+
+我们已经知道`endl`可以换行，但如果我想在一个字符串内部换行，或者输出一些特殊符号（比如双引号 `"` 本身），该怎么办？这时就需要**转义字符（Escape Sequence）**。
+
+转义字符是一个以反斜杠 `\` 开头的特殊字符组合，它告诉编译器不要按字面意思解释后面的字符，而是将其“转义”成一个特殊的功能。
+
+#### 常见的转义字符
+
+| 转义字符 | 名称       | 描述                                                                                              |
+| :------- | :--------- | :------------------------------------------------------------------------------------------------ |
+| `\n`     | 换行符     | 将光标移动到下一行的开头。它和`endl`的主要区别在于`endl`还会**刷新输出缓冲区**。                     |
+| `\t`     | 水平制表符 | 将光标移动到下一个制表位，通常用于在控制台输出中对齐文本。                                        |
+| `\"`     | 双引号     | 用于在字符串字面量中插入一个双引号字符。                                                          |
+| `\'`     | 单引号     | 用于在字符或字符串字面量中插入一个单引号字符。                                                    |
+| `\\`     | 反斜杠     | 用于在字符串字面量中插入一个反斜杠字符本身。                                                      |
+| `\a`     | 响铃符     | 发出一个声音警报（在某些终端上可能无效）。                                                        |
+
+#### 示例：使用转义字符进行排版
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+int main() {
+    cout << "这是一个普通的句子。\n这是换行后的句子。" << endl;
+    cout << "\n--- 商品列表 ---\n";
+    cout << "商品\t\t价格\n"; // 使用\t进行对齐
+    cout << "苹果(Apple)\t¥5.00\n";
+    cout << "香蕉(Banana)\t¥3.50\n";
+
+    // 输出包含特殊符号的句子
+    cout << "\n他说：\"C++是一门强大的语言。\"" << endl;
+    
+    // 输出Windows文件路径需要转义反斜杠
+    cout << "文件路径是：C:\\Users\\MyPC\\Documents" << endl;
+
+    return 0;
+}
+```
+**预期输出：**
+```
+这是一个普通的句子。
+这是换行后的句子。
+
+--- 商品列表 ---
+商品		价格
+苹果(Apple)	¥5.00
+香蕉(Banana)	¥3.50
+
+他说："C++是一门强大的语言。"
+文件路径是：C:\Users\MyPC\Documents
+```
+
+#### 延伸概念：原始字符串字面量 (Raw String Literals)
+
+你会发现，在处理像Windows文件路径或正则表达式这样包含大量反斜杠的字符串时，写一长串 `\\` 会非常繁琐且容易出错，我们称之为“反斜杠地狱”。
+
+从C++11开始，引入了**原始字符串字面量**来解决这个问题。它允许你创建一个内容所见即所得的字符串，无需任何转义。
+
+**语法**：`R"(原始字符串内容)"`
+
+```cpp
+#include <iostream>
+#include <string>
+
+int main() {
+    // 传统方式，需要转义所有反斜杠
+    string old_path = "C:\\Users\\MyPC\\Documents\\project.cpp";
+
+    // 使用原始字符串字面量，所见即所得
+    string raw_path = R"(C:\Users\MyPC\Documents\project.cpp)";
+
+    cout << "传统方式: " << old_path << endl;
+    cout << "原始字符串: " << raw_path << endl;
+
+    // 甚至可以包含换行和引号，无需转义
+    string multi_line_raw = R"(第一行在这里。
+第二行在这里，还包含 "引号"。
+    )";
+    cout << "\n多行原始字符串:\n" << multi_line_raw << endl;
+
+    return 0;
+}
+```
+**预期输出：**
+```
+传统方式: C:\Users\MyPC\Documents\project.cpp
+原始字符串: C:\Users\MyPC\Documents\project.cpp
+
+多行原始字符串:
+第一行在这里。
+第二行在这里，还包含 "引号"。
+    
+```
+原始字符串字面量极大地提高了代码的可读性，尤其是在处理特定格式的文本时。
 
 ---
 
@@ -1621,19 +1723,21 @@ GPA   : 3.90
 #include <iostream>
 #include <string>
 
+using namespace std;
+
 int main() {
     int age;
-    std::string full_name;
+    string full_name;
 
-    std::cout << "请输入您的年龄: ";
-    std::cin >> age;
+    cout << "请输入您的年龄: ";
+    cin >> age;
 
-    std::cout << "请输入您的全名: ";
-    std::getline(std::cin, full_name);
+    cout << "请输入您的全名: ";
+    getline(cin, full_name);
 
-    std::cout << "\n您的信息如下：" << std::endl;
-    std::cout << "年龄: " << age << std::endl;
-    std::cout << "全名: '" << full_name << "'" << std::endl;
+    cout << "\n您的信息如下：" << endl;
+    cout << "年龄: " << age << endl;
+    cout << "全名: '" << full_name << "'" << endl;
 
     return 0;
 }
@@ -1650,32 +1754,32 @@ int main() {
 
 1.  **问题原因分析**
 
-    这个问题的根源在于**输入缓冲区（Input Buffer）**以及 `std::cin >>` 和 `std::getline` 两种输入方式的不同工作机制。
+    这个问题的根源在于**输入缓冲区（Input Buffer）**以及 `cin >>` 和 `getline` 两种输入方式的不同工作机制。
     *   当用户输入年龄（例如 `25`）并按下回车键时，实际输入到缓冲区的内容是 `"25\n"`（数字2、数字5和换行符）。
-    *   `std::cin >> age;` 这条语句会从缓冲区中读取数字，直到遇到非数字字符（在这里是换行符`\n`）为止。它成功地将 `25` 读取并存入了 `age` 变量。
-    *   **关键在于**：`std::cin >>` 读取完 `25` 后，换行符 `\n` **仍然残留在输入缓冲区中**。
-    *   接着，程序执行到 `std::getline(std::cin, full_name);`。`getline` 函数的作用是读取一行，直到遇到换行符 `\n` 为止。它一检查输入缓冲区，立即就发现了那个被遗留下来的 `\n`。
+    *   `cin >> age;` 这条语句会从缓冲区中读取数字，直到遇到非数字字符（在这里是换行符`\n`）为止。它成功地将 `25` 读取并存入了 `age` 变量。
+    *   **关键在于**：`cin >>` 读取完 `25` 后，换行符 `\n` **仍然残留在输入缓冲区中**。
+    *   接着，程序执行到 `getline(cin, full_name);`。`getline` 函数的作用是读取一行，直到遇到换行符 `\n` 为止。它一检查输入缓冲区，立即就发现了那个被遗留下来的 `\n`。
     *   `getline` 认为它已经读取到了行尾，于是它读取了一个“空字符串”存入 `full_name`，然后消耗掉这个`\n`，输入操作结束。
     *   因此，从用户的角度看，程序根本没有等待他们输入姓名，就直接跳到了下一步。
 
 2.  **代码修正**
 
-    解决方案是在使用 `std::cin >>` 之后、调用 `std::getline` 之前，手动清理掉输入缓冲区中残留的那个换行符。这可以通过 `std::cin.ignore()` 实现。
+    解决方案是在使用 `cin >>` 之后、调用 `getline` 之前，手动清理掉输入缓冲区中残留的那个换行符。这可以通过 `cin.ignore()` 实现。
 
     **修正后的关键代码行**:
     ```cpp
     // ...
-    std::cout << "请输入您的年龄: ";
-    std::cin >> age;
+    cout << "请输入您的年龄: ";
+    cin >> age;
 
     #include <limits> // 需要包含此头文件
-    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); 
+    cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
 
-    std::cout << "请输入您的全名: ";
-    std::getline(std::cin, full_name);
+    cout << "请输入您的全名: ";
+    getline(cin, full_name);
     // ...
     ```
-    **解析**：`std::cin.ignore()` 会从输入缓冲区中舍弃字符。`std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');` 是最健壮的写法，它告诉程序“忽略缓冲区中任意数量的字符，直到找到并丢弃一个换行符为止”。这样就能确保在 `getline` 执行前，缓冲区是干净的（相对于上一行的遗留物而言），从而能正确地等待用户输入新的一行。
+    **解析**：`cin.ignore()` 会从输入缓冲区中舍弃字符。`cin.ignore(numeric_limits<streamsize>::max(), '\n');` 是最健壮的写法，它告诉程序“忽略缓冲区中任意数量的字符，直到找到并丢弃一个换行符为止”。这样就能确保在 `getline` 执行前，缓冲区是干净的（相对于上一行的遗留物而言），从而能正确地等待用户输入新的一行。
 
 </details>
 
@@ -1711,23 +1815,25 @@ int main() {
 #include <iostream>
 #include <iomanip>
 
+using namespace std;
+
 int main() {
     double price = 0.0;
     int quantity = 0;
 
-    std::cout << "请输入商品单价: ";
-    std::cin >> price;
+    cout << "请输入商品单价: ";
+    cin >> price;
 
-    std::cout << "请输入购买数量: ";
-    std::cin >> quantity;
+    cout << "请输入购买数量: ";
+    cin >> quantity;
 
     double total_price = price * quantity;
 
-    std::cout << "商品总价为: " 
-              << std::fixed
-              << std::setprecision(2)
+    cout << "商品总价为: " 
+              << fixed
+              << setprecision(2)
               << total_price 
-              << std::endl;
+              << endl;
 
     return 0;
 }
@@ -2230,14 +2336,16 @@ result = 1.4500
 ```cpp
 #include <iostream>
 
+using namespace std;
+
 int main() {
     const int SECONDS_PER_MINUTE = 60;
     const int SECONDS_PER_HOUR = 60 * 60;
     const int SECONDS_PER_DAY = 60 * 60 * 24;
 
     int total_seconds = 0;
-    std::cout << "请输入总秒数: ";
-    std::cin >> total_seconds;
+    cout << "请输入总秒数: ";
+    cin >> total_seconds;
 
     // 1. 计算天数
     int days = total_seconds / SECONDS_PER_DAY;
@@ -2257,9 +2365,9 @@ int main() {
     // 6. 最后剩下的就是秒数
     int seconds = remaining_seconds % SECONDS_PER_MINUTE;
 
-    std::cout << total_seconds << " 秒等于:" << std::endl;
-    std::cout << days << " 天, " << hours << " 小时, " 
-              << minutes << " 分钟, " << seconds << " 秒" << std::endl;
+    cout << total_seconds << " 秒等于:" << endl;
+    cout << days << " 天, " << hours << " 小时, " 
+              << minutes << " 分钟, " << seconds << " 秒" << endl;
 
     return 0;
 }
@@ -2288,6 +2396,8 @@ int main() {
 ```cpp
 #include <iostream>
 
+using namespace std;
+
 int main() {
     int a = 5;
     int b = 5;
@@ -2296,10 +2406,10 @@ int main() {
     c = ++a; // 第1步
     d = b++; // 第2步
 
-    std::cout << "a 的值是: " << a << std::endl;
-    std::cout << "b 的值是: " << b << std::endl;
-    std::cout << "c 的值是: " << c << std::endl;
-    std::cout << "d 的值是: " << d << std::endl;
+    cout << "a 的值是: " << a << endl;
+    cout << "b 的值是: " << b << endl;
+    cout << "c 的值是: " << c << endl;
+    cout << "d 的值是: " << d << endl;
 
     return 0;
 }
