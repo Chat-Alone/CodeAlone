@@ -221,6 +221,7 @@
             border: 1px solid var(--border-color);
             border-radius: 0.75rem;
             margin: 1.5rem 0;
+            overflow: hidden;
         }
 
         .doc-content summary {
@@ -236,7 +237,11 @@
             transition: background-color 0.2s;
         }
 
-        .doc-content summary:hover {
+        .doc-content details:not([open]) summary:hover {
+            background-color: var(--bg-tertiary);
+        }
+        
+        .doc-content details[open] > summary {
             background-color: var(--bg-tertiary);
         }
 
@@ -251,25 +256,26 @@
             height: 0.5em;
             border-right: 0.15em solid var(--text-tertiary);
             border-bottom: 0.15em solid var(--text-tertiary);
-            transform: rotate(45deg);
+            transform: rotate(-45deg);
             transition: transform 0.25s ease-in-out;
             flex-shrink: 0;
         }
 
         .doc-content details[open] > summary::before {
-            transform: rotate(-135deg);
+            transform: rotate(45deg);
         }
 
         .doc-content details[open] {
-            padding: 0 1.25rem 1rem 1.25rem;
+            padding-bottom: 1rem;
         }
 
         .doc-content details[open] > summary {
-            margin: 0 -1.25rem 1rem -1.25rem;
+            margin-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
         }
         
         .doc-content details[open] > *:not(summary) {
+            padding: 0 1.25rem;
             animation: details-fade-in 0.4s ease-out;
         }
 
