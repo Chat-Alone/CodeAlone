@@ -8244,7 +8244,7 @@ bool areBracketsBalanced(const char expression[]) {
 }
 
 int main() {
-    cout << boolalpha;
+    cout << boolalpha; // 让cout直接输出 true/false
 
     const char* expr1 = "{[()]}";
     cout << "表达式 '" << expr1 << "' 是否平衡? " << areBracketsBalanced(expr1) << endl;
