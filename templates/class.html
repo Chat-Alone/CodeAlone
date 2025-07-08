@@ -205,12 +205,22 @@
             font-size: 0.9375rem;
         }
 
+        @keyframes details-fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(-0.5rem);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         .doc-content details {
             background-color: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 0.75rem;
             margin: 1.5rem 0;
-            transition: all .2s;
         }
 
         .doc-content summary {
@@ -241,13 +251,13 @@
             height: 0.5em;
             border-right: 0.15em solid var(--text-tertiary);
             border-bottom: 0.15em solid var(--text-tertiary);
-            transform: rotate(-45deg);
-            transition: transform 0.2s ease-in-out;
+            transform: rotate(45deg);
+            transition: transform 0.25s ease-in-out;
             flex-shrink: 0;
         }
 
         .doc-content details[open] > summary::before {
-            transform: rotate(45deg);
+            transform: rotate(-135deg);
         }
 
         .doc-content details[open] {
@@ -257,6 +267,10 @@
         .doc-content details[open] > summary {
             margin: 0 -1.25rem 1rem -1.25rem;
             border-bottom: 1px solid var(--border-color);
+        }
+        
+        .doc-content details[open] > *:not(summary) {
+            animation: details-fade-in 0.4s ease-out;
         }
 
         .doc-content img {
