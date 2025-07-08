@@ -520,8 +520,6 @@ long long worldPopulation; // 声明一个名为worldPopulation的双长整型�
 unsigned int itemCount;    // 声明一个名为itemCount的无符号整型变量
 ```
 
-**警告**：只声明而未初始化的变量，其内部存放的是一个不确定的**垃圾值**（Garbage Value）。直接使用这样的变量会导致不可预测的程序行为，是常见的程序BUG来源。
-
 #### 变量的初始化
 
 **初始化**（Initialization）是在声明变量的同时，给它一个初始值。这是一种非常好的编程习惯，可以有效避免垃圾值问题。
@@ -550,6 +548,8 @@ cout << "学生数量: " << studentCount << endl;
 是否完成: 1
 学生数量: 1200
 ```
+
+**警告**：只声明而未初始化的变量，其内部存放的是一个不确定的**垃圾值**（Garbage Value）。直接使用这样的变量会导致不可预测的程序行为，是常见的程序BUG来源。
 
 你也可以先声明，再**赋值**（Assignment）：
 ```cpp
