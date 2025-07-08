@@ -12322,13 +12322,11 @@ int main() {
 
 using namespace std;
 
-// 操作函数 1: 计算并打印长度
 void countLength(char* str) {
     if (str == nullptr) return;
     cout << "字符串长度为: " << strlen(str) << endl;
 }
 
-// 操作函数 2: 转换为大写
 void toUpperCase(char* str) {
     if (str == nullptr) return;
     for (int i = 0; str[i] != '\0'; ++i) {
@@ -12337,7 +12335,6 @@ void toUpperCase(char* str) {
     cout << "已转换为大写。" << endl;
 }
 
-// 操作函数 3: 转换为小写
 void toLowerCase(char* str) {
     if (str == nullptr) return;
     for (int i = 0; str[i] != '\0'; ++i) {
@@ -12347,10 +12344,8 @@ void toLowerCase(char* str) {
 }
 
 int main() {
-    // 定义一个函数指针类型，方便使用
     typedef void (*StringOperation)(char*);
 
-    // 创建并初始化函数指针数组
     StringOperation operations[] = {countLength, toUpperCase, toLowerCase};
 
     char myString[100] = "Hello Cpp World! 123.";
@@ -12370,7 +12365,6 @@ int main() {
         cin >> choice;
 
         if (choice >= 1 && choice <= 3) {
-            // 使用用户选择-1作为数组索引来调用函数
             operations[choice - 1](myString);
             if (choice == 2 || choice == 3) {
                 cout << "操作后字符串: \"" << myString << "\"" << endl;
@@ -12390,9 +12384,9 @@ int main() {
 ##### 答案解析
 
 本题主要考察**函数指针数组**的应用：
-1.  **函数指针数组的声明与初始化**：代码中 `StringOperation operations[] = {countLength, toUpperCase, toLowerCase};` 这一行声明了一个名为 `operations` 的数组，其每个元素都是一个类型为 `StringOperation`（即 `void (*)(char*)`）的函数指针。我们直接用函数名（即函数的地址）来初始化这个数组。
-2.  **通过索引调用函数**：在 `main` 函数的 `if` 语句中，`operations[choice - 1](myString);` 这一行是关键。它根据用户的输入 `choice` 计算出数组的索引，然后直接通过该索引取出对应的函数指针并执行函数调用。
-3.  **替代 `if-else` 或 `switch`**：这种方法优雅地替代了冗长的 `if-else if-else` 或 `switch` 结构。如果有很多选项，使用函数指针数组可以让代码更简洁、更具可扩展性。若要增加新功能，只需编写新函数并将其添加到数组中，再更新菜单即可，逻辑分支代码几乎无需改动。
+1.  代码中 `StringOperation operations[] = {countLength, toUpperCase, toLowerCase};` 这一行声明了一个名为 `operations` 的数组，其每个元素都是一个类型为 `StringOperation`（即 `void (*)(char*)`）的函数指针。我们直接用函数名（即函数的地址）来初始化这个数组。
+2.  在 `main` 函数的 `if` 语句中，`operations[choice - 1](myString);` 这一行是关键。它根据用户的输入 `choice` 计算出数组的索引，然后直接通过该索引取出对应的函数指针并执行函数调用。
+3.  这种方法优雅地替代了冗长的 `if-else if-else` 或 `switch` 结构。如果有很多选项，使用函数指针数组可以让代码更简洁、更具可扩展性。若要增加新功能，只需编写新函数并将其添加到数组中，再更新菜单即可，逻辑分支代码几乎无需改动。
 
 </details>
 
