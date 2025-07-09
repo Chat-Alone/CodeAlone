@@ -959,6 +959,16 @@
             let currentChapterIndex = 0;
             let courseName = '';
 
+            function slugify(text) {
+                if (!text) return '';
+                return text.toString().toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^\u4e00-\u9fa5a-z0-9-]+/g, '')
+                    .replace(/--+/g, '-')
+                    .replace(/^-+/, '')
+                    .replace(/-+$/, '');
+            }
+
             function debounce(func, wait) {
                 let timeout;
                 return function (...args) {
@@ -1078,6 +1088,12 @@
                 currentChapterIndex = index;
                 const chapter = chapters[index];
                 const docContentEl = document.querySelector('.doc-content');
+
+                const newHash = '#' + chapter.slug;
+                if (window.location.hash !== newHash) {
+                    history.replaceState(null, '', newHash);
+                }
+
                 let content = '';
                 if (chapter.partTitle) {
                     content += `<div class="part-title">${chapter.partTitle}</div>`;
@@ -1287,6 +1303,7 @@
                     let globalChapterIndex = 0;
                     let inCodeBlock = false;
                     const lines = markdown.split('\n');
+                    const usedSlugs = new Set();
 
                     for (const line of lines) {
                         const trimmedLine = line.trim();
@@ -1310,7 +1327,15 @@
                                 currentPart = { title: courseName, chapters: [] };
                                 parts.push(currentPart);
                             }
-                            currentChapter = { title: trimmedLine.substring(3).trim(), partTitle: currentPart.title, content: '', globalIndex: globalChapterIndex++ };
+                            const title = trimmedLine.substring(3).trim();
+                            let baseSlug = slugify(title);
+                            let finalSlug = baseSlug;
+                            let counter = 1;
+                            while (usedSlugs.has(finalSlug)) {
+                                finalSlug = `${baseSlug}-${counter++}`;
+                            }
+                            usedSlugs.add(finalSlug);
+                            currentChapter = { title, slug: finalSlug, partTitle: currentPart.title, content: '', globalIndex: globalChapterIndex++ };
                             currentPart.chapters.push(currentChapter);
                             currentContent += line + '\n';
                         } else {
@@ -1326,15 +1351,30 @@
                             currentPart = { title: courseName, chapters: [] };
                             parts.push(currentPart);
                         }
-                        currentChapter = { title: courseName, partTitle: courseName, content: markdown, globalIndex: 0 };
+                        const title = courseName;
+                        const slug = slugify(title) || 'home';
+                        currentChapter = { title, slug, partTitle: courseName, content: markdown, globalIndex: 0 };
                         currentPart.chapters.push(currentChapter);
                         chapters.push(currentChapter);
                     }
 
                     generateSidebar();
+
                     let initialIndex = 0;
                     let initialPosition = 0;
-                    if (courseName) {
+                    let loadedFromHash = false;
+
+                    const hash = window.location.hash.substring(1);
+                    if (hash) {
+                        const targetChapter = chapters.find(c => c.slug === hash);
+                        if (targetChapter) {
+                            initialIndex = targetChapter.globalIndex;
+                            initialPosition = 0;
+                            loadedFromHash = true;
+                        }
+                    }
+
+                    if (!loadedFromHash && courseName) {
                         const progressKey = `readingProgress_${courseName}`;
                         const savedProgressStr = localStorage.getItem(progressKey);
                         if (savedProgressStr) {
