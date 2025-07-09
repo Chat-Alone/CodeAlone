@@ -30,13 +30,13 @@
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: '#3b82f6', secondary: '#64748b' }, borderRadius: { 'none': '0', 'sm': '4px', DEFAULT: '8px', 'md': '12px', 'lg': '16px', 'xl': '20px', '2xl': '24px', '3xl': '32px', 'full': '9999px', 'button': '8px' } } } }
     </script>
     <script>
-            (function () {
-                if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                } else {
-                    document.documentElement.classList.remove('dark');
-                }
-            })();
+        (function () {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
     </script>
     <style>
         @font-face {
@@ -948,24 +948,40 @@
             let parts = [];
             let chapters = [];
             let currentChapterIndex = 0;
-            let courseName = ''; // Used to store progress key
+            let courseName = '';
+
+            function debounce(func, wait) {
+                let timeout;
+                return function (...args) {
+                    const context = this;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(context, args), wait);
+                };
+            }
+
+            const saveProgress = debounce(() => {
+                if (!courseName) return;
+                const progressKey = `readingProgress_${courseName}`;
+                const progress = {
+                    index: currentChapterIndex,
+                    position: window.scrollY
+                };
+                localStorage.setItem(progressKey, JSON.stringify(progress));
+            }, 500);
 
             function showToast(message) {
                 const existingToast = document.querySelector('.toast-notification');
                 if (existingToast) {
                     existingToast.remove();
                 }
-
                 const toast = document.createElement('div');
                 toast.className = 'toast-notification fixed top-5 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50 transition-all duration-300 ease-in-out opacity-0 transform -translate-y-4';
                 toast.textContent = message;
                 document.body.appendChild(toast);
-
                 setTimeout(() => {
                     toast.classList.remove('opacity-0', '-translate-y-4');
                     toast.classList.add('opacity-100', 'translate-y-0');
                 }, 10);
-
                 setTimeout(() => {
                     toast.classList.remove('opacity-100', 'translate-y-0');
                     toast.classList.add('opacity-0', '-translate-y-4');
@@ -1017,13 +1033,11 @@
                 sidebarNav.innerHTML = '';
                 const navContainer = document.createElement('div');
                 navContainer.className = 'space-y-0';
-
                 parts.forEach((part) => {
                     const partDiv = document.createElement('div');
                     partDiv.className = 'nav-part';
                     partDiv.textContent = part.title;
                     navContainer.appendChild(partDiv);
-
                     part.chapters.forEach((chapter) => {
                         const link = document.createElement('a');
                         link.href = '#';
@@ -1032,14 +1046,12 @@
                         link.textContent = chapter.title;
                         link.addEventListener('click', (e) => {
                             e.preventDefault();
-                            loadChapter(chapter.globalIndex);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            loadChapter(chapter.globalIndex, 0); // Scroll to top for manual navigation
                             if (window.innerWidth < 1024) closeSidebar();
                         });
                         navContainer.appendChild(link);
                     });
                 });
-
                 sidebarNav.appendChild(navContainer);
             }
 
@@ -1053,31 +1065,17 @@
                 });
             }
 
-            function loadChapter(index) {
+            function loadChapter(index, positionToRestore = null) {
                 currentChapterIndex = index;
-                if (courseName) {
-                    const progressKey = `readingProgress_${courseName}`;
-                    localStorage.setItem(progressKey, index);
-                }
-
                 const chapter = chapters[index];
                 const docContentEl = document.querySelector('.doc-content');
-
                 let content = '';
-
                 if (chapter.partTitle) {
-                    const partIndex = parts.findIndex(p => p.title === chapter.partTitle);
-                    if (partIndex !== -1) {
-                        const partTitleText = `${chapter.partTitle}`;
-                        content += `<div class="part-title">${partTitleText}</div>`;
-                    }
+                    content += `<div class="part-title">${chapter.partTitle}</div>`;
                 }
-
                 content += marked.parse(chapter.content);
-
                 const chapterNav = document.createElement('div');
                 chapterNav.className = 'chapter-nav';
-
                 const prevButton = document.createElement('a');
                 prevButton.href = '#';
                 prevButton.className = 'chapter-nav-button';
@@ -1085,14 +1083,12 @@
                     prevButton.innerHTML = `<i class="ri-arrow-left-line"></i> <span class="hidden min-[375px]:inline">上一章:</span> ${chapters[index - 1].title}`;
                     prevButton.addEventListener('click', (e) => {
                         e.preventDefault();
-                        loadChapter(index - 1);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        loadChapter(index - 1, 0);
                     });
                 } else {
                     prevButton.classList.add('disabled');
                     prevButton.innerHTML = `<i class="ri-arrow-left-line"></i> 上一章`;
                 }
-
                 const nextButton = document.createElement('a');
                 nextButton.href = '#';
                 nextButton.className = 'chapter-nav-button';
@@ -1100,28 +1096,31 @@
                     nextButton.innerHTML = `<span class="hidden min-[375px]:inline">下一章:</span> ${chapters[index + 1].title} <i class="ri-arrow-right-line"></i>`;
                     nextButton.addEventListener('click', (e) => {
                         e.preventDefault();
-                        loadChapter(index + 1);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        loadChapter(index + 1, 0);
                     });
                 } else {
                     nextButton.classList.add('disabled');
                     nextButton.innerHTML = `下一章 <i class="ri-arrow-right-line"></i>`;
                 }
-
                 chapterNav.appendChild(prevButton);
                 chapterNav.appendChild(nextButton);
-
                 docContentEl.innerHTML = content;
                 docContentEl.appendChild(chapterNav);
-
                 updateActiveSection();
                 initializeCopyButtons();
+
+                const behavior = positionToRestore === 0 ? 'smooth' : 'auto';
+                const top = positionToRestore !== null ? positionToRestore : 0;
+
+                // Use a short delay to ensure DOM is ready for scrolling
+                setTimeout(() => {
+                    window.scrollTo({ top, behavior });
+                }, 50);
             }
 
             function initializeCopyButtons() {
                 document.querySelectorAll('.doc-content pre code').forEach(block => {
                     const pre = block.parentElement;
-
                     if (!pre.querySelector('.copy-button')) {
                         const btn = document.createElement('button');
                         btn.className = 'copy-button';
@@ -1139,10 +1138,7 @@
                         });
                         pre.appendChild(btn);
                     }
-
-                    const hasExplicitLang = [...block.classList].some(cls =>
-                        cls.startsWith('language-') && cls !== 'language-plaintext' && cls !== 'language-'
-                    );
+                    const hasExplicitLang = [...block.classList].some(cls => cls.startsWith('language-') && cls !== 'language-plaintext' && cls !== 'language-');
                     if (hasExplicitLang) hljs.highlightElement(block);
                 });
             }
@@ -1154,25 +1150,20 @@
                 try {
                     const pathParts = window.location.pathname.split('/');
                     courseName = decodeURIComponent(pathParts.pop() || pathParts.pop());
-
                     if (!courseName || pathParts[pathParts.length - 1] !== 'course') {
                         throw new Error("无效的课程URL。URL格式应为 /course/课程名称");
                     }
-
                     const coursesResponse = await fetch('/api/courses');
                     if (!coursesResponse.ok) throw new Error(`获取课程列表失败: ${coursesResponse.status}`);
                     const allCourses = await coursesResponse.json();
-
                     const courseMeta = allCourses.find(c => c.name === courseName);
                     if (!courseMeta) {
                         throw new Error(`未找到名为 "${courseName}" 的课程。`);
                     }
                     const filename = courseMeta.api_name;
-
                     const markdownResponse = await fetch(`/class/${filename}`);
                     if (!markdownResponse.ok) throw new Error(`获取课程文件失败: ${markdownResponse.status}`);
                     const markdown = await markdownResponse.text();
-
                     document.title = `CodeAlone - ${courseName}`;
                     document.getElementById('doc-title').textContent = courseName;
                     document.getElementById('mobile-doc-title').textContent = courseName;
@@ -1208,24 +1199,17 @@
                                 currentPart = { title: courseName, chapters: [] };
                                 parts.push(currentPart);
                             }
-                            currentChapter = {
-                                title: trimmedLine.substring(3).trim(),
-                                partTitle: currentPart.title,
-                                content: '',
-                                globalIndex: globalChapterIndex++
-                            };
+                            currentChapter = { title: trimmedLine.substring(3).trim(), partTitle: currentPart.title, content: '', globalIndex: globalChapterIndex++ };
                             currentPart.chapters.push(currentChapter);
                             currentContent += line + '\n';
                         } else {
                             currentContent += line + '\n';
                         }
                     }
-
                     if (currentChapter) {
                         currentChapter.content = currentContent;
                         chapters.push(currentChapter);
                     }
-
                     if (chapters.length === 0 && markdown.trim().length > 0) {
                         if (!currentPart) {
                             currentPart = { title: courseName, chapters: [] };
@@ -1237,27 +1221,34 @@
                     }
 
                     generateSidebar();
-
                     let initialIndex = 0;
+                    let initialPosition = 0;
                     if (courseName) {
                         const progressKey = `readingProgress_${courseName}`;
-                        const savedIndexStr = localStorage.getItem(progressKey);
-                        if (savedIndexStr) {
-                            const savedIndex = parseInt(savedIndexStr, 10);
-                            if (!isNaN(savedIndex) && savedIndex >= 0 && savedIndex < chapters.length) {
-                                initialIndex = savedIndex;
-                                if (initialIndex > 0) {
-                                    showToast('已为您跳转到上次阅读的位置');
+                        const savedProgressStr = localStorage.getItem(progressKey);
+                        if (savedProgressStr) {
+                            try {
+                                const savedProgress = JSON.parse(savedProgressStr);
+                                if (savedProgress && typeof savedProgress.index === 'number' && typeof savedProgress.position === 'number' && savedProgress.index >= 0 && savedProgress.index < chapters.length) {
+                                    initialIndex = savedProgress.index;
+                                    initialPosition = savedProgress.position;
+                                    if (initialIndex > 0 || initialPosition > 100) {
+                                        showToast('已为您跳转到上次阅读的位置');
+                                    }
                                 }
+                            } catch (e) {
+                                localStorage.removeItem(progressKey);
                             }
                         }
                     }
 
                     if (chapters.length > 0) {
-                        loadChapter(initialIndex);
+                        loadChapter(initialIndex, initialPosition);
                     } else {
                         docContentEl.innerHTML = `<div class="text-center p-8"><p class="text-gray-500">课程内容为空。</p></div>`;
                     }
+
+                    window.addEventListener('scroll', saveProgress);
 
                     const clearHistoryBtn = document.getElementById('clear-history');
                     if (clearHistoryBtn) {
@@ -1266,8 +1257,7 @@
                                 const progressKey = `readingProgress_${courseName}`;
                                 localStorage.removeItem(progressKey);
                                 showToast('已清除本课程的浏览记录');
-                                loadChapter(0);
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                loadChapter(0, 0);
                             }
                         });
                     }
