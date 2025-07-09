@@ -30,13 +30,13 @@
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { primary: '#3b82f6', secondary: '#64748b' }, borderRadius: { 'none': '0', 'sm': '4px', DEFAULT: '8px', 'md': '12px', 'lg': '16px', 'xl': '20px', '2xl': '24px', '3xl': '32px', 'full': '9999px', 'button': '8px' } } } }
     </script>
     <script>
-        (function () {
-            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-            } else {
-                document.documentElement.classList.remove('dark');
-            }
-        })();
+            (function () {
+                if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            })();
     </script>
     <style>
         @font-face {
@@ -210,6 +210,7 @@
                 opacity: 0;
                 transform: translateY(-0.5rem);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -236,7 +237,7 @@
             outline: none;
             transition: background-color 0.2s;
         }
-        
+
         .doc-content details:not([open]) summary:hover {
             background-color: var(--bg-tertiary);
         }
@@ -252,27 +253,29 @@
             height: 0.5em;
             border-right: 0.15em solid var(--text-tertiary);
             border-bottom: 0.15em solid var(--text-tertiary);
-            transform: rotate(-45deg); /* Points right: > */
+            transform: rotate(-45deg);
+            /* Points right: > */
             transition: transform 0.25s ease-in-out;
             flex-shrink: 0;
         }
 
-        .doc-content details[open] > summary::before {
-            transform: rotate(45deg); /* Points down: v */
+        .doc-content details[open]>summary::before {
+            transform: rotate(45deg);
+            /* Points down: v */
         }
-        
+
         .doc-content details[open] {
             padding: 0 1.25rem 1.25rem 1.25rem;
         }
 
-        .doc-content details[open] > summary {
+        .doc-content details[open]>summary {
             margin: 0 -1.25rem 1rem -1.25rem;
             padding: 0.875rem 1.25rem;
             border-bottom: 1px solid var(--border-color);
             background-color: var(--bg-tertiary);
         }
-        
-        .doc-content details[open] > *:not(summary) {
+
+        .doc-content details[open]>*:not(summary) {
             animation: details-fade-in 0.4s ease-out;
         }
 
@@ -902,13 +905,24 @@
                                 class="py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 w-32 min-[540px]:w-48 sm:w-full text-xs sm:text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-[#262626] rounded-lg border-none focus:ring-2 focus:ring-primary focus:ring-opacity-20 focus:outline-none"
                                 placeholder="搜索文档...">
                         </div>
-                        <button id="theme-toggle"
-                            class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
+                        <button id="clear-history"
+                            class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626] hidden min-[480px]:block mr-1"
+                            title="清除本课程浏览记录">
                             <div
                                 class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-gray-500 dark:text-gray-400">
-                                <i class="ri-sun-line dark:hidden"></i><i class="ri-moon-line hidden dark:block"></i>
+                                <i class="ri-delete-bin-line"></i>
                             </div>
                         </button>
+                        <button id="theme-toggle"
+                            class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
+                            <button id="theme-toggle"
+                                class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
+                                <div
+                                    class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                    <i class="ri-sun-line dark:hidden"></i><i
+                                        class="ri-moon-line hidden dark:block"></i>
+                                </div>
+                            </button>
                     </div>
                 </div>
             </header>
@@ -934,6 +948,32 @@
             let parts = [];
             let chapters = [];
             let currentChapterIndex = 0;
+            let courseName = ''; // Used to store progress key
+
+            function showToast(message) {
+                const existingToast = document.querySelector('.toast-notification');
+                if (existingToast) {
+                    existingToast.remove();
+                }
+
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification fixed top-5 left-1/2 -translate-x-1/2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 text-sm font-medium px-4 py-2 rounded-lg shadow-lg z-50 transition-all duration-300 ease-in-out opacity-0 transform -translate-y-4';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.remove('opacity-0', '-translate-y-4');
+                    toast.classList.add('opacity-100', 'translate-y-0');
+                }, 10);
+
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100', 'translate-y-0');
+                    toast.classList.add('opacity-0', '-translate-y-4');
+                    setTimeout(() => {
+                        if (toast) toast.remove();
+                    }, 300);
+                }, 3000);
+            }
 
             function openSidebar() {
                 sidebar.classList.remove('-translate-x-full');
@@ -1015,6 +1055,11 @@
 
             function loadChapter(index) {
                 currentChapterIndex = index;
+                if (courseName) {
+                    const progressKey = `readingProgress_${courseName}`;
+                    localStorage.setItem(progressKey, index);
+                }
+
                 const chapter = chapters[index];
                 const docContentEl = document.querySelector('.doc-content');
 
@@ -1071,7 +1116,6 @@
 
                 updateActiveSection();
                 initializeCopyButtons();
-                // document.querySelectorAll('.doc-content pre code').forEach(hljs.highlightElement);
             }
 
             function initializeCopyButtons() {
@@ -1109,7 +1153,7 @@
 
                 try {
                     const pathParts = window.location.pathname.split('/');
-                    const courseName = decodeURIComponent(pathParts.pop() || pathParts.pop());
+                    courseName = decodeURIComponent(pathParts.pop() || pathParts.pop());
 
                     if (!courseName || pathParts[pathParts.length - 1] !== 'course') {
                         throw new Error("无效的课程URL。URL格式应为 /course/课程名称");
@@ -1139,17 +1183,12 @@
                     let currentChapter = null;
                     let currentContent = '';
                     let globalChapterIndex = 0;
-
                     let inCodeBlock = false;
                     const lines = markdown.split('\n');
 
                     for (const line of lines) {
                         const trimmedLine = line.trim();
-
-                        if (trimmedLine.startsWith('```')) {
-                            inCodeBlock = !inCodeBlock;
-                        }
-
+                        if (trimmedLine.startsWith('```')) inCodeBlock = !inCodeBlock;
                         if (!inCodeBlock && trimmedLine.startsWith('# ') && !trimmedLine.startsWith('##')) {
                             if (currentChapter) {
                                 currentChapter.content = currentContent;
@@ -1159,8 +1198,7 @@
                             currentPart = { title: trimmedLine.substring(2).trim(), chapters: [] };
                             parts.push(currentPart);
                             currentChapter = null;
-                        }
-                        else if (!inCodeBlock && trimmedLine.startsWith('## ')) {
+                        } else if (!inCodeBlock && trimmedLine.startsWith('## ')) {
                             if (currentChapter) {
                                 currentChapter.content = currentContent;
                                 chapters.push(currentChapter);
@@ -1193,21 +1231,45 @@
                             currentPart = { title: courseName, chapters: [] };
                             parts.push(currentPart);
                         }
-                        currentChapter = {
-                            title: courseName,
-                            partTitle: courseName,
-                            content: markdown,
-                            globalIndex: 0
-                        };
+                        currentChapter = { title: courseName, partTitle: courseName, content: markdown, globalIndex: 0 };
                         currentPart.chapters.push(currentChapter);
                         chapters.push(currentChapter);
                     }
 
                     generateSidebar();
+
+                    let initialIndex = 0;
+                    if (courseName) {
+                        const progressKey = `readingProgress_${courseName}`;
+                        const savedIndexStr = localStorage.getItem(progressKey);
+                        if (savedIndexStr) {
+                            const savedIndex = parseInt(savedIndexStr, 10);
+                            if (!isNaN(savedIndex) && savedIndex >= 0 && savedIndex < chapters.length) {
+                                initialIndex = savedIndex;
+                                if (initialIndex > 0) {
+                                    showToast('已为您跳转到上次阅读的位置');
+                                }
+                            }
+                        }
+                    }
+
                     if (chapters.length > 0) {
-                        loadChapter(0);
+                        loadChapter(initialIndex);
                     } else {
                         docContentEl.innerHTML = `<div class="text-center p-8"><p class="text-gray-500">课程内容为空。</p></div>`;
+                    }
+
+                    const clearHistoryBtn = document.getElementById('clear-history');
+                    if (clearHistoryBtn) {
+                        clearHistoryBtn.addEventListener('click', () => {
+                            if (courseName) {
+                                const progressKey = `readingProgress_${courseName}`;
+                                localStorage.removeItem(progressKey);
+                                showToast('已清除本课程的浏览记录');
+                                loadChapter(0);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }
+                        });
                     }
 
                 } catch (error) {
