@@ -13431,36 +13431,34 @@ void printBookInfo(const Book* bookPtr) {
 
 Book* findOldestBook(Book books[], int size) {
     if (size <= 0) {
-        return nullptr; // 如果数组为空或大小无效，返回空指针
+        return nullptr;
     }
 
-    Book* oldest = &books[0]; // 假设第一本是目前最老的
+    Book* oldest = &books[0];
 
     for (int i = 1; i < size; ++i) {
         if (books[i].publicationYear < oldest->publicationYear) {
-            oldest = &books[i]; // 发现更老的书，更新指针
+            oldest = &books[i];
         }
     }
     return oldest;
 }
 
-
 int main() {
     const int NUM_BOOKS = 3;
     Book library[NUM_BOOKS];
 
-    // 初始化三本书的信息
-    strcpy(library[0].title, "C++ Primer");
-    strcpy(library[0].author, "Stanley B. Lippman");
-    library[0].publicationYear = 2012;
+    strcpy(library[0].title, "原神攻略");
+    strcpy(library[0].author, "mihoyo");
+    library[0].publicationYear = 2022;
 
-    strcpy(library[1].title, "The C Programming Language");
-    strcpy(library[1].author, "Brian W. Kernighan");
-    library[1].publicationYear = 1988;
+    strcpy(library[1].title, "崩铁攻略");
+    strcpy(library[1].author, "mihomo");
+    library[1].publicationYear = 2020;
 
-    strcpy(library[2].title, "Effective C++");
-    strcpy(library[2].author, "Scott Meyers");
-    library[2].publicationYear = 2005;
+    strcpy(library[2].title, "赛博朋克2078");
+    strcpy(library[2].author, "mihoyo");
+    library[2].publicationYear = 2078;
 
     cout << "--- 图书馆所有藏书 ---" << endl;
     for (int i = 0; i < NUM_BOOKS; ++i) {
@@ -13468,7 +13466,6 @@ int main() {
         cout << "--------------------" << endl;
     }
 
-    // 查找并打印最老的书
     Book* oldestBookPtr = findOldestBook(library, NUM_BOOKS);
     
     cout << "\n--- 年份最久远的书籍 ---" << endl;
@@ -13479,12 +13476,9 @@ int main() {
 ```
 
 ##### 答案解析
-
-本题综合考察了本章的大部分核心知识点：
-1.  **结构体定义与数组**：我们定义了 `Book` 结构体，并在 `main` 函数中创建了一个 `Book` 类型的数组 `library` 来管理一组数据。
-2.  **结构体指针与箭头运算符 `->`**：`printBookInfo` 函数和 `findOldestBook` 函数都使用了结构体指针。特别是在 `printBookInfo` 中，我们使用 `bookPtr->title` 的形式来访问指针所指向的结构体成员，这是本章的重点。
-3.  **向函数传递结构体指针**：为了效率和能够返回特定元素地址，我们将结构体数组或单个结构体的地址（指针）传递给函数。例如，`findOldestBook` 返回一个指向数组内部元素的指针，这避免了复制整个结构体。
-4.  **const在指针中的应用**：`printBookInfo` 的参数被声明为 `const Book*`，这是一种非常好的编程实践。它向函数的调用者承诺，这个函数只会读取数据，绝不会修改指针所指向的 `Book` 对象，增强了代码的安全性。
+2.  `printBookInfo` 函数和 `findOldestBook` 函数都使用了结构体指针。特别是在 `printBookInfo` 中，我们使用 `bookPtr->title` 的形式来访问指针所指向的结构体成员。
+3.  为了效率和能够返回特定元素地址，我们将结构体数组或单个结构体的地址（指针）传递给函数。例如`findOldestBook` 返回一个指向数组内部元素的指针，避免复制整个结构体。
+4.  **const在指针中的应用**：`printBookInfo` 的参数被声明为 `const Book*`，这是一种非常好的编程实践。它向函数的调用者承诺这个函数是只读的，不会修改指针所指向的 `Book` 对象。
 
 ---
 
@@ -13495,15 +13489,13 @@ int main() {
 定义一个表示二维坐标点的结构体 `Point`，包含两个 `double` 类型的成员 `x` 和 `y`。然后编写三个不同版本的 `movePoint` 函数，用于将一个点在x和y方向上各移动一段距离 `dx` 和 `dy`：
 
 1.  `void movePointByValue(Point p, double dx, double dy)`：通过**值传递**接收 `Point` 结构体。函数内部对点进行移动操作，并打印移动后的坐标。
-2.  `void movePointByPointer(Point* p, double dx, double dy)`：通过**指针传递**接收 `Point` 结构体。函数内部对指针指向的点进行移动。
-3.  `void movePointByReference(Point& p, double dx, double dy)`：通过**引用传递**接收 `Point` 结构体。函数内部对引用的点进行移动。
+2.  `void movePointByPointer(Point* p, double dx, double dy)`：通过**指针传递**接收 `Point` 结构体。函数内部对指针指向的点进行移动（修改x和y的值）。
+3.  `void movePointByReference(Point& p, double dx, double dy)`：通过**引用传递**接收 `Point` 结构体。函数内部对引用的点进行移动（修改x和y的值。
 
-在 `main` 函数中，创建一个 `Point` 对象 `p1` 并初始化为 `{10.0, 20.0}`。然后依次进行以下操作，并观察和解释每次操作后 `p1` 的值：
+在 `main` 函数中，创建一个 `Point` 对象 `p1` 并初始化为 `{10.0, 20.0}`。然后依次进行以下操作，并观察每次操作后 `p1` 的值：
 *   调用 `movePointByValue`。
 *   调用 `movePointByPointer`。
 *   调用 `movePointByReference`。
-
-**目的**：通过本题，深刻理解三种不同传递方式对函数外部原始变量的影响。
 
 <details>
 <summary>点击查看答案与解析</summary>
@@ -13515,7 +13507,6 @@ int main() {
 
 using namespace std;
 
-// 定义Point结构体
 struct Point {
     double x;
     double y;
@@ -13543,7 +13534,6 @@ void movePointByReference(Point& p, double dx, double dy) {
     cout << "  (函数内部) 引用传递后，点变为: (" << p.x << ", " << p.y << ")" << endl;
 }
 
-// 辅助函数，打印Point
 void printPoint(const char* label, const Point& p) {
     cout << label << "当前坐标: (" << p.x << ", " << p.y << ")" << endl;
 }
@@ -13556,21 +13546,16 @@ int main() {
     printPoint("初始状态: ", p1);
     cout << "------------------------------------------" << endl;
 
-    // --- 测试值传递 ---
     cout << "调用 movePointByValue..." << endl;
     movePointByValue(p1, dx, dy);
     printPoint("调用后，p1 ", p1);
-    cout << "结论：原始对象 p1 未被修改。" << endl;
     cout << "------------------------------------------" << endl;
     
-    // --- 测试指针传递 ---
     cout << "调用 movePointByPointer..." << endl;
     movePointByPointer(&p1, dx, dy);
     printPoint("调用后，p1 ", p1);
-    cout << "结论：原始对象 p1 已被修改。" << endl;
     cout << "------------------------------------------" << endl;
 
-    // --- 测试引用传递 ---
     // 先将 p1 移回，方便观察
     p1.x -= dx;
     p1.y -= dy; 
@@ -13578,7 +13563,6 @@ int main() {
     cout << "调用 movePointByReference..." << endl;
     movePointByReference(p1, dx, dy);
     printPoint("调用后，p1 ", p1);
-    cout << "结论：原始对象 p1 再次被修改。" << endl;
     cout << "------------------------------------------" << endl;
 
     return 0;
@@ -13591,8 +13575,6 @@ int main() {
 1.  **值传递 (`movePointByValue`)**：当 `p1` 以值传递给函数时，C++会创建一个 `p1` 的**完整副本** `p`。函数内的所有操作都是针对这个副本 `p` 的，因此无论函数内部如何修改 `p`，都丝毫不会影响到 `main` 函数中的原始对象 `p1`。这种方式简单，但当结构体很大时，复制开销会很大。
 2.  **指针传递 (`movePointByPointer`)**：我们将 `p1` 的内存地址 (`&p1`) 传递给函数。函数通过这个地址（指针）直接访问并修改了 `main` 函数中的 `p1` 对象本身。因此，函数执行完毕后，`p1` 的值发生了永久性改变。这是C语言中修改函数外部变量的传统方式。
 3.  **引用传递 (`movePointByReference`)**：引用是C++引入的特性，可以看作是变量的一个“别名”。当 `p1` 以引用传递时，函数内的 `p` 就是 `p1` 本身，没有任何复制发生。对 `p` 的任何操作都等同于直接对 `p1` 操作。因此，`p1` 的值也被修改了。引用传递在语法上比指针更简洁（使用 `.` 而非 `->`），且同样高效。
-
-通过这个实验，你可以清晰地看到，只有**指针传递**和**引用传递**才能实现对函数外部结构体变量的修改。
 
 </details>
 
