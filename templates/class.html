@@ -905,14 +905,6 @@
                                 class="py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 w-32 min-[540px]:w-48 sm:w-full text-xs sm:text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-[#262626] rounded-lg border-none focus:ring-2 focus:ring-primary focus:ring-opacity-20 focus:outline-none"
                                 placeholder="搜索文档...">
                         </div>
-                        <button id="clear-history"
-                            class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626] hidden min-[480px]:block mr-1"
-                            title="清除本课程浏览记录">
-                            <div
-                                class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-gray-500 dark:text-gray-400">
-                                <i class="ri-delete-bin-line"></i>
-                            </div>
-                        </button>
                         <button id="theme-toggle"
                             class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
                             <button id="theme-toggle"
@@ -1112,7 +1104,6 @@
                 const behavior = positionToRestore === 0 ? 'smooth' : 'auto';
                 const top = positionToRestore !== null ? positionToRestore : 0;
 
-                // Use a short delay to ensure DOM is ready for scrolling
                 setTimeout(() => {
                     window.scrollTo({ top, behavior });
                 }, 50);
@@ -1249,18 +1240,6 @@
                     }
 
                     window.addEventListener('scroll', saveProgress);
-
-                    const clearHistoryBtn = document.getElementById('clear-history');
-                    if (clearHistoryBtn) {
-                        clearHistoryBtn.addEventListener('click', () => {
-                            if (courseName) {
-                                const progressKey = `readingProgress_${courseName}`;
-                                localStorage.removeItem(progressKey);
-                                showToast('已清除本课程的浏览记录');
-                                loadChapter(0, 0);
-                            }
-                        });
-                    }
 
                 } catch (error) {
                     docContentEl.innerHTML = `<div class="text-center p-6 sm:p-8"><h1 class="text-xl sm:text-2xl font-bold text-red-600 dark:text-red-400">内容加载失败</h1><p class="mt-3 sm:mt-4 text-gray-500 dark:text-gray-400 text-sm sm:text-base">无法加载课程内容，请检查URL或稍后再试。</p><p class="mt-2 text-xs sm:text-sm text-secondary dark:text-tertiary font-mono bg-tertiary dark:bg-code-bg p-2 rounded-md">${error.toString()}</p></div>`;
