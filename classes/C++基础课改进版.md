@@ -557,6 +557,27 @@ int score;      // 声明
 score = 100;    // 赋值
 ```
 
+#### 一次声明多个变量
+
+除了逐行声明，C++还允许你在一条语句中声明多个**相同类型**的变量，只需要用**逗号**`,`将它们隔开即可。
+
+语法格式：`数据类型 变量名1, 变量名2, 变量名3;`
+
+```cpp
+int a, b, c; // 同时声明三个int类型的变量
+double x_coord, y_coord, z_coord; // 同时声明三个double类型的变量
+```
+
+你还可以在同一行声明中对部分或全部变量进行初始化。
+
+```cpp
+// 声明三个变量，并初始化其中两个
+int score1 = 100, score2, score3 = 95; 
+```
+在这里，`score1`被初始化为100，`score3`被初始化为95，而`score2`只被声明，其值仍然是未定义的垃圾值。
+
+**编程建议**：虽然这种写法很紧凑，但为了代码的清晰度和可维护性，许多编程风格指南推荐**每行只声明一个变量**。这样做更容易为每个变量添加注释，也更方便阅读。
+
 ---
 
 #### 变量的赋值
@@ -14206,6 +14227,236 @@ int main() {
     return 0;
 }
 ```
+
+---
+
+### 本章课后习题
+#### 习题一：实现学生信息的深拷贝
+
+**题目描述**
+
+在程序中，我们需要管理学生信息。请定义以下两个结构体：
+1.  一个 `FullName` 结构体，包含两个成员：`char* firstName` 和 `char* lastName`
+2.  一个 `Student` 结构体，它**嵌套**了 `FullName` 结构体，并包含一个额外的成员：`int studentID`
+
+你的任务是：
+1.  在 `main` 函数中，创建一个 `Student` 变量 `studentA`。动态地为 `studentA` 的 `firstName` 和 `lastName` 分配内存，并使用 `strcpy` 初始化它们（例如，"John", "Doe", ID 12345）。
+2.  创建一个新的 `Student` 变量 `studentB`。
+3.  编写一个函数 `void deepCopyStudent(Student& dest, const Student& src)`，该函数执行**深拷贝**。也就是说，它不仅要复制 `studentID`，还必须为 `dest` 的 `firstName` 和 `lastName` **重新分配新的内存**，然后将 `src` 的姓名内容拷贝过去。
+4.  在 `main` 函数中，调用 `deepCopyStudent` 将 `studentA` 的内容深拷贝到 `studentB`。之后，修改 `studentA` 的 `firstName` (例如，改为 "Johnny")。
+5.  分别打印 `studentA` 和 `studentB` 的信息，以验证 `studentA` 的修改没有影响到 `studentB`。
+6.  最后，务必为 `studentA` 和 `studentB` 中所有动态分配的内存编写清理代码，避免内存泄漏。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+struct FullName {
+    char* firstName;
+    char* lastName;
+};
+
+struct Student {
+    FullName name;
+    int studentID;
+};
+
+void deepCopyStudent(Student& dest, const Student& src) {
+    dest.studentID = src.studentID;
+
+    // 加1是为了存放字符串末尾的 '\0'
+    dest.name.firstName = new char[strlen(src.name.firstName) + 1];
+    dest.name.lastName = new char[strlen(src.name.lastName) + 1];
+
+    strcpy(dest.name.firstName, src.name.firstName);
+    strcpy(dest.name.lastName, src.name.lastName);
+}
+
+void printStudent(const Student& s) {
+    cout << "ID: " << s.studentID 
+         << ", 姓名: " << s.name.firstName << " " << s.name.lastName << endl;
+}
+
+int main() {
+    Student studentA;
+    studentA.studentID = 12345;
+    
+    const char* fNameA = "John";
+    const char* lNameA = "Doe";
+    studentA.name.firstName = new char[strlen(fNameA) + 1];
+    studentA.name.lastName = new char[strlen(lNameA) + 1];
+    strcpy(studentA.name.firstName, fNameA);
+    strcpy(studentA.name.lastName, lNameA);
+
+    cout << "初始状态:" << endl;
+    printStudent(studentA);
+    
+    Student studentB;
+    studentB.name.firstName = nullptr; 
+    studentB.name.lastName = nullptr;
+    
+    deepCopyStudent(studentB, studentA);
+    
+    cout << "拷贝后，studentB 的信息:" << endl;
+    printStudent(studentB);
+
+    cout << "\n修改 studentA 的名字为 'Johnny'..." << endl;
+    strcpy(studentA.name.firstName, "Johnny");
+
+    cout << "\n修改后，各自的信息:" << endl;
+    cout << "Student A: ";
+    printStudent(studentA);
+    cout << "Student B: ";
+    printStudent(studentB);
+
+    delete[] studentA.name.firstName;
+    delete[] studentA.name.lastName;
+    delete[] studentB.name.firstName;
+    delete[] studentB.name.lastName;
+
+    studentA.name.firstName = nullptr;
+    studentA.name.lastName = nullptr;
+    studentB.name.firstName = nullptr;
+    studentB.name.lastName = nullptr;
+    
+    cout << "清理完毕。" << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析：
+1.  `FullName` 的成员是 `char*` 指针。如果直接使用 `studentB = studentA;`（浅拷贝），`studentB` 和 `studentA` 的姓名指针将指向**同一块内存**。修改任何一个，另一个都会受影响，并且在析构时会导致同一块内存被释放两次，引发程序崩溃。
+2.  `deepCopyStudent` 函数是本题的重点。它先为目标结构体的指针成员**分配了新的独立内存**，然后才进行内容的复制。这样就确保了两个结构体对象在内存上是完全独立的。这是处理包含动态资源（如指针）的类或结构体时必须掌握的知识。
+
+---
+
+#### 习题二：构建和管理一个简单的链表
+
+**题目描述**
+
+使用**自引用结构体**来创建一个简单的单向链表，用于存储一系列整数。
+
+请定义一个 `Node` 结构体，它应包含：
+*   `data` (一个整数)
+*   `next` (一个指向 `Node` 类型结构体的指针)
+
+然后，实现以下三个核心函数来操作这个链表：
+1.  `void appendNode(Node*& head, int value)`: 在链表的**末尾**添加一个包含 `value` 的新节点。
+2.  `void printList(const Node* head)`:从头到尾遍历链表，打印出每个节点的 `data` 值。
+3.  `void deleteList(Node*& head)`: 负责释放整个链表占用的所有动态内存。它需要遍历链表，逐个 `delete` 每个节点，并将头指针 `head` 设置为 `nullptr` 以防悬垂。
+
+在 `main` 函数中，按顺序执行以下操作：
+*   创建一个 `Node` 指针 `myList` 并初始化为 `nullptr`。
+*   使用 `appendNode` 函数向链表中添加整数 10, 20, 30。
+*   调用 `printList` 打印链表的当前内容。
+*   调用 `deleteList` 清理链表。
+*   再次调用 `printList` 确认链表已被清空。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+struct Node {
+    int data;
+    Node* next;
+};
+
+void appendNode(Node*& head, int value) {
+    // 1. 创建新节点并初始化
+    Node* newNode = new Node;
+    newNode->data = value;
+    newNode->next = nullptr;
+
+    // 2. 如果链表为空，新节点就是头节点
+    if (head == nullptr) {
+        head = newNode;
+        return;
+    }
+
+    // 3. 如果链表不为空，找到最后一个节点
+    Node* current = head;
+    while (current->next != nullptr) {
+        current = current->next;
+    }
+
+    // 4. 将新节点连接到末尾
+    current->next = newNode;
+}
+
+void printList(const Node* head) {
+    cout << "链表内容: [ ";
+    const Node* current = head;
+    while (current != nullptr) {
+        cout << current->data << " ";
+        current = current->next; // 移动到下一个节点
+    }
+    cout << "]" << endl;
+}
+
+void deleteList(Node*& head) {
+    Node* current = head;
+    Node* nextNode = nullptr;
+
+    while (current != nullptr) {
+        nextNode = current->next; // 保存下一个节点的地址
+        delete current;           // 删除当前节点
+        current = nextNode;       // 移动到下一个节点
+    }
+
+    head = nullptr; // 将原始的头指针设为nullptr，防止悬垂指针
+}
+
+int main() {
+    Node* myList = nullptr;
+
+    cout << "向链表中添加 10, 20, 30..." << endl;
+    appendNode(myList, 10);
+    appendNode(myList, 20);
+    appendNode(myList, 30);
+
+    printList(myList);
+
+    cout << "\n删除整个链表..." << endl;
+    deleteList(myList);
+
+    cout << "删除后，再次打印链表:" << endl;
+    printList(myList);
+
+    if (myList == nullptr) {
+        cout << "链表已成功清空。" << endl;
+    }
+
+    return 0;
+}
+```
+
+##### 答案解析
+
+**一定要动手写一遍正确的代码，不看答案！这非常有助于你理解指针的使用。**
+
+1.  `Node` 结构体内部包含一个指向 `Node` 自身的指针 `next`。这是构建链式数据结构（如链表、树）的根本。
+2.  每个新节点都是通过 `new Node` 在堆上动态创建的。`appendNode` 函数展示了如何将这些独立的节点通过 `next` 指针串联起来，形成一个逻辑上的序列。
+3.  `printList` 和 `deleteList` 都使用了经典的链表遍历模式：`while (current != nullptr) { ...; current = current->next; }`。这是所有链表操作的基础。
+4.  `deleteList` 函数展示了如何正确地释放链表内存。关键在于需要一个临时指针（`nextNode`）来保存下一个节点的地址，否则在 `delete current` 之后，就无法找到下一个节点了。
+5.  **指针的引用 (`*&`)**：`appendNode` 和 `deleteList` 的 `head` 参数是 `Node*&` 类型。这允许函数直接修改调用者（`main` 函数）的 `myList` 指针变量。这在处理链表头部的插入或整个链表的删除时非常有用和常见。如果你还不明白，请看详细解释：
+
+> `Node*& head` 是一个**对 `Node` 类型指针的引用**。这是一个引用传递。简单来说，它不是传递指针的副本，而是将函数内的 `head` 变量作为原始指针（`myList`）的一个**别名**。这使得函数能够直接、永久地修改原始指针。这在两种情况下至关重要：(1) 当链表为空时，`appendNode` 函数需要将 `main` 中的 `nullptr` 指针改为指向新创建的第一个节点；(2) 当 `deleteList` 函数清空整个链表后，需要将 `main` 中的指针设置回 `nullptr` 以防止其成为悬垂指针。**当你想用`Node* head`作为参数时会发生什么？**你在调用函数时发生了**值传递**，创建了原始指针（`myList`）的拷贝，使得你无法在函数内部修改原始指针。
+
+</details>
 
 ## 第23章：共用体和枚举
 
