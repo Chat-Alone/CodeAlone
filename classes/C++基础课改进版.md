@@ -12891,6 +12891,7 @@ int main() {
 1.  `createArray` 函数在堆上使用 `new[]` 创建了一个数组，其生命周期独立于函数本身。函数返回这个指向堆内存的指针，使得 `main` 函数可以接管并使用这个数组。这是返回指针的正确用法（返回指向堆内存的指针）。
 2.  `reverseArray` 函数接收一个指针 `arr`。通过这个指针，函数可以直接访问和修改 `main` 函数中 `myArray` 指向的内存区域，实现了对函数外部数据的修改。代码中使用了两个指针 `start` 和 `end` 来完成原地反转，这叫**双指针算法**，也叫“首尾对撞指针”或“对撞双指针”。
 3.  我们在堆上创建了数组，因此必须在 `main` 函数中使用 `delete[]` 来释放内存。
+</details>
 
 ---
 
@@ -12966,6 +12967,8 @@ int main() {
 1.  **函数指针的定义**：题目明确要求了 `applyToEachElement` 的第三个参数是一个函数指针 `void (*operation)(int&)`。这里的 `*operation` 表示它是一个指针，而 `void` 和 `(int&)` 分别定义了它所指向的函数的返回类型和参数列表。
 2.  **函数指针作为参数（回调）**：`applyToEachElement` 函数本身不关心具体要执行什么操作，它只负责遍历数组的逻辑。具体的操作由调用者通过传递不同的函数（`incrementElement` 或 `squareElement`）来“注入”。这种将函数作为参数传递以定制另一个函数行为的模式，就是回调。
 3.  **逻辑解耦**：通过回调机制，我们将数据遍历的通用逻辑（在 `applyToEachElement` 中）与具体的数据处理逻辑（在 `incrementElement` 和 `squareElement` 中）分离开来，使得代码更加模块化、灵活且易于扩展。如果未来需要对数组元素执行新操作（如“减半”），我们只需再写一个新函数，而无需修改 `applyToEachElement`。
+
+</details>
 
 ---
 
@@ -13789,6 +13792,8 @@ int main() {
 4.  **const在指针中的应用**：`printBookInfo` 的参数被声明为 `const Book*`，这是一种非常好的编程实践。它向函数的调用者承诺这个函数是只读的，不会修改指针所指向的 `Book` 对象。
 
 ---
+
+</details>
 
 #### 习题二：结构体作为函数参数——值、指针与引用的对比
 
@@ -15551,6 +15556,161 @@ int main() {
 }
 ```
 
+---
+
+### 本章课后习题
+#### 习题一：学生信息管理器
+
+**题目描述**
+
+请定义一个名为 `Student` 的类，用于存储和显示学生的基本信息。这个类应该包含以下特性：
+
+1.  **私有成员变量 (private):**
+    *   一个 `std::string` 类型的变量 `name`，用于存储学生姓名。
+    *   一个 `int` 类型的变量 `studentID`，用于存储学号。
+    *   一个 `double` 类型的变量 `score`，用于存储成绩。
+2.  **公有成员函数 (public):**
+    *   一个名为 `setData` 的函数，它接收姓名、学号和成绩作为参数，并用这些参数来初始化对象的成员变量。
+    *   一个名为 `printData` 的函数，它不接收任何参数，负责在屏幕上按固定格式打印出该学生的姓名、学号和成绩。
+
+在 `main` 函数中，创建一个 `Student` 类的对象，调用 `setData` 函数为其设置信息，然后调用 `printData` 函数将信息显示出来。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Student {
+private:
+    string name;
+    int studentID;
+    double score;
+
+public:
+    // 设置学生信息的成员函数
+    void setData(string n, int id, double s) {
+        name = n;
+        studentID = id;
+        score = s;
+    }
+
+    // 打印学生信息的成员函数
+    void printData() {
+        cout << "姓名: " << name << endl;
+        cout << "学号: " << studentID << endl;
+        cout << "成绩: " << score << endl;
+    }
+};
+
+int main() {
+    // 1. 实例化对象
+    Student stu1;
+
+    // 2. 设置数据
+    stu1.setData("张三", 2024001, 95.5);
+
+    // 3. 打印数据
+    stu1.printData();
+
+    return 0;
+}
+```
+
+</details>
+
+---
+
+#### 习题二：`this` 指针与 `const` 成员函数的应用
+
+**题目描述**
+
+设计一个 `Rectangle` (矩形) 类。这个类需要满足以下要求：
+
+1.  **私有成员变量 (private):**
+    *   `double width`: 矩形的宽度。
+    *   `double height`: 矩形的高度。
+2.  **公有成员函数 (public):**
+    *   `void setDimensions(double width, double height)`: 这个函数的参数名与成员变量名完全相同。请使用 `this` 指针来正确地为成员变量赋值。
+    *   `double getArea() const`: 这个函数计算并返回矩形的面积。因为它不修改任何成员变量，所以将它声明为 `const` 成员函数。
+    *   `void scale(double factor)`: 这个函数将矩形的宽和高都乘以一个 `factor` 因子，从而改变矩形的大小。
+    *   `void printDimensions() const`: 打印矩形的宽和高，同样，它是一个不修改对象状态的 `const` 成员函数。
+
+在 `main` 函数中，完成以下操作：
+1.  创建一个普通的 `Rectangle` 对象 `rect1`。
+2.  使用 `setDimensions` 设置其宽和高，然后打印它的尺寸和面积。
+3.  调用 `scale` 函数将其放大2倍，再次打印其尺寸和面积。
+4.  创建一个 `const Rectangle` 对象 `constRect`，并使用 `rect1` 对其进行初始化，然后尝试调用 `printDimensions` 和 `getArea` 函数。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Rectangle {
+private:
+    double width;
+    double height;
+
+public:
+    void setDimensions(double width, double height) {
+        this->width = width;
+        this->height = height;
+    }
+
+    double getArea() const {
+        return width * height;
+    }
+
+    void scale(double factor) {
+        width *= factor;
+        height *= factor;
+    }
+    
+    void printDimensions() const {
+        cout << "宽度: " << width << ", 高度: " << height << endl;
+    }
+};
+
+int main() {
+    Rectangle rect1;
+    rect1.setDimensions(10.0, 5.0);
+    cout << "初始状态: ";
+    rect1.printDimensions();
+    cout << "初始面积: " << rect1.getArea() << endl;
+
+    rect1.scale(2.0);
+    cout << "放大后: ";
+    rect1.printDimensions();
+    cout << "放大后面积: " << rect1.getArea() << endl;
+
+
+    const Rectangle constRect = rect1;
+    cout << "const 对象状态: ";
+    constRect.printDimensions();
+    cout << "const 对象面积: " << constRect.getArea() << endl;
+    
+    // 下面这行代码如果取消注释，会导致编译错误
+    // constRect.scale(3.0); 
+    // 错误信息通常是: "passing 'const Rectangle' as 'this' argument discards qualifiers"
+    // 因为不能在 const 对象上调用非 const 成员函数
+
+    return 0;
+}
+```
+
+</details>
+
 ## 第25章：构造函数与析构函数
 
 **学习目标**：在上一章，我们学会了创建对象，然后调用一个`set...`之类的函数来给它赋值。但这种方式有两个问题：
@@ -16127,6 +16287,210 @@ MyString析构 for 'Hello C++'
 MyString析构 for 'Hello C++'
 MyString析构 for ''
 ```
+
+---
+
+### 本章课后习题
+#### 习题一：书本信息类与成员初始化列表
+
+**题目描述**
+
+设计一个 `Book` 类，用于存储书本信息。该类需要满足以下条件：
+
+1.  **私有成员变量 (private):**
+    *   一个 `char*` 类型的指针 `title`，用于指向动态分配的内存来存储书名。
+    *   一个 `const int` 类型的常量 `ISBN`，用于存储书本的国际标准书号（一旦设置就不能修改）。
+    *   一个 `double` 类型的变量 `price`，用于存储价格。
+
+2.  **公有成员 (public):**
+    *   一个**构造函数** `Book(const char* t, int isbn_val, double p)`，它接收书名、ISBN和价格作为参数。在此构造函数中：
+        *   **必须**使用**成员初始化列表**来初始化 `ISBN` 和 `price` 成员。
+        *   需要为 `title` 动态分配足够的内存，并把传入的书名字符串 `t` 复制进去。
+    *   一个**析构函数** `~Book()`，它需要负责释放构造函数中为 `title` 分配的动态内存，为了便于观察，在释放后打印一条消息，如 "Book '书名' destroyed."。
+    *   一个 `const` 成员函数 `display()`，用于按格式打印书本的所有信息。
+
+在 `main` 函数中，创建一个 `Book` 对象，并调用其 `display()` 方法。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+#include <cstring>  // 为了strcpy
+
+using namespace std;
+
+class Book {
+private:
+    char* title;
+    const int ISBN;
+    double price;
+
+public:
+    Book(const char* t, int isbn_val, double p) : ISBN(isbn_val), price(p) {
+        cout << "Constructor called for Book '" << t << "'" << endl;
+        title = new char[strlen(t) + 1]; // +1 为了存储结尾的 '\0'
+        strcpy(title, t);
+    }
+
+    ~Book() {
+        cout << "Destructor called. Book '" << title << "' destroyed." << endl;
+        delete[] title; // 使用 delete[] 因为我们用了 new[]
+    }
+
+    void display() const {
+        cout << "--- Book Details ---" << endl;
+        cout << "Title: " << title << endl;
+        cout << "ISBN: " << ISBN << endl;
+        cout << "Price: " << price << "元" << endl;
+        cout << "--------------------" << endl;
+    }
+};
+
+int main() {
+    Book myBook("C++ Primer", 97871212, 128.0);
+    myBook.display();
+    return 0;
+}
+```
+
+##### 答案解析
+
+本题主要考察以下几个核心知识点：
+1.  对于 `const` 成员（如 `ISBN`），它**必须在创建对象时被初始化**，并且之后**不能再被赋值**。成员初始化列表是完成此任务的唯一方式。同时，它对于普通成员（如 `price`）也是推荐的初始化方式，因为它比在构造函数体内赋值更高效。
+2.  构造函数是初始化对象的理想场所，这也包括为对象获取所需的系统资源，例如本例中通过 `new[]` 为 `title` 申请堆内存。
+3.  析构函数在对象销毁时自动调用，它的核心职责是“清理”工作，即释放对象在生命周期内获取的资源。这里，我们使用 `delete[]` 来释放为 `title` 分配的内存，完美地与构造函数中的 `new[]` 配对，防止了内存泄漏。
+4.  **RAII (Resource Acquisition Is Initialization)**：虽然没有明确提出这个术语，但这道题是 RAII 思想的一个典型入门示例。资源（内存）的获取与对象的初始化绑定（在构造函数中），资源的释放与对象的销毁绑定（在析构函数中）。
+
+</details>
+
+---
+
+#### 习题二：实现一个安全的动态数组类
+
+**题目描述**
+
+默认的拷贝构造函数执行的是“浅拷贝”，这在类管理动态内存时会引发严重问题。请你创建一个名为 `DynamicData` 的类来演示如何通过**深拷贝**解决这个问题。
+
+`DynamicData` 类的要求如下：
+
+1.  **私有成员变量 (private):**
+    *   `int* data`：指向一个在堆上动态分配的整数数组。
+    *   `int size`：记录数组的大小。
+2.  **公有成员 (public):**
+    *   **构造函数** `DynamicData(int s)`：接收一个整数 `s` 作为大小，动态分配一个包含 `s` 个整数的数组，并将其所有元素初始化为0。
+    *   **析构函数** `~DynamicData()`：释放 `data` 指向的动态数组内存。为了便于观察，请在构造和析构时打印信息。
+    *   **拷贝构造函数** `DynamicData(const DynamicData& other)`：这是本题的核心。你需要手动实现它，以完成**深拷贝**。具体来说，它应该为新对象分配一块**新的、独立的**内存，然后将 `other` 对象数组中的数据**逐个复制**过来。
+    *   一个辅助函数 `setData(int index, int value)` 用于修改数组中特定位置的值。
+    *   一个辅助的 `const` 成员函数 `printData()` 用于打印数组内容。
+
+在 `main` 函数中，执行以下步骤来验证你的深拷贝实现：
+1.  创建一个 `DynamicData` 对象 `d1`，大小为 3。
+2.  使用 `setData` 修改 `d1` 中某个元素的值。
+3.  通过 `d1` 初始化另一个对象 `d2` (即 `DynamicData d2 = d1;`)，这会调用你的拷贝构造函数。
+4.  修改 `d1` 中某个元素的值。
+5.  分别打印 `d1` 和 `d2` 的内容，观察 `d2` 的内容是否受到 `d1` 后续修改的影响。程序结束时，观察析构函数是否为两个对象都正确执行。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class DynamicData {
+private:
+    int* data;
+    int size;
+
+public:
+    // 构造函数
+    DynamicData(int s) : size(s) {
+        data = new int[size];
+        for (int i = 0; i < size; ++i) {
+            data[i] = 0;
+        }
+        cout << "Constructor called. Allocated memory for " << size << " integers at " << data << endl;
+    }
+
+    // 析构函数
+    ~DynamicData() {
+        cout << "Destructor called. Deleting memory at " << data << endl;
+        delete[] data;
+    }
+
+    // 拷贝构造函数
+    DynamicData(const DynamicData& other) : size(other.size) {
+        data = new int[size];
+        
+        for (int i = 0; i < size; ++i) {
+            this->data[i] = other.data[i];
+        }
+        cout << "COPY Constructor called. Deep copied " << size << " integers. New memory at " << data << endl;
+    }
+
+    void setData(int index, int value) {
+        if (index >= 0 && index < size) {
+            data[index] = value;
+        }
+    }
+
+    void printData() const {
+        cout << "Data at " << data << ": [ ";
+        for (int i = 0; i < size; ++i) {
+            cout << data[i] << " ";
+        }
+        cout << "]" << endl;
+    }
+};
+
+int main() {
+    DynamicData d1(3);
+    d1.setData(0, 100);
+    d1.setData(1, 200);
+    cout << "d1 initial state: ";
+    d1.printData();
+    cout << endl;
+
+    DynamicData d2 = d1; 
+    cout << "d1 state after copy: ";
+    d1.printData();
+    cout << "d2 state after copy: ";
+    d2.printData();
+    cout << endl;
+    
+    d1.setData(0, 999);
+    cout << "d1 state after modification: ";
+    d1.printData();
+    cout << "d2 state: ";
+    d2.printData();
+    cout << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+
+本题旨在让你深刻理解**浅拷贝的危害**与**深拷贝的必要性**。
+
+1.  **问题根源（浅拷贝）**：如果不由我们自己提供拷贝构造函数，编译器会生成一个默认的。这个默认版本只会简单地复制成员变量的值。对于 `int size` 这没问题，但对于指针 `int* data`，它只会复制指针的地址，而不是指针指向的内容。这会导致两个 `DynamicData` 对象（如 `d1` 和 `d2`）内部的 `data` 指针指向**同一块**堆内存。
+
+2.  **浅拷贝的后果**：
+    *   **数据非独立**：修改 `d1` 的数据会立刻影响到 `d2`，因为它们共享数据。这违背了对象封装和独立的原则。
+    *   **重复释放（Double Free）**：当 `main` 函数结束，`d2` 先被析构，它会 `delete[]` 掉那块共享内存。随后 `d1` 被析构，它会尝试再次 `delete[]` **同一块已经被释放的内存**，这通常会导致程序崩溃。
+
+3.  **解决方案（深拷贝）**：我们手动实现的拷贝构造函数执行了深拷贝：
+    *   `data = new int[size];` 为新对象（`d2`）在堆上申请了一块**全新的**内存空间。
+    *   随后的 `for` 循环将源对象（`d1`）内存中的**内容**，一个一个地复制到新对象的这块新内存中。
+    *   这样，`d1` 和 `d2` 就拥有了各自独立的数据副本。修改一个不会影响另一个，并且在析构时，它们各自释放自己的内存，程序安全运行。观察程序的输出，你会看到构造和析构的地址是不同的，这正是深拷贝的证明。
+
+</details>
 
 ## 第26章：运算符重载
 
@@ -16836,6 +17200,204 @@ int main() {
 4       5       6
 ```
 
+---
+
+### 本章课后习题
+#### 习题一：二维向量类与运算符重载
+
+**题目描述**
+
+创建一个 `Vector2D` 类来表示一个二维平面上的向量。
+
+1.  **成员变量 (private):**
+    *   `double x, y;` 分别表示向量在x和y轴上的分量。
+2.  **成员函数与重载 (public):**
+    *   一个构造函数 `Vector2D(double x_val = 0.0, double y_val = 0.0)`，可以初始化向量。
+    *   重载加法运算符 `+`，使其能够实现两个 `Vector2D` 对象的相加，返回一个新的 `Vector2D` 对象。例如：`Vector2D v3 = v1 + v2;`。请将其实现为**成员函数**。
+    *   重载流插入运算符 `<<`，使其能够通过 `std::cout` 直接打印向量的信息，格式为 `(x, y)`。例如：`cout << v1;`。由于 `cout` 是左操作数，这需要被实现为**非成员函数**（可以声明为友元 `friend` 以访问私有成员）。
+
+在 `main` 函数中，创建两个 `Vector2D` 对象，计算它们的和，并分别打印这三个向量。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Vector2D {
+private:
+    double x, y;
+
+public:
+    // 构造函数
+    Vector2D(double x_val = 0.0, double y_val = 0.0) : x(x_val), y(y_val) {}
+
+    // 1. 重载加法运算符 + (作为成员函数)
+    // this 对象是左操作数，other 是右操作数
+    Vector2D operator+(const Vector2D& other) const {
+        Vector2D result;
+        result.x = this->x + other.x;
+        result.y = this->y + other.y;
+        return result;
+    }
+
+    // 2. 将流插入运算符重载函数声明为友元，以便访问 private 成员 x 和 y
+    friend ostream& operator<<(ostream& os, const Vector2D& vec);
+};
+
+// 3. 重载流插入运算符 << (作为非成员函数)
+// 第一个参数是 ostream 引用，第二个参数是要打印的对象
+ostream& operator<<(ostream& os, const Vector2D& vec) {
+    os << "(" << vec.x << ", " << vec.y << ")";
+    return os; // 返回 ostream 引用以支持链式输出, 例如 cout << v1 << v2;
+}
+
+int main() {
+    Vector2D v1(3.0, 4.0);
+    Vector2D v2(1.0, -2.0);
+
+    cout << "向量 v1: " << v1 << endl;
+    cout << "向量 v2: " << v2 << endl;
+
+    Vector2D v3 = v1 + v2;
+
+    cout << "v1 + v2 的结果是 v3: " << v3 << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+
+本题主要考察运算符重载的两种基本实现方式：
+
+1.  **成员函数重载 (`operator+`)**: 对于像 `+`, `-`, `*` 等二元运算符，当左操作数是本类的对象时，将其重载为成员函数非常自然。在这种情况下，`this` 指针隐式地指向左操作数对象（`v1`），而参数（`other`）则代表右操作数对象（`v2`）。函数返回一个新的 `Vector2D` 对象作为运算结果。
+
+2.  **非成员/友元函数重载 (`operator<<`)**: 对于流插入 `<<` 和流提取 `>>` 运算符，左操作数是流对象（如 `std::cout`），而不是我们的自定义类对象。因此，它们**不能**被重载为成员函数。它们必须是接收流对象和我们的类对象作为参数的非成员函数。为了能够访问类的 `private` 成员（`x` 和 `y`），我们在类定义内部使用 `friend` 关键字将其声明为友元函数。
+
+</details>
+
+---
+
+#### 习题二：赋值三法则之终章——实现安全的赋值运算符
+
+**题目描述**
+
+基于上一章你实现的动态数据管理类，我们来创建一个简化的字符串类 `MyString`，并补全“赋值三法则”中最后也是最关键的一环：**赋值运算符重载**。
+
+`MyString` 类的要求如下：
+
+1.  **私有成员变量 (private):**
+    *   `char* data;`：指向动态分配的C风格字符串。
+2.  **公有成员 (public):**
+    *   **构造函数** `MyString(const char* str = "")`：根据传入的字符串初始化对象，如果未提供参数，则初始化为空字符串。
+    *   **析构函数** `~MyString()`：释放 `data` 指向的内存。
+    *   **拷贝构造函数** `MyString(const MyString& other)`：实现深拷贝。
+    *   **赋值运算符重载** `MyString& operator=(const MyString& other)`：这是本题的**核心**。你需要在这里实现安全的深拷贝赋值，必须处理以下几点：
+        *   **自赋值检查**：防止 `s = s;` 这样的操作导致提前释放内存。
+        *   **释放旧资源**：在拷贝新数据前，必须先释放当前对象已有的动态内存。
+        *   **深拷贝**：为 `data` 分配新内存并复制 `other` 的内容。
+        *   **返回引用**：返回 `*this` 的引用以支持链式赋值 `s3 = s2 = s1;`。
+    *   一个 `const` 成员函数 `print()`，用于打印字符串内容。
+
+在 `main` 函数中，演示普通赋值、链式赋值以及自赋值的情况，以验证你的实现是安全且正确的。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+class MyString {
+private:
+    char* data;
+
+public:
+    // 构造函数
+    MyString(const char* str = "") {
+        data = new char[strlen(str) + 1];
+        strcpy(data, str);
+    }
+
+    // 析构函数
+    ~MyString() {
+        delete[] data;
+    }
+
+    // 拷贝构造函数
+    MyString(const MyString& other) {
+        data = new char[strlen(other.data) + 1];
+        strcpy(data, other.data);
+    }
+
+    // 赋值运算符重载
+    MyString& operator=(const MyString& other) {
+        // 1. 自赋值检查
+        if (this == &other) {
+            return *this;
+        }
+
+        // 2. 释放旧资源
+        delete[] this->data;
+
+        // 3. 分配新内存并进行深拷贝
+        this->data = new char[strlen(other.data) + 1];
+        strcpy(this->data, other.data);
+        
+        // 4. 返回 *this 的引用
+        return *this;
+    }
+
+    void print() const {
+        cout << data << endl;
+    }
+};
+
+int main() {
+    cout << "--- 1. 创建初始对象 ---" << endl;
+    MyString s1("Hello");
+    MyString s2("World");
+    MyString s3; // 空字符串
+    
+    cout << "\n--- 2. 测试普通赋值 ---" << endl;
+    s3 = s1; // s3 的旧内存被释放，然后拷贝 s1 的内容
+    cout << "s3 现在是: "; s3.print();
+
+    cout << "\n--- 3. 测试链式赋值 ---" << endl;
+    s3 = s2 = s1; // s2=s1 先执行，返回 s2 的引用；然后执行 s3 = s2
+    cout << "s2 现在是: "; s2.print();
+    cout << "s3 现在是: "; s3.print();
+
+    cout << "\n--- 4. 测试自赋值 ---" << endl;
+    s1 = s1; // 应该被自赋值检查捕获
+    cout << "s1 自我赋值后: "; s1.print();
+    return 0;
+}
+```
+
+##### 答案解析
+
+本题是C++类设计中一个里程碑式的练习，它完整地展现了“**赋值三法则**”（Rule of Three）的应用。当一个类需要自己管理资源（如动态内存）时，通常需要同时提供析构函数、拷贝构造函数和**拷贝赋值运算符**。
+
+1.  **自赋值检查 (`if (this == &other)`)** 是 `operator=` 实现中最关键的第一步。如果没有这个检查，`delete[] this->data;` 将会释放掉内存，而 `other.data`（其实就是 `this->data`）将指向一块已被释放的无效内存，随后的 `strcpy` 会导致未定义行为（通常是程序崩溃）。
+
+2.  资源管理时，正确的顺序是“先释放旧的，再申请新的”。`delete[] this->data;` 清理了对象在赋值操作之前持有的内存，防止了内存泄漏。
+
+3.  与拷贝构造函数一样，赋值操作也必须是深拷贝，即为 `this->data` 分配一块全新的内存，并将 `other.data` 指向的内容复制过来，确保两个对象的数据独立。
+
+4.  返回 `MyString&` 类型使得赋值操作可以被链接起来。`s2 = s1` 这个表达式本身的结果是 `s2` 的一个引用，这个引用接着被用作 `s3 = ...` 的右操作数，从而实现了 `s3 = (s2 = s1)` 的效果。这是C++内置类型赋值行为的模仿。
+
+</details>
+
 ## 第27章：友元与静态成员
 
 **学习目标**：我们已经学习了`public`和`private`这两个访问控制的“大门”。但有时，我们需要给特定的“朋友”一把钥匙，让它能绕过这扇门。本章我们将学习**友元(friend)**，它允许类外的函数或其他类访问私有成员。同时，我们还会探索一种截然不同的成员类型——**静态成员(static member)**。静态成员不属于任何单个对象，而是属于整个类，为所有对象所共享。
@@ -17303,6 +17865,172 @@ int main() {
     return 0;
 }
 ```
+
+---
+
+### 本章课后习题
+#### 习题一：比较两个私密矩形的大小
+
+**题目描述**
+
+假设你有一个 `Rectangle` 类，它有私有的 `width` 和 `height` 成员。现在你需要编写一个**非成员函数** `isLarger`，该函数接收两个 `Rectangle` 对象的引用，并比较它们的面积，如果第一个矩形的面积大于第二个就返回 `true` ，否则返回 `false`。
+
+在 `main` 函数中，创建两个 `Rectangle` 对象，并使用 `isLarger` 函数来比较它们，然后根据结果打印出哪个矩形更大。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+// 需要前向声明 Rectangle 类
+class Rectangle; 
+
+bool isLarger(const Rectangle& r1, const Rectangle& r2);
+
+class Rectangle {
+private:
+    double width;
+    double height;
+
+public:
+    Rectangle(double w, double h) : width(w), height(h) {}
+
+    double getArea() const {
+        return width * height;
+    }
+
+    friend bool isLarger(const Rectangle& r1, const Rectangle& r2);
+};
+
+bool isLarger(const Rectangle& r1, const Rectangle& r2) {
+    double area1 = r1.width * r1.height;
+    double area2 = r2.width * r2.height;
+    return area1 > area2;
+}
+
+int main() {
+    Rectangle rect1(10.0, 5.0);
+    Rectangle rect2(8.0, 7.0);
+
+    cout << "矩形1的面积: " << rect1.getArea() << endl;
+    cout << "矩形2的面积: " << rect2.getArea() << endl;
+
+    // 调用友元函数
+    if (isLarger(rect1, rect2)) {
+        cout << "矩形1更大。" << endl;
+    } else {
+        cout << "矩形2更大或相等。" << endl;
+    }
+
+    return 0;
+}
+```
+</details>
+
+---
+
+#### 习题二：追踪活动对象数量
+
+**题目描述**
+
+设计一个名为 `Gadget` (小工具) 的类，你需要用它来追踪当前程序中总共存在多少个活动的 `Gadget` 对象。
+
+为了实现这个功能，你需要使用**静态成员**：
+
+1.  **私有成员 (private):**
+    *   一个**静态**的 `int` 成员变量 `active_count`，用于记录当前活动对象的数量。
+    *   一个 `int` 成员变量 `id`，用于存储每个对象的唯一ID。
+2.  **公有成员 (public):**
+    *   一个**静态**的 `int` 成员变量 `total_created`，用于记录自程序开始以来总共创建过的对象数量。
+    *   **构造函数** `Gadget()`：
+        *   每当一个新对象被创建，它应该将 `active_count` 和 `total_created` 都加一。
+        *   它应该将 `total_created` 的当前值赋给新对象的 `id`。
+        *   打印一条消息，表明一个新 Gadget 被创建。
+    *   **析构函数** `~Gadget()`：
+        *   每当一个对象被销毁，它应该将 `active_count` 减一。
+        *   打印一条消息，表明一个 Gadget 被销毁。
+    *   一个**静态**成员函数 `getActiveCount()`，它返回 `active_count` 的当前值。因为是静态的，所以它应该能通过类名直接调用，如 `Gadget::getActiveCount()`。
+
+在 `main` 函数中，通过创建和销毁对象（例如在不同的作用域中），来演示 `active_count` 的动态变化，并在关键点调用 `Gadget::getActiveCount()` 来验证其正确性。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Gadget {
+private:
+    static int active_count;
+    int id;
+
+public:
+    static int total_created;
+
+    Gadget() {
+        active_count++;
+        total_created++;
+        id = total_created;
+        cout << "Gadget " << id << " created. (当前活动对象: " << active_count << ")" << endl;
+    }
+
+    ~Gadget() {
+        active_count--;
+        cout << "Gadget " << id << " destroyed. (当前活动对象: " << active_count << ")" << endl;
+    }
+
+    static int getActiveCount() {
+        // 静态成员函数没有 this 指针，只能访问静态成员
+        return active_count;
+    }
+};
+
+// 静态成员变量必须在类外进行定义和初始化
+int Gadget::active_count = 0;
+int Gadget::total_created = 0;
+
+void createSomeGadgets() {
+    cout << "\n--- 进入 createSomeGadgets 函数作用域 ---" << endl;
+    Gadget g3;
+    Gadget g4;
+    cout << "函数内，活动对象数: " << Gadget::getActiveCount() << endl;
+    cout << "--- 退出 createSomeGadgets 函数作用域 ---" << endl;
+}
+
+int main() {
+    cout << "程序开始时，活动对象数: " << Gadget::getActiveCount() << endl;
+
+    cout << "\n--- 创建 g1 和 g2 ---" << endl;
+    Gadget g1;
+    Gadget* g2_ptr = new Gadget(); // 在堆上创建
+
+    cout << "创建 g1 和 g2 后，活动对象数: " << Gadget::getActiveCount() << endl;
+
+    // 调用一个函数，该函数内部有自己的局部对象
+    createSomeGadgets();
+
+    cout << "\n函数返回后，活动对象数: " << Gadget::getActiveCount() << endl;
+
+    cout << "\n--- 手动销毁 g2 ---" << endl;
+    delete g2_ptr; // 销毁堆上的对象
+    cout << "销毁 g2 后，活动对象数: " << Gadget::getActiveCount() << endl;
+
+    cout << "\n--- main 函数即将结束 ---" << endl;
+    // g1 将在 main 结束时自动销毁
+    return 0;
+}
+```
+
+</details>
 
 # 第八部分：继承与多态
 ## 第28章：继承基础
@@ -17934,6 +18662,220 @@ int main() {
 }
 ```
 这个例子清晰地展示了如何通过继承，让`Manager`和`Technician`共享`Employee`的通用数据和行为，同时又保持了各自的独特性。它也强调了`private`成员的封装性：派生类无法直接访问，必须通过基类的公有接口。
+
+---
+
+### 本章课后习题
+#### 题目一：交通工具的层级
+
+**题目描述**
+
+请你设计一个简单的继承体系来模拟“交通工具”和“汽车”。
+
+1.  创建一个名为 `Vehicle` (交通工具) 的基类，它包含：
+    *   一个 `protected` 的整型成员变量 `speed` (速度)。
+    *   一个 `public` 的构造函数，接收一个整数作为初始速度，并打印 "交通工具基类构造函数被调用"。
+    *   一个 `public` 的析构函数，打印 "交通工具基类析构函数被调用"。
+    *   一个 `public` 的成员函数 `showSpeed()`，用于打印当前的速度。
+
+2.  创建一个名为 `Car` (汽车) 的派生类，它 `public` 继承自 `Vehicle`，并包含：
+    *   一个 `private` 的整型成员变量 `seatNum` (座位数)。
+    *   一个 `public` 的构造函数，接收速度和座位数，并正确地初始化基类和自身的成员。该构造函数应打印 "汽车派生类构造函数被调用"。
+    *   一个 `public` 的析构函数，打印 "汽车派生类析构函数被调用"。
+    *   一个 `public` 的成员函数 `showInfo()`，用于打印汽车的座位数。
+
+3.  在 `main` 函数中，创建一个 `Car` 对象，并调用它的 `showSpeed()` 和 `showInfo()` 方法来展示信息。观察构造函数和析构函数的调用顺序。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Vehicle {
+protected:
+    int speed;
+
+public:
+    Vehicle(int s) : speed(s) {
+        cout << "交通工具基类构造函数被调用" << endl;
+    }
+
+    ~Vehicle() {
+        cout << "交通工具基类析构函数被调用" << endl;
+    }
+
+    void showSpeed() {
+        cout << "当前速度: " << speed << " km/h" << endl;
+    }
+};
+
+class Car : public Vehicle {
+private:
+    int seatNum;
+
+public:
+    Car(int s, int num) : Vehicle(s), seatNum(num) {
+        cout << "汽车派生类构造函数被调用" << endl;
+    }
+
+    ~Car() {
+        cout << "汽车派生类析构函数被调用" << endl;
+    }
+
+    void showInfo() {
+        cout << "座位数: " << seatNum << endl;
+    }
+};
+
+int main() {
+    cout << "--- 创建对象 ---" << endl;
+    Car myCar(100, 5);
+    cout << "--- 调用方法 ---" << endl;
+    myCar.showSpeed();
+    myCar.showInfo();
+    cout << "--- 程序结束, 对象即将销毁 ---" << endl;
+    return 0;
+}
+```
+
+##### 预期输出
+```
+--- 创建对象 ---
+交通工具基类构造函数被调用
+汽车派生类构造函数被调用
+--- 调用方法 ---
+当前速度: 100 km/h
+座位数: 5
+--- 程序结束, 对象即将销毁 ---
+汽车派生类析构函数被调用
+交通工具基类析构函数被调用
+```
+
+##### 答案解析
+本题主要考察以下几个核心知识点：
+1.  `Car` 类通过 `public` 继承获得了 `Vehicle` 类的 `public` 和 `protected` 成员。因此，`myCar` 对象可以直接调用基类的 `public` 方法 `showSpeed()`。
+2.  在创建派生类对象 `myCar` 时，先调用基类 `Vehicle` 的构造函数，再调用派生类 `Car` 的构造函数。这是构建一个对象的自然顺序：先构建“基础”部分，再构建“派生”部分。
+3.  派生类 `Car` 的构造函数必须通过成员初始化列表 (`: Vehicle(s)`) 来显式调用基类 `Vehicle` 的构造函数，并传递必要的参数。如果基类没有默认构造函数，这一步是强制性的。
+4.  **析构函数调用顺序**：当 `main` 函数结束，`myCar` 对象被销毁时，析构函数的调用顺序与构造函数相反：先调用派生类 `Car` 的析构函数，再调用基类 `Vehicle` 的析构函数。这确保了对象能被正确地、自内向外地清理。
+
+</details>
+
+---
+
+#### 题目二：修复代码
+
+**题目描述**
+
+下面是一段有问题的代码。一个 `Employee` (员工) 类中有一个 `introduce()` 方法。它的派生类 `Manager` 重写了 `introduce()` 方法来添加自己的职位信息。
+
+你的任务是找出代码中的问题所在，并修复代码。
+
+**原始代码（待修改）**
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+class Employee {
+private:
+    char name[50];
+
+public:
+    Employee(const char* n) {
+        strcpy(name, n);
+    }
+
+    void introduce() {
+        cout << "大家好，我是员工 " << name << "。" << endl;
+    }
+};
+
+class Manager : public Employee {
+private:
+    char department[50];
+
+public:
+    Manager(const char* n, const char* d) : Employee(n) {
+        strcpy(department, d);
+    }
+
+    void introduce() {
+        cout << "大家好，我是员工 " << name << "。" << endl;
+        cout << "我负责管理 " << department << " 部门。" << endl;
+    }
+};
+
+int main() {
+    Manager mgr("张三", "技术");
+    mgr.introduce();
+    return 0;
+}
+```
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 修改后的参考代码
+```cpp
+#include <iostream>
+#include <cstring>
+
+using namespace std;
+
+class Employee {
+private:
+    char name[50];
+
+public:
+    Employee(const char* n) {
+        strcpy(name, n);
+    }
+
+    void introduce() {
+        cout << "大家好，我是员工 " << name << "。" << endl;
+    }
+};
+
+class Manager : public Employee {
+private:
+    char department[50];
+
+public:
+    Manager(const char* n, const char* d) : Employee(n) {
+        strcpy(department, d);
+    }
+
+    // 正确的实现：复用基类的同名函数
+    void introduce() {
+        // 1. 使用作用域解析运算符::调用基类被隐藏的 introduce() 函数
+        Employee::introduce();
+        // 2. 添加派生类自己的功能
+        cout << "我负责管理 " << department << " 部门。" << endl;
+    }
+};
+
+int main() {
+    Manager mgr("张三", "技术");
+    mgr.introduce();
+    return 0;
+}
+```
+
+##### 预期输出
+```
+大家好，我是员工 张三。
+我负责管理 技术 部门。
+```
+
+##### 答案解析
+通过调用 `Employee::introduce()`，我们复用了基类中已经写好的逻辑（打印姓名），而无需在派生类中重复编写，也解决了派生类无法访问基类 `private` 成员 `name` 的问题。这正是继承带来的主要好处之一：在扩展功能的同时，可以复用已有代码，使程序更易维护。
+
+</details>
 
 ## 第29章：多态与虚函数
 
