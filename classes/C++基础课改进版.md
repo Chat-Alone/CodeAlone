@@ -19424,6 +19424,186 @@ int main() {
 --- 场景渲染完毕 ---
 ```
 
+---
+
+### 本章课后习题
+#### 题目一：动物怎么叫
+
+**题目描述**
+
+请你创建一个模拟动物叫声的程序。
+
+1.  创建一个基类 `Animal`，它包含：
+    *   一个 `public` 的 `virtual` 成员函数 `speak()`，它会打印 "动物发出未知的叫声..."。
+    *   一个 `public` 的构造函数，打印 "一只动物诞生了"。
+
+2.  创建两个派生类 `Cat` 和 `Dog`，它们都继承自 `Animal`。
+    *   `Cat` 类：
+        *   有一个构造函数，打印 "一只小猫诞生了"。
+        *   重写（override）`speak()` 函数，使其打印 "喵喵喵！"。
+    *   `Dog` 类：
+        *   有一个构造函数，打印 "一只小狗诞生了"。
+        *   重写（override）`speak()` 函数，使其打印 "汪汪汪！"。
+
+3.  在 `main` 函数中，编写一个名为 `perform` 的全局函数，它接收一个 `Animal*` (基类指针) 作为参数，并在函数内部调用该指针的 `speak()` 方法。
+
+4.  在 `main` 函数中，分别在栈上创建一个 `Cat` 对象和 `Dog` 对象，然后将它们的地址传递给 `perform` 函数，观察多态是如何工作的。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Animal {
+public:
+    Animal() {
+        cout << "一只动物诞生了" << endl;
+    }
+
+    virtual void speak() {
+        cout << "动物发出未知的叫声..." << endl;
+    }
+};
+
+class Cat : public Animal {
+public:
+    Cat() {
+        cout << "一只小猫诞生了" << endl;
+    }
+
+    void speak() override {
+        cout << "喵喵喵！" << endl;
+    }
+};
+
+class Dog : public Animal {
+public:
+    Dog() {
+        cout << "一只小狗诞生了" << endl;
+    }
+
+    void speak() override {
+        cout << "汪汪汪！" << endl;
+    }
+};
+
+void perform(Animal* p_animal) {
+    cout << "我要叫了: ";
+    p_animal->speak();
+}
+
+int main() {
+    Cat kitty;
+    Dog buddy;
+
+    perform(&kitty);
+    perform(&buddy);
+    
+    return 0;
+}
+```
+
+##### 答案解析
+本题主要考察以下几个核心知识点：
+1.  `perform` 函数接收一个 `Animal*` 类型的指针，但它可以指向任何 `Animal` 的派生类对象（如`Cat`或`Dog`）。尽管调用的是同一行代码 `p_animal->speak()`，但程序在运行时会根据指针 `p_animal` **实际指向的对象类型** 来决定调用哪个版本的 `speak()` 函数。
+2.  `Animal` 基类中的 `speak()` 函数被 `virtual` 关键字修饰，这是实现多态的关键。它告诉编译器，这个函数的调用应该在运行时解析（**动态绑定**），而不是在编译时确定（静态绑定）。
+3.  在派生类中重写虚函数时使用 `override` 是一个好习惯。它能让编译器帮助检查你是否真的重写了基类的某个虚函数。如果基类中没有对应的虚函数或者函数的签名不匹配，编译器会报错，从而避免了潜在的错误。
+
+</details>
+
+---
+
+#### 题目二：图形绘制与内存安全
+
+**题目描述**
+
+设计一个图形绘制程序，该程序需要处理不同类型的图形（如圆形、矩形），并确保在使用动态内存时不会发生内存泄漏。
+
+1.  创建一个抽象基类 `Shape`，它包含：
+    *   一个 `public` 的 **纯虚函数** `draw() = 0`。
+    *   一个 `public` 的 **虚析构函数**，它会打印 "Shape 析构函数被调用"。
+
+2.  创建两个派生类 `Circle` 和 `Rectangle`，它们都继承自 `Shape`。
+    *   `Circle` 类：
+        *   重写 `draw()` 函数，使其打印 "正在绘制一个圆形..."。
+        *   析构函数打印 "Circle 析构函数被调用"。
+    *   `Rectangle` 类：
+        *   重写 `draw()` 函数，使其打印 "正在绘制一个矩形..."。
+        *   析构函数打印 "Rectangle 析构函数被调用"。
+
+3.  在 `main` 函数中：
+    *   创建一个 `Shape*` 类型的数组，大小为2。
+    *   使用 `new` 关键字在堆上分别创建一个 `Circle` 对象和一个 `Rectangle` 对象，并将它们的地址存入上述指针数组中。
+    *   遍历数组，调用每个图形的 `draw()` 方法。
+    *   遍历数组，使用 `delete` 释放之前用 `new` 分配的内存。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+class Shape {
+public:
+    virtual void draw() = 0;
+
+    virtual ~Shape() {
+        cout << "Shape 析构函数被调用" << endl;
+    }
+};
+
+class Circle : public Shape {
+public:
+    void draw() override {
+        cout << "正在绘制一个圆形..." << endl;
+    }
+    ~Circle() {
+        cout << "Circle 析构函数被调用" << endl;
+    }
+};
+
+class Rectangle : public Shape {
+public:
+    void draw() override {
+        cout << "正在绘制一个矩形..." << endl;
+    }
+    ~Rectangle() {
+        cout << "Rectangle 析构函数被调用" << endl;
+    }
+};
+
+int main() {
+    Shape* shapes[2];
+    
+    shapes[0] = new Circle();
+    shapes[1] = new Rectangle();
+
+    for (int i = 0; i < 2; ++i) {
+        shapes[i]->draw();
+    }
+    
+    for (int i = 0; i < 2; ++i) {
+        delete shapes[i];
+    }
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题主要考察以下几个核心知识点：
+1.  基类 `Shape` 包含一个纯虚函数 `draw() = 0`，这使得 `Shape` 成为一个 **抽象类**。抽象类不能被直接实例化（如 `Shape shape;` 会报错），它存在的意义是为所有派生类定义一个必须实现的公共接口。任何继承自 `Shape` 的类都**必须**重写 `draw()` 方法，否则它自己也会成为抽象类。
+2.  这在 `main` 函数中，我们通过基类指针 `Shape*` 来 `delete` 堆上的派生类对象。如果基类 `Shape` 的析构函数 **不是** `virtual` 的，那么 `delete shapes[i];` 只会调用 `Shape` 的析构函数，而不会调用 `Circle` 或 `Rectangle` 的析构函数，这将导致 **内存泄漏**（如果派生类析构函数中有资源释放代码）。将基类析构函数声明为 `virtual` 后，`delete` 操作也会变成动态绑定的，会先调用指针实际指向的派生类的析构函数，然后再调用基类的析构函数，确保了资源的完整释放。
+
+</details>
+
 ## 第30章：继承与多态综合应用
 
 **学习目标：** 在本章中，你将不再仅仅满足于实现功能，而是要学会如何“设计”功能。我们将初步接触**设计模式**，学习如何用模板方法和工厂模式来解决特定问题。你还将掌握在运行时识别对象类型的技术，并深入探讨一个核心的设计问题：何时使用继承，何时使用组合。最后，我们将学习里氏替换原则，为编写健壮的面向对象程序提供指导。
