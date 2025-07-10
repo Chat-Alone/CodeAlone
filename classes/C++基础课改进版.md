@@ -20746,6 +20746,147 @@ int main() {
 ```
 这个例子展示了如何组织和使用模板代码。`MyMath.hpp`可以被任何需要这些通用数学函数的项目复用，只需一个`#include`即可。
 
+---
+
+### 本章课后习题
+#### 题目一：通用的最大值查找器
+
+**题目描述**
+
+编写一个名为 `findMax` 的函数模板，该模板可以接收两个任意类型的参数，并返回它们中的较大者。
+
+1.  使用 `template <typename T>` 定义一个函数模板 `findMax`。
+2.  在 `main` 函数中，分别使用 `int`、`double` 和 `char` 类型的变量来测试你的 `findMax` 函数模板，并打印出结果。
+3.  思考：如果直接将两个C风格字符串（`const char*`）传递给这个未经修改的模板，会发生什么？
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+// 1. 定义一个函数模板
+template <typename T>
+T findMax(T a, T b) {
+    return (a > b) ? a : b;
+}
+
+int main() {
+    // 2. 使用不同类型测试模板
+    // 测试 int 类型
+    int i1 = 10, i2 = 20;
+    cout << "整数 " << i1 << " 和 " << i2 << " 中的最大值是: " << findMax(i1, i2) << endl;
+
+    // 测试 double 类型
+    double d1 = 3.14, d2 = 2.71;
+    cout << "浮点数 " << d1 << " 和 " << d2 << " 中的最大值是: " << findMax(d1, d2) << endl;
+
+    // 测试 char 类型 (比较ASCII码)
+    char c1 = 'A', c2 = 'X';
+    cout << "字符 '" << c1 << "' 和 '" << c2 << "' 中的最大值是: " << findMax(c1, c2) << endl;
+
+    return 0;
+}
+```
+
+##### 预期输出
+```
+整数 10 和 20 中的最大值是: 20
+浮点数 3.14 和 2.71 中的最大值是: 3.14
+字符 'A' 和 'X' 中的最大值是: X
+```
+
+##### 答案解析
+本题主要考察以下几个核心知识点：
+1.  我们使用 `template <typename T>` 语法创建了一个通用的函数蓝图 `findMax`。`T` 是一个占位符，代表任何数据类型。
+2.  在 `main` 函数中调用 `findMax` 时，编译器会自动根据传入参数的类型（如 `int`、`double`）来推导 `T` 应该是什么，并为该类型生成一个具体的函数实例。例如，`findMax(i1, i2)` 会让编译器生成一个 `int findMax(int, int)` 的函数。
+3.  如果将两个 `const char*` 类型的变量（如 `"hello"` 和 `"world"`）传给这个模板，代码 `(a > b)` 比较的将 **不是字符串的内容**，而是 **两个指针的地址**！因为C风格字符串本质上是字符数组的首地址。哪个指针的地址值更大是不确定的。要正确比较C风格字符串，需要使用 `strcmp` 函数，这就引出了下一题的核心——模板特化。
+
+</details>
+
+---
+
+#### 题目二：定制化的比较函数
+
+**题目描述**
+
+在上一题的基础上，我们需要一个更智能的 `areEqual` 函数，它能正确处理不同类型的数据比较，特别是对C风格字符串的比较。
+
+1.  创建一个通用的函数模板 `areEqual`，它接收两个参数，如果它们相等则返回 `true`，否则返回 `false`。
+2.  为这个模板提供一个 **模板特化（specialization）** 版本，专门用于处理 `const char*` 类型。这个特化版本应该使用 `<cstring>` 库中的 `strcmp` 函数来比较字符串的内容是否相同。
+3.  除了模板，再编写一个普通的、非模板的 **重载函数** `areEqual`，它接收两个 `double` 类型的参数。这个函数在判断相等时，应该考虑浮点数的精度问题：如果两个数的差的绝对值小于一个极小的数（例如 `1e-6`），我们就认为它们相等。
+4.  在 `main` 函数中，分别用 `int`、`const char*` 和 `double` 类型的数据调用 `areEqual` 函数，以验证编译器是否正确地选择了通用模板、特化版本和重载函数。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <cstring>   // 用于 strcmp
+
+using namespace std;
+
+// 1. 通用函数模板
+template <typename T>
+bool areEqual(T a, T b) {
+    return a == b;
+}
+
+// 2. 针对 const char* 的模板特化
+template <>
+bool areEqual<const char*>(const char* a, const char* b) {
+    return strcmp(a, b) == 0;
+}
+
+// 3. 辅助函数，用于获取绝对值
+inline double absVal(double x) {
+    return x < 0 ? -x : x;
+}
+
+// 4. 针对 double 的普通重载函数
+bool areEqual(double a, double b) {
+    const double epsilon = 1e-6;
+    return absVal(a - b) < epsilon;
+}
+
+int main() {
+    // 测试通用模板
+    cout << "比较整数 10 和 10: "          << boolalpha << areEqual(10, 10) << endl;
+    cout << "比较整数 10 和 20: "          << boolalpha << areEqual(10, 20) << endl;
+    cout << "--------------------------" << endl;
+
+    // 测试模板特化
+    const char* s1 = "hello";
+    const char* s2 = "world";
+    const char* s3 = "hello";
+    cout << "比较字符串 \"" << s1 << "\" 和 \"" << s2 << "\": "
+         << boolalpha << areEqual(s1, s2) << endl;
+    cout << "比较字符串 \"" << s1 << "\" 和 \"" << s3 << "\": "
+         << boolalpha << areEqual(s1, s3) << endl;
+    cout << "--------------------------" << endl;
+
+    // 测试普通重载函数
+    double d1 = 0.3;
+    double d2 = 0.1 + 0.2;     // d2 的实际值可能不是精确的 0.3
+    cout << "比较浮点数 " << d1 << " 和 " << d2 << ": "
+         << boolalpha << areEqual(d1, d2) << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题的核心是理解C++中函数调用的 **最佳匹配（Best Match）** 规则：
+1.  **优先选择普通函数**：当调用 `areEqual(d1, d2)` 时，编译器发现有一个参数类型完全匹配的普通函数 `bool areEqual(double, double)`。这是一个完美匹配，因此编译器会 **优先选择它**，而不是从模板生成一个实例。
+2.  **其次选择模板特化**：当调用 `areEqual(s1, s2)` 时，没有精确匹配的普通函数。编译器会查找模板。它发现有一个通用的 `areEqual<T>` 模板，但同时还有一个专门为 `T = const char*` 定制的 **特化版本**。特化版本比通用版本更“具体”，因此编译器选择调用特化版本。
+3.  **最后选择通用模板**：当调用 `areEqual(10, 10)` 时，既没有匹配的普通函数，也没有匹配的特化版本。编译器只能使用最通用的 `areEqual<T>` 模板，并通过参数推导出 `T` 为 `int`，然后实例化出一个 `int` 版本的函数来调用。
+
+</details>
+
 ## 第32章：类模板
 
 **学习目标**：
@@ -21589,6 +21730,192 @@ int main() {
     return 0;
 }
 ```
+
+---
+### 本章课后习题
+#### 题目一：可定制容量的通用栈
+（如果没学栈可以不做）
+**题目描述**
+
+请你利用类模板，将我们之前学过的栈（Stack）数据结构改造成一个通用的、可以存放任何数据类型的栈。
+
+1.  创建一个名为 `Stack` 的类模板，它应该接收两个模板参数：
+    *   `typename T`：表示栈中存储的数据类型。
+    *   `int Capacity`：一个非类型模板参数，表示栈的容量。为 `Capacity` 提供一个默认值 `10`。
+2.  `Stack` 类的内部实现应该使用一个类型为 `T` 的数组来存储数据。
+3.  实现以下成员函数：
+    *   `push(const T& value)`：将元素压入栈顶。
+    *   `pop()`：弹出栈顶元素。
+    *   `getTop()`：返回栈顶元素的引用。
+    *   `isEmpty()` 和 `isFull()`：检查栈是否为空或已满。
+4.  请将 `push` 函数的 **定义写在类的外部**，以练习在类外定义模板成员函数的语法。
+5.  在 `main` 函数中，分别实例化一个 `int` 类型的栈（使用默认容量）和一个 `std::string` 类型的栈（指定容量为5），并对它们进行一些基本的压入和弹出操作来验证其功能。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+template <typename T, int Capacity = 10>
+class Stack {
+private:
+    T m_data[Capacity]; // 数组成员
+    int m_top;          // 栈顶指针
+
+public:
+    Stack() : m_top(-1) {}
+
+    void push(const T& value);
+
+    void pop() {
+        if (!isEmpty()) {
+            m_top--;
+        } else {
+            cout << "错误：栈为空，无法弹出！" << endl;
+        }
+    }
+
+    T& getTop() {
+        return m_data[m_top];
+    }
+
+    bool isEmpty() const {
+        return m_top == -1;
+    }
+
+    bool isFull() const {
+        return m_top == Capacity - 1;
+    }
+};
+
+template <typename T, int Capacity>
+void Stack<T, Capacity>::push(const T& value) {
+    if (!isFull()) {
+        m_data[++m_top] = value;
+    } else {
+        cout << "错误：栈已满，无法压入！" << endl;
+    }
+}
+
+int main() {
+    cout << "--- 测试整数栈 (默认容量10) ---" << endl;
+    Stack<int> intStack;
+    intStack.push(1);
+    intStack.push(2);
+    cout << "栈顶元素: " << intStack.getTop() << endl;
+    intStack.pop();
+    cout << "弹出后栈顶元素: " << intStack.getTop() << endl;
+    
+    cout << "\n--- 测试字符串栈 (容量5) ---" << endl;
+    Stack<string, 5> stringStack;
+    stringStack.push("你好");
+    stringStack.push("C++");
+    stringStack.push("模板");
+    cout << "栈顶元素: " << stringStack.getTop() << endl;
+    stringStack.pop();
+    cout << "弹出后栈顶元素: " << stringStack.getTop() << endl;
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题主要考察以下几个核心知识点：
+1.  使用 `template <typename T, int Capacity>` 定义了一个可以接受类型和非类型（一个编译期常量）参数的类。
+2.  通过 `Capacity = 10`，我们为非类型参数提供了默认值。这使得在创建 `intStack` 时可以省略第二个参数，写作 `Stack<int>`，简化了使用。
+3.  在类外定义模板成员函数时，必须同时重复模板声明 `template <typename T, int Capacity>`，并且在函数名前用类名和作用域解析运算符 `Stack<T, Capacity>::` 来指明其归属。
+4.  在 `main` 函数中，我们通过 `Stack<int>` 和 `Stack<string, 5>` 显式指定了模板参数，编译器根据这些信息生成了两个完全不同但逻辑相同的具体类。
+
+</details>
+
+---
+
+#### 题目二：智能包装器与特化
+
+**题目描述**
+
+创建一个名为 `Wrapper` 的类模板，它用于“包装”一个值并提供一个 `print` 方法。然后，通过特化技术，让它能够智能地处理普通类型、指针类型和C风格字符串。
+
+1.  创建一个 **通用 `Wrapper` 类模板**，它有一个 `T` 类型的成员变量，并通过 `print()` 方法打印这个成员。
+2.  创建一个 **`Wrapper` 的部分特化 (partial specialization)** 版本，专门用于处理 **指针类型 `T*`**。这个特化版本的 `print()` 方法应该打印指针所指向的地址以及地址中存储的值。
+3.  创建一个 **`Wrapper` 的全特化 (full specialization)** 版本，专门用于处理 **`const char*` 类型**。这个特化版本的 `print()` 方法应该将它作为一个完整的字符串来打印，而不是打印单个字符或地址。
+4.  在 `main` 函数中，分别创建 `Wrapper<double>`、`Wrapper<int*>` 和 `Wrapper<const char*>` 的对象，并调用它们的 `print()` 方法，以验证编译器是否正确地选择了最合适的模板版本。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+
+using namespace std;
+
+template <typename T>
+class Wrapper {
+private:
+    T m_value;
+public:
+    Wrapper(T value) : m_value(value) {}
+    void print() const {
+        cout << "通用模板: 值是 " << m_value << endl;
+    }
+};
+
+template <typename T>
+class Wrapper<T*> {
+private:
+    T* m_ptr;
+public:
+    Wrapper(T* ptr) : m_ptr(ptr) {}
+    void print() const {
+        cout << "指针特化模板: 指针地址是 " << m_ptr 
+             << "，指向的值是 " << *m_ptr << endl;
+    }
+};
+
+template <>
+class Wrapper<const char*> {
+private:
+    const char* m_str;
+public:
+    Wrapper(const char* str) : m_str(str) {}
+    void print() const {
+        cout << "C风格字符串全特化模板: 字符串是 \"" << m_str << "\"" << endl;
+    }
+};
+
+int main() {
+    cout << "--- 测试通用模板 ---" << endl;
+    Wrapper<double> doubleWrapper(3.14159);
+    doubleWrapper.print();
+
+    cout << "\n--- 测试指针部分特化 ---" << endl;
+    int value = 100;
+    Wrapper<int*> ptrWrapper(&value);
+    ptrWrapper.print();
+
+    cout << "\n--- 测试C风格字符串全特化 ---" << endl;
+    Wrapper<const char*> cstrWrapper("Hello, Specialization!");
+    cstrWrapper.print();
+
+    return 0;
+}
+```
+
+##### 答案解析
+本题的核心是理解 **模板特化（Template Specialization）** 的匹配规则：
+1.  **匹配过程**：当编译器遇到一个模板实例化请求，如 `Wrapper<int*>` 时，它会寻找所有可用的 `Wrapper` 模板定义。
+2.  **选择最具体的版本**：编译器的选择遵循“最特化优先”原则。
+    *   对于 `Wrapper<double>`，只有通用模板 `Wrapper<T>` 能匹配，因此 `T` 被推导为 `double`。
+    *   对于 `Wrapper<int*>`，通用模板 `Wrapper<T>` (T为`int*`) 和部分特化模板 `Wrapper<T*>` (T为`int`) 都能匹配。由于部分特化版本 (`T*`) 比通用版本 (`T`) 更具体，编译器选择部分特化。
+    *   对于 `Wrapper<const char*>`，通用模板、部分特化模板 (`T`为`const char`) 和全特化模板 `Wrapper<const char*>` 都能匹配。全特化版本是为这个特定类型量身定做的，是“最最具体”的，因此编译器会毫不犹豫地选择它。
+
+</details>
 
 # 第十部分：STL标准模板库
 **部分描述**：学习使用C++标准库提供的强大工具，提高编程效率。
