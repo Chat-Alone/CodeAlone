@@ -21918,61 +21918,1631 @@ int main() {
 </details>
 
 # 第十部分：STL标准模板库
-**部分描述**：学习使用C++标准库提供的强大工具，提高编程效率。
+## 第33章：vector容器
 
-## 第33章：STL容器基础
-**知识点**：
-- STL概述
-- vector容器
-- vector的基本操作
-- list容器
-- deque容器
-- 容器的选择
-- 容器的通用操作
-- 容器的效率比较
-- **示例程序**：学生管理系统STL版、数据统计程序
+欢迎来到C++标准模板库（**S**tandard **T**emplate **L**ibrary, STL）的世界！STL是C++标准库的瑰宝，它包含了一系列经过精心设计和高度优化的数据结构和算法。你之前学习的**模板**正是STL的根基，它使得STL中的组件能够处理任何数据类型，实现了代码的极致复用。
 
-## 第34章：STL容器进阶
-**知识点**：
-- set和multiset
-- map和multimap
-- unordered_set和unordered_map
-- stack适配器
-- queue适配器
-- priority_queue
-- 容器的嵌套使用
-- 自定义比较函数
-- **示例程序**：词频统计程序、任务调度系统
+从现在开始，你将告别手动实现链表、动态数组等基础数据结构的时代。STL为你提供了现成的、工业级的“轮子”，让你可以专注于解决更高层次的业务逻辑问题。
 
-## 第35章：STL算法
-**知识点**：
-- 算法库概述
-- 非修改性算法（find、count等）
-- 修改性算法（copy、transform等）
-- 排序算法（sort、partial_sort等）
-- 数值算法
-- 算法与函数对象
-- lambda表达式基础
-- 算法的使用技巧
-- **示例程序**：数据分析工具、文本处理工具
+本章我们将学习STL中最基本、最重要、也是使用最频繁的容器——`std::vector`。
 
-## 第36章：迭代器与适配器
-**知识点**：
-- 迭代器的概念
-- 迭代器的类别
-- 迭代器的使用
-- 迭代器失效问题
-- 反向迭代器
-- 插入迭代器
-- 流迭代器
-- 函数适配器
-- 迭代器适配器
-- **示例程序**：自定义容器类、高级数据处理程序
+### 时间复杂度
+
+在学习正式内容前，让我们思考一个问题：“如何表示一个算法的性能？当数据量变得非常大时，它会不会卡爆了？” 
+
+**时间复杂度（Time Complexity）** 就是用来回答这个问题的。
+
+它描述的**不是**一个操作具体花费了多少秒，因为这取决于计算机的性能、编程语言等因素。相反，它描述的是**操作的执行时间如何随着输入数据规模的增长而增长的趋势**。我们通常使用“大O表示法”（Big O Notation）来表示，例如 `O(1)`、`O(N)`。
+
+以下是一些最常见的时间复杂度，以及它们的直观理解：
+
+*   **O(1) - 常数时间**
+    *   **含义**：无论处理的数据有多少，该操作花费的时间基本保持不变。
+    *   **类比**：从一本书中拿出第一页。无论这本书是10页还是1000页，这个动作都一样快。
+    *   这是**最高效**的时间复杂度。
+
+*   **O(N) - 线性时间 (Linear Time)**
+    *   **含义**：花费的时间与数据的数量 `N` 成正比。如果数据量翻倍，时间也大致翻倍。
+    *   **例如**：完整地读完一本书。一本200页的书会比一本100页的书多花一倍的时间。
+    *   **代码示例**: 一个简单的 `for` 循环，遍历所有 `N` 个元素。
+        ```cpp
+        for (int i = 0; i < N; ++i) {
+            // 对第i个元素做一些事
+        }
+        ```
+
+*   **O(log N) - 对数时间**
+    *   **含义**：当数据量 `N` 巨大地增长时，花费的时间只是缓慢地增长。
+    *   **例如**：二分算法：在一个排好序的字典里找一个词。你不会一页一页地翻（那是O(N)）。你会先翻到中间，看要找的词在前半部分还是后半部分，然后对那一半再重复这个过程。即使字典的页数翻倍，你也只需要多“对半切分”一次而已。
+    *   这是一种**非常高效**的复杂度，仅次于O(1)。
+
+*   **O(N²) - 平方时间**
+    *   **含义**：花费的时间与数据数量 `N` 的平方成正比。如果数据量翻倍，时间会变成原来的四倍（2²=4）。
+    *   **例如**：一个班级里有 `N` 个学生，要求每个学生都和其他所有学生握一次手。当学生人数增加时，握手的总次数会急剧增加。
+    *   **代码示例**: 一个嵌套的 `for` 循环，内外两层都遍历 `N` 个元素。
+        ```cpp
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j) {
+                // 对(i, j)这对组合做一些事
+            }
+        }
+        ```
+    *   这种复杂度的算法在大数据量时会变得非常慢，通常需要避免。
+
+---
+
+### `std::vector`是什么？
+你可以将`std::vector`理解为一个“**智能的动态数组**”。它像普通数组一样，使用一块**连续的内存**来存储元素，这使得它可以通过下标快速访问任何元素。但与普通数组不同，`vector`的大小是动态的，它可以根据需要自动增长或缩小。它为你封装了所有繁琐的内存管理工作，如`new`和`delete`，让我们能安全、便捷地使用动态数组。
+
+**本章学习目标**：
+*   理解`vector`作为动态数组的本质。
+*   掌握`vector`的创建、元素访问、增删改查等基本操作。
+*   理解其内存管理机制（容量和大小）以及对性能的影响。
+*   学会使用迭代器遍历和操作`vector`。
+*   了解并规避`vector`操作中可能导致的迭代器失效问题。
+
+**准备工作**：
+要使用`std::vector`，你必须在代码文件的开头包含其头文件：
+```cpp
+#include <vector>
+```
+
+---
+
+### 构造与初始化
+
+创建一个`vector`，就是声明一个`vector`类型的变量。由于`vector`是一个类模板，我们必须在尖括号`< >`中指明它要存储的数据类型。
+
+#### 1. 默认构造 (创建空vector)
+这是最简单的构造方式，创建一个不包含任何元素的`vector`。
+
+*   **语法**：`std::vector<DataType> variable_name;`
+*   **说明**：这会创建一个空的`vector`。我们可以通过它的成员函数`size()`和`empty()`来验证其状态。
+    *   `size()`：返回一个`size_t`类型（一种无符号整数），表示`vector`中当前存储的**元素数量**。
+    *   `empty()`：返回一个`bool`值，如果`vector`为空（即`size()`为0），则返回`true`，否则返回`false`。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+int main() {
+    // 默认构造一个存储int类型的vector
+    std::vector<int> numbers;
+
+    std::cout << "Vector 'numbers' 被创建了。" << std::endl;
+    std::cout << "它是否为空? " << (numbers.empty() ? "是" : "否") << std::endl;
+    std::cout << "它包含多少个元素? " << numbers.size() << std::endl;
+
+    // 同样可以创建存储其他类型的vector
+    std::vector<std::string> names;
+    std::cout << "\nVector 'names' 被创建了。" << std::endl;
+    std::cout << "它的大小是: " << names.size() << std::endl;
+
+    return 0;
+}
+```
+**输出结果**：
+```
+Vector 'numbers' 被创建了。
+它是否为空? 是
+它包含多少个元素? 0
+
+Vector 'names' 被创建了。
+它的大小是: 0
+```
+
+#### 2. 填充构造 (创建包含n个相同元素的vector)
+如果你希望创建一个包含多个相同初始值的`vector`，可以使用填充构造函数。
+
+*   **语法**：`std::vector<DataType> variable_name(n, value);`
+*   **说明**：这会创建一个包含`n`个元素的`vector`，并且每一个元素都被初始化为`value`。
+
+*   当`vector`存储的是类对象时，填充构造会调用`MyClass`的**拷贝构造函数**`n`次，用`value`对象来创建`vector`中的每一个元素。这叫做**值初始化**。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+// 一个简单的类，用于演示构造函数的调用
+class Gadget {
+public:
+    Gadget() { // 默认构造函数
+        std::cout << "Gadget 默认构造函数被调用！" << std::endl;
+    }
+    Gadget(const Gadget& other) { // 拷贝构造函数
+        std::cout << "Gadget 拷贝构造函数被调用！" << std::endl;
+    }
+};
+
+int main() {
+    // 填充构造：创建包含5个整数的vector，每个元素的值都是100
+    std::vector<int> scores(5, 100);
+
+    std::cout << "Vector 'scores' 的大小是: " << scores.size() << std::endl;
+
+    Gadget prototype; // 调用默认构造函数
+
+    // 使用原型对象来填充，会调用5次拷贝构造函数
+    std::vector<Gadget> gadgets1(5, prototype); 
+
+    // 只指定大小，会调用3次默认构造函数
+    std::vector<Gadget> gadgets2(3);
+    return 0;
+}
+```
+**输出结果**：
+```
+Vector 'scores' 的大小是: 5
+Gadget 默认构造函数被调用！
+
+Gadget 拷贝构造函数被调用！
+Gadget 拷贝构造函数被调用！
+Gadget 拷贝构造函数被调用！
+Gadget 拷贝构造函数被调用！
+Gadget 拷贝构造函数被调用！
+
+Gadget 默认构造函数被调用！
+Gadget 默认构造函数被调用！
+Gadget 默认构造函数被调用！
+```
+
+#### 3. 列表初始化 (C++11及以后)
+从C++11开始，我们可以使用一种更现代、更直观的方式——列表初始化，来创建`vector`。
+
+*   **语法**：`std::vector<DataType> variable_name = {value1, value2, ...};` (或 `std::vector<DataType> variable_name{value1, value2, ...};`)
+*   **说明**：这是目前最推荐的初始化方式之一，代码清晰易读。
+*   当`vector`存储的是类对象时，会调用**拷贝构造函数**，将初始化列表中的每个对象复制到`vector`中。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+int main() {
+    // 使用列表初始化一个整数vector
+    std::vector<int> numbers = {10, 20, 30, 40, 50};
+    std::cout << "Vector 'numbers' 的大小: " << numbers.size() << std::endl;
+
+    // 使用列表初始化一个字符串vector
+    std::vector<std::string> fruits{"Apple", "Banana", "Cherry"};
+    std::cout << "Vector 'fruits' 的大小: " << fruits.size() << std::endl;
+
+    return 0;
+}
+```
+**输出结果**：
+```
+Vector 'numbers' 的大小: 5
+Vector 'fruits' 的大小: 3
+```
+
+#### 4. 拷贝构造
+你可以用一个已经存在的`vector`来创建另一个一模一样的`vector`。
+
+*   **语法**：`std::vector<DataType> new_vector(old_vector);` (或 `std::vector<DataType> new_vector = old_vector;`)
+*   **说明**：这个操作会创建一个**深拷贝 (Deep Copy)**。也就是说，`new_vector`会分配自己的内存，并将`old_vector`中的所有元素**逐一复制**过来。之后，两个`vector`是完全独立的。
+*   当`vector`存储的是类对象时，会调用**拷贝构造函数**，对每一个元素执行一次拷贝，从而创建新容器。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> original = {1, 2, 3};
+    
+    // 使用拷贝构造函数创建副本
+    std::vector<int> copy(original);
+
+    std::cout << "Original vector 的大小: " << original.size() << std::endl;
+    std::cout << "Copy vector 的大小: " << copy.size() << std::endl;
+    // 修改其中一个不会影响另一个，我们将在学习元素修改后验证这一点。
+
+    return 0;
+}
+```
+**输出结果**：
+```
+Original vector 的大小: 3
+Copy vector 的大小: 3
+```
+
+---
+
+### 元素访问：读取Vector中的数据
+
+创建了`vector`之后，下一步就是如何访问其中的元素。`vector`因为其内存连续的特性，提供了多种高效的访问方法。
+
+#### 1. `operator[]` (下标运算符)
+这是最基本、最像C风格数组的访问方式。
+
+*   **语法**：`vec[index]`
+*   **功能**：返回对索引`index`处元素的**引用**。这意味着你既可以读取也可以修改它。`vector`的索引从`0`开始，到`size() - 1`结束。
+*   **性能**：时间复杂度为**O(1)**，速度极快。
+*   **超级无敌非常特别重大警告**：`operator[]` **不进行边界检查**。如果你提供一个无效的索引（例如，等于或大于`size()`的索引），将会发生**未定义行为**。这通常会导致程序崩溃（段错误），或者更糟，它可能会无声地破坏其他内存区域的数据，导致难以追踪的bug。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30};
+    std::vector<int> scores(5, 100); // 这是之前创建的填充vector
+
+    // --- 正确使用 ---
+    // 读取元素
+    std::cout << "numbers的第一个元素是: " << numbers[0] << std::endl;
+    std::cout << "numbers的第三个元素是: " << numbers[2] << std::endl;
+    
+    std::cout << "scores的第四个元素是: " << scores[3] << std::endl; // 输出 100
+
+    // 修改元素
+    std::cout << "\n修改前，numbers[1] = " << numbers[1] << std::endl;
+    numbers[1] = 25;
+    std::cout << "修改后，numbers[1] = " << numbers[1] << std::endl;
+
+    // --- 错误示范 ---
+    // 下面的代码会导致未定义行为，因为有效索引是 0, 1, 2
+    std::cout << numbers[3]; // 越界访问！
+    numbers[3] = 40;         // 越界写入！
+    
+    return 0;
+}
+```
+
+#### 2. `at()` (安全的访问方式)
+为了解决`[]`的安全性问题，`vector`提供了`at()`成员函数。
+
+*   **语法**：`vec.at(index)`
+*   **功能**：同样返回对索引`index`处元素的引用。
+*   **性能**：时间复杂度为**O(1)**，但比`[]`有非常微小的性能开销（用于边界检查）。
+*   **特性**：`at()` **会进行边界检查**。如果索引无效，它不会导致未定义行为，而是会**抛出 (throw)** 一个`std::out_of_range`类型的**异常 (Exception)**。如果你不处理异常，就会导致程序崩溃。我们在下一部分会学习如何处理异常。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30};
+    // 尝试访问有效的索引
+    std::cout << "使用at()访问第三个元素: " << numbers.at(2) << std::endl;
+    
+    // 尝试越界访问
+    std::cout << "尝试使用at()访问索引为5的元素..." << std::endl;
+    int value = numbers.at(5); // 这行会抛出异常
+
+    return 0;
+}
+```
+**输出结果**：
+```
+使用at()访问第三个元素: 30
+尝试使用at()访问索引为5的元素...
+错误: 访问越界！
+异常信息: vector::_M_range_check: __n (which is 5) >= this->size() (which is 3)
+```
+
+**`[]` vs `at()`: 如何选择?**
+*   **追求极致性能且能100%保证索引有效时**：使用`[]`。例如，在一个从`0`到`vec.size()-1`的`for`循环内部。
+*   **不确定索引是否有效，或更注重程序健壮性时**：**强烈推荐使用`at()`**。由非法访问导致的程序崩溃是比微小性能损失严重得多的问题。
+
+#### 3. `front()` 和 `back()`
+这两个函数提供了访问**第一个**和**最后一个**元素的便捷方式。
+
+*   `front()`: 返回对第一个元素的引用。等价于`vec[0]`或`vec.at(0)`。
+*   `back()`: 返回对最后一个元素的引用。等价于`vec[vec.size() - 1]`。
+*   **警告**：对一个**空的`vector`**调用`front()`或`back()`是**未定义行为**。因此，在使用前最好先用`empty()`检查。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {11, 22, 33, 44, 55};
+
+    if (!numbers.empty()) {
+        std::cout << "第一个元素是 (front): " << numbers.front() << std::endl;
+        std::cout << "最后一个元素是 (back): " << numbers.back() << std::endl;
+
+        // 因为返回的是引用，所以可以用来修改
+        numbers.front() = 1;
+        numbers.back() = 5;
+
+        std::cout << "修改后第一个元素是: " << numbers.front() << std::endl;
+        std::cout << "修改后最后一个元素是: " << numbers.back() << std::endl;
+    }
+
+    return 0;
+}
+```
+---
+
+### 遍历Vector
+
+#### 1. 使用`for`循环和下标运算符`[]`
+这是最直观的遍历方式，和我们之前学习的差不多。
+
+*   **模式**：我们使用一个`for`循环，循环变量`i`从`0`开始，到`vec.size() - 1`结束。在循环体内部，我们使用`vec[i]`来访问当前元素。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+// 一个辅助函数，用来打印vector的内容
+void print_string_vector(const std::vector<std::string>& vec) {
+    std::cout << "Vector 内容: ";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        std::cout << vec.at(i) << " "; // 在这里使用at()更安全
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<std::string> fruits = {"Apple", "Banana", "Cherry", "Durian"};
+    print_string_vector(fruits);
+    return 0;
+}
+```
+**输出结果**：
+```
+Vector 内容: Apple Banana Cherry Durian 
+```
+
+---
+
+### 插入与删除元素
+
+`vector`的强大之处在于其**动态性**——我们可以在运行时添加或移除元素。
+
+#### 1. `push_back()`: 在末尾添加元素
+这是向`vector`中添加元素最常用的方法。
+
+*   **语法**：`vec.push_back(value);`
+*   **功能**：在`vector`的**尾部**添加一个新元素，其值为`value`。此操作会使`vector`的`size`增加1。
+*   **性能**：**均摊O(1)**。
+    *   **什么是“均摊O(1)”？** 大多数情况下，当`vector`的`capacity`（容量）足够时，`push_back`只是简单地在末尾放置一个元素，这是一个极快的`O(1)`操作。
+    *   但是，如果`size`即将超过`capacity`，`vector`就需要**重新分配内存**（申请一块更大的内存，将所有旧元素拷贝过去，再释放旧内存）。这次重分配是一个昂贵的`O(N)`操作。
+    *   不过`vector`的容量增长策略（通常是翻倍）保证了这种昂贵的`O(N)`操作**不会频繁发生**。将这些昂贵操作的成本“平摊”到所有`push_back`调用上，其平均时间复杂度依然是`O(1)`。
+    *   因此你可以放心地认为`push_back`是一个非常高效的操作。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+void print_vector_status(const std::vector<std::string>& vec) {
+    std::cout << "当前大小(size): " << vec.size() << ". 内容: ";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        std::cout << vec[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<std::string> shopping_list;
+    std::cout << "创建一个空的购物清单..." << std::endl;
+    print_vector_status(shopping_list);
+
+    std::cout << "\n添加 'Milk'..." << std::endl;
+    shopping_list.push_back("Milk");
+    print_vector_status(shopping_list);
+    
+    std::cout << "添加 'Bread'..." << std::endl;
+    shopping_list.push_back("Bread");
+    print_vector_status(shopping_list);
+
+    std::cout << "添加 'Eggs'..." << std::endl;
+    shopping_list.push_back("Eggs");
+    print_vector_status(shopping_list);
+
+    return 0;
+}
+```
+**输出结果**：
+```
+创建一个空的购物清单...
+当前大小(size): 0. 内容: 
+
+添加 'Milk'...
+当前大小(size): 1. 内容: Milk 
+添加 'Bread'...
+当前大小(size): 2. 内容: Milk Bread 
+添加 'Eggs'...
+当前大小(size): 3. 内容: Milk Bread Eggs 
+```
+
+#### 2. `pop_back()`: 删除末尾元素
+与`push_back`相对应，`pop_back`用于移除`vector`的最后一个元素。
+
+*   **语法**：`vec.pop_back();`
+*   **功能**：删除`vector`的**最后一个**元素。此操作会使`vector`的`size`减少1。
+*   **注意**：`pop_back`**没有返回值**。它只是删除元素，并不会返回被删除的元素值。如果你需要获取那个值，需要在调用`pop_back`之前先用`back()`访问它。
+*   **警告**：对一个**空`vector`**调用`pop_back`是**未定义行为**。
+*   **性能**：**O(1)**。这是一个非常快速的操作，因为它只修改`size`的值，不涉及任何元素的移动或内存的释放。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+void print_int_vector(const std::vector<int>& vec) {
+    std::cout << "Size: " << vec.size() << ". 内容: ";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        std::cout << vec[i] << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30, 40};
+    std::cout << "初始状态:" << std::endl;
+    print_int_vector(numbers);
+
+    if (!numbers.empty()) {
+        int last_element = numbers.back(); // 先获取最后一个元素的值
+        std::cout << "\n准备删除最后一个元素，它的值是: " << last_element << std::endl;
+        
+        numbers.pop_back(); // 执行删除
+        std::cout << "删除后:" << std::endl;
+        print_int_vector(numbers);
+    }
+    
+    numbers.pop_back();
+    std::cout << "\n再次删除后:" << std::endl;
+    print_int_vector(numbers);
+
+    return 0;
+}
+```
+**输出结果**：
+```
+初始状态:
+Size: 4. 内容: 10 20 30 40 
+
+准备删除最后一个元素，它的值是: 40
+删除后:
+Size: 3. 内容: 10 20 30 
+
+再次删除后:
+Size: 2. 内容: 10 20 
+```
+
+#### 3. `clear()`: 清空所有元素
+如果你想一次性删除`vector`中的所有元素，可以使用`clear()`。
+
+*   **语法**：`vec.clear();`
+*   **功能**：移除`vector`中的所有元素，使其`size`变为0。
+*   **注意**：`clear()`只改变`size`，通常**不改变`capacity`**。这意味着`vector`之前分配的内存仍然被保留，以便未来快速添加新元素。
+*   **性能**：**O(N)**。虽然不移动元素，但需要对每个元素调用其析构函数（对于像`int`这样的基本类型，什么也不做；但对于类对象，会执行清理工作）。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    std::cout << "清空前: Size=" << numbers.size() << ", Capacity=" << numbers.capacity() << std::endl;
+
+    numbers.clear();
+
+    std::cout << "清空后: Size=" << numbers.size() << ", Capacity=" << numbers.capacity() << std::endl;
+    std::cout << "Vector现在是否为空? " << (numbers.empty() ? "是" : "否") << std::endl;
+
+    return 0;
+}
+```
+**可能的输出结果**：
+```
+清空前: Size=5, Capacity=5
+清空后: Size=0, Capacity=5
+Vector现在是否为空? 是
+```
+你可能会想：“如何在`vector`的**中间**插入或删除元素呢？” 这需要一个更强大的工具——**迭代器（Iterator）**。我们将在后面学习迭代器，之后再回来解决这个问题。
+
+---
+
+### 容量管理：深入`vector`的内存秘密
+
+我们之前在使用`push_back`时已经初步接触了`vector`的内存行为。现在我们系统地学习它。`vector`之所以高效，关键在于它对内存的智能管理。要理解其工作原理，必须分清两个核心概念：**大小（Size）**和**容量（Capacity）**。
+
+*   `size()`：**大小**。我们已经用过它了，它指的是`vector`中**当前实际存储了多少个元素**。
+*   `capacity()`：**容量**。指的是在**不重新分配新内存**的情况下，`vector`**最多能够容纳多少个元素**。
+
+**关键规则**：`capacity() >= size()` 这条规则永远成立。
+
+**为什么需要容量？**
+`vector`采用了一种**预分配策略**。当你用`push_back`添加元素，`size`即将超过`capacity`时，`vector`会执行一次**内存重分配（Reallocation）**：
+1.  **申请一块更大的新内存**：新内存的大小通常是当前容量的1.5倍或2倍（具体策略取决于编译器实现）。
+2.  **拷贝元素**：将旧内存中的所有元素拷贝（或移动）到新内存中。
+3.  **释放旧内存**：销毁旧的内存空间。
+
+这个过程是昂贵的（时间复杂度为`O(N)`，n是元素数量），`capacity`的存在就是为了**减少内存重分配的频率**，从而提高连续添加元素时的整体性能。
+
+**代码示例：观察size和capacity的变化**
+```cpp
+#include <iostream>
+#include <vector>
+
+void print_status(const std::vector<int>& vec) {
+    std::cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << std::endl;
+}
+
+int main() {
+    std::vector<int> vec;
+    std::cout << "初始状态:" << std::endl;
+    print_status(vec); // Size: 0, Capacity: 0
+
+    std::cout << "\n开始用 push_back 添加元素..." << std::endl;
+    for (int i = 1; i <= 5; ++i) {
+        vec.push_back(i);
+        std::cout << "添加 " << i << " 后 -> ";
+        print_status(vec);
+    }
+    // 你会观察到，capacity的增长是跳跃式的。
+    // 当size超过capacity时，capacity会一次性变得更大。
+    return 0;
+}
+```
+**可能的输出结果（具体容量值可能不同）**：
+```
+初始状态:
+Size: 0, Capacity: 0
+
+开始用 push_back 添加元素...
+添加 1 后 -> Size: 1, Capacity: 1
+添加 2 后 -> Size: 2, Capacity: 2
+添加 3 后 -> Size: 3, Capacity: 3
+添加 4 后 -> Size: 4, Capacity: 4
+添加 5 后 -> Size: 5, Capacity: 6
+```
+
+#### `reserve()`: 主动预留空间
+如果你能预知大概要存储多少个元素，可以使用`reserve()`来一次性分配足够的内存。这是一个非常重要的性能优化技巧。
+
+*   **语法**：`vec.reserve(n);`
+*   **功能**：请求`vector`的容量至少为`n`。
+    *   如果`n`小于或等于当前的`capacity`，`vector`什么也不做。
+    *   如果`n`大于当前的`capacity`，`vector`会进行一次内存重分配，将容量擴展到至少为`n`。
+*   **注意**：`reserve()`只改变`capacity`，**不改变`size`**，也不会添加任何新元素。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+void print_status(const std::vector<int>& vec) {
+    std::cout << "Size: " << vec.size() << ", Capacity: " << vec.capacity() << std::endl;
+}
+
+int main() {
+    std::vector<int> vec_no_reserve;
+    std::vector<int> vec_with_reserve;
+
+    // --- 对比实验 ---
+    int num_elements = 1000;
+    
+    // 1. 不使用reserve
+    std::cout << "--- 不使用 reserve ---" << std::endl;
+    for (int i = 0; i < num_elements; ++i) {
+        vec_no_reserve.push_back(i);
+        // 这个循环内部可能会发生多次内存重分配
+    }
+    std::cout << "添加1000个元素后: ";
+    print_status(vec_no_reserve);
+
+
+    // 2. 使用reserve
+    std::cout << "\n--- 使用 reserve ---" << std::endl;
+    vec_with_reserve.reserve(num_elements); // 提前分配好所有空间
+    std::cout << "reserve(1000)后: ";
+    print_status(vec_with_reserve);
+    for (int i = 0; i < num_elements; ++i) {
+        vec_with_reserve.push_back(i);
+        // 这个循环内部将不会发生任何内存重分配
+    }
+    std::cout << "添加1000个元素后: ";
+    print_status(vec_with_reserve);
+
+    return 0;
+}
+```
+
+#### `shrink_to_fit()`: 释放多余容量
+与`reserve`相反，`shrink_to_fit`用于请求释放未使用的内存。
+
+*   **语法**：`vec.shrink_to_fit();`
+*   **功能**：这是一个**请求**，而非强制命令。它建议`vector`将`capacity`减少到与`size`相同。这个操作可能会引发一次内存重分配（将元素复制到一块更小的内存中）。
+*   **使用场景**：当你确定一个`vector`在未来很长一段时间内不会再增长时（比如处理完数据后），可以用此方法节约内存。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers;
+    numbers.reserve(100); // 容量很大
+    numbers.push_back(1);
+    numbers.push_back(2);
+    numbers.push_back(3);
+
+    std::cout << "操作前: Size=" << numbers.size() << ", Capacity=" << numbers.capacity() << std::endl;
+
+    // 现在我们有很多元素，但又删除了大部分
+    numbers.push_back(4);
+    numbers.push_back(5);
+    while (numbers.size() > 2) {
+        numbers.pop_back();
+    }
+    std::cout << "删除大量元素后: Size=" << numbers.size() << ", Capacity=" << numbers.capacity() << std::endl;
+
+    // 请求释放多余内存
+    numbers.shrink_to_fit();
+    std::cout << "shrink_to_fit后: Size=" << numbers.size() << ", Capacity=" << numbers.capacity() << std::endl;
+
+    return 0;
+}
+```
+**输出结果**：
+```
+操作前: Size=3, Capacity=100
+删除大量元素后: Size=2, Capacity=100
+shrink_to_fit后: Size=2, Capacity=2
+```
+
+---
+
+### 迭代器 (Iterator)：`vector`的通用指针
+
+**什么是迭代器？**
+**迭代器（Iterator）** 是一种行为类似指针的对象。它“指向”容器（如`vector`）中的某个元素，并且我们能通过它在容器的元素之间移动。
+
+你可以把它想象成一个书签。这个书签可以指向书中的某一页（元素），你可以通过书签读取当前页的内容，也可以把书签向前或向后移动到其他页面。
+
+**为什么需要迭代器？**
+你可能会想：“我们已经有下标`[]`了，为什么还需要一个新东西？”
+答案是，下标访问**不是一种通用的方式**。它只适用于像`vector`和数组这样内存连续的数据结构。对于我们后续即将学习的数据结构例如链表（`std::list`）、树（`std::map`）这样的数据结构，它们在内存中不是连续存储的，你无法用`[5]`来直接跳到第5个元素。
+
+迭代器提供了一种**统一的、抽象的访问接口**。无论底层数据结构是什么，我们都可以用同样的方式（`*it`取值，`++it`移动）来遍历它。这使得STL中的算法（如排序、查找）可以不关心容器的具体类型，只通过迭代器来操作数据，极大地提升了代码的通用性。
+
+#### 获取迭代器
+
+`vector`提供了几个成员函数来获取指向特定位置的迭代器：
+
+*   `begin()`: 返回一个指向`vector`**第一个元素**的迭代器。
+*   `end()`: 返回一个指向`vector`**最后一个元素之后**的“哨兵”位置的迭代器。这个位置本身**并不存储任何有效元素**。
+    *   **重要概念：左闭右开区间 `[begin, end)`**
+        `begin()`和`end()`共同定义了一个代表`vector`所有元素的区间。这是一个**左闭右开**的区间，意味着它包含`begin()`指向的元素，但不包含`end()`指向的位置。这在C++中是一种非常标准和常见的设计。
+
+假设我们有一个 `vector`，其中包含 5 个整数：`{10, 20, 30, 40, 50}`。
+
+```cpp
+std::vector<int> v = {10, 20, 30, 40, 50};
+```
+
+下面的图表展示了 `v.begin()` 和 `v.end()` 指向的位置：
+
+| **概念** | **1** | **2** | **3** | **4** | **5** | **末尾之后 (Past-the-end)** |
+| :--- | :---: | :---: | :---: | :---: | :---: |:---:|
+| **值** | `10` | `20` | `30` | `40` | `50` | *(不属于容器)* |
+| **索引** | `[0]` | `[1]` | `[2]` | `[3]` | `[4]` | |
+| **迭代器** | ↑ | | | | | ↑ |
+| | `v.begin()` | | | | | `v.end()` |
+
+**代码示例：获取并理解`begin`和`end`**
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30};
+
+    // 获取迭代器
+    // 注意迭代器的类型是 std::vector<int>::iterator
+    std::vector<int>::iterator it_begin = numbers.begin();
+    std::vector<int>::iterator it_end = numbers.end();
+
+    // 使用解引用操作符 * 来获取迭代器指向的元素值
+    std::cout << "begin() 指向的元素是: " << *it_begin << std::endl; // 输出 10
+
+    // 移动迭代器
+    // 使用 ++ 操作符将迭代器移动到下一个元素
+    ++it_begin; 
+    std::cout << "将begin()迭代器++后，指向的元素是: " << *it_begin << std::endl; // 输出 20
+    
+    // end() 不指向任何有效元素，对它解引用是未定义行为！
+    // std::cout << *it_end << std::endl; // ！！！错误，会导致程序崩溃！！！
+    
+    return 0;
+}
+```
+
+#### 使用迭代器遍历`vector`
+
+现在我们有了`begin()`和`end()`，就可以实现一种新的、更通用的遍历方式。
+
+*   **模式**：
+    1.  初始化一个迭代器`it`，令其等于`vec.begin()`。
+    2.  循环的条件是 `it != vec.end()`。当迭代器移动到`end()`位置时，说明已经遍历完所有元素，循环结束。
+    3.  在循环体内部，使用 `*it` 来访问当前元素。
+    4.  在每次循环结束时，使用 `++it` 将迭代器移动到下一个元素。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30, 40, 50};
+
+    std::cout << "使用迭代器遍历 vector: ";
+    for (std::vector<int>::iterator it = numbers.begin(); it != numbers.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    // 迭代器不仅可以读，还可以写
+    std::cout << "使用迭代器将所有元素乘以2..." << std::endl;
+    for (std::vector<int>::iterator it = numbers.begin(); it != numbers.end(); ++it) {
+        *it = *it * 2; // 通过解引用来修改元素的值
+    }
+
+    std::cout << "修改后的 vector: ";
+    // 再次遍历以查看结果
+    for (std::vector<int>::iterator it = numbers.begin(); it != numbers.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**输出结果**：
+```
+使用迭代器遍历 vector: 10 20 30 40 50 
+使用迭代器将所有元素乘以2...
+修改后的 vector: 20 40 60 80 100 
+```
+
+#### 范围for循环 (Range-based for loop)
+
+手写迭代器循环虽然通用，但语法稍显繁琐。C++11引入了一种更简洁、更安全、更易读的遍历语法——**范围for循环**。
+
+**它的底层原理就是迭代器！** 编译器会自动将范围for循环转换为我们上面手写的那种`begin()`到`end()`的循环。
+
+*   **语法**：`for (ElementType variable : container)`
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+int main() {
+    std::vector<std::string> fruits = {"Apple", "Banana", "Cherry"};
+
+    std::cout << "使用范围for循环遍历 (只读):" << std::endl;
+    // 使用 const auto& 是一种很好的实践：
+    // const: 表明我们不打算在循环中修改元素，更安全。
+    // auto: 编译器自动推断元素类型 (这里是std::string)。
+    // &:   使用引用，避免对每个元素进行不必要的拷贝，提升性能。
+    for (const auto& fruit : fruits) {
+        std::cout << fruit << std::endl;
+    }
+
+    std::cout << "\n使用范围for循环修改元素:" << std::endl;
+    std::vector<int> numbers = {1, 2, 3};
+    // 如果要修改，必须使用非const引用 auto&
+    for (auto& num : numbers) {
+        num *= 10;
+    }
+    
+    // 打印验证
+    std::cout << "修改后: ";
+    for (const auto& num : numbers) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**结论**：在只需要顺序遍历容器时，**优先使用范围for循环**。它更简洁、更安全，不易出错。只有在需要更复杂操作（如在循环中删除元素）时，才需要手写迭代器循环。
+
+#### 其他类型的迭代器
+
+*   **`const_iterator`**: 常量迭代器。
+    *   获取方式：`cbegin()`, `cend()`。
+    *   功能：它只能用来读取元素 (`*it`)，不能用来修改元素 (`*it = value;` 会导致编译错误)。
+    *   用途：当你的函数接收一个`const`的`vector`引用（例如`const std::vector<int>&`）时，你只能使用`const_iterator`来遍历它，这保证了函数不会意外修改数据。
+    *   当你的函数接收一个`const`的`vector`引用时，`vec.begin()`会自动返回`const_iterator`
+
+*   **`reverse_iterator`**: 反向迭代器。
+    *   获取方式：`rbegin()`, `rend()`。
+    *   `rbegin()`: 指向`vector`的**最后一个**元素。
+    *   `rend()`: 指向`vector`**第一个元素之前**的“哨兵”位置。
+    *   功能：`++`操作会使它向前（向`vector`的开头）移动。用于反向遍历`vector`。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+void print_const_vector(const std::vector<int>& vec) {
+    std::cout << "在一个const函数中用cbegin/cend遍历: ";
+    // 在这里，vec是const的，所以vec.begin()会自动返回const_iterator
+    // 为了教学，我们这里明确使用cbegin()
+    for (std::vector<int>::const_iterator it = vec.cbegin(); it != vec.cend(); ++it) {
+        // *it = 10; // 编译错误！不能通过const_iterator修改
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+}
+
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30};
+    print_const_vector(numbers);
+
+    std::cout << "使用反向迭代器rbegin/rend遍历: ";
+    for (std::vector<int>::reverse_iterator rit = numbers.rbegin(); rit != numbers.rend(); ++rit) {
+        std::cout << *rit << " ";
+    }
+    std::cout << std::endl;
+    
+    return 0;
+}
+```
+**输出结果**：
+```
+在一个const函数中用cbegin/cend遍历: 10 20 30 
+使用反向迭代器rbegin/rend遍历: 30 20 10 
+```
+
+---
+
+### 在任意位置插入和删除
+
+现在，有了迭代器这个强大的工具，我们终于可以解决在`vector`中间进行操作的问题了。
+
+#### 1. `insert()`: 在指定位置插入
+`insert`函数可以在迭代器指定的位置之前插入一个或多个元素。
+
+**语法 1 (插入单个元素)**：`vec.insert(iterator_pos, value);`
+*   **功能**：在迭代器`iterator_pos`指向的位置**之前**，插入一个新元素`value`。
+*   **返回值**：返回一个指向**新插入元素**的迭代器。
+*   **性能**：**O(N)**。因为从插入点开始到`vector`末尾的所有元素都需要向后移动一个位置。
+
+**语法 2 (插入n个相同元素)**：`vec.insert(iterator_pos, count, value);`
+*   **功能**：在迭代器 `iterator_pos` 指向的位置**之前**，插入 `count` 个值为 `value` 的新元素。
+*   **返回值**：返回一个指向**第一个新插入元素**的迭代器。如果 `count` 为 0，则返回 `iterator_pos`。
+*   **性能**：**O(M + N)**。其中 M 是要插入的元素数量 (`count`)，N 是从插入点到 `vector` 末尾的元素数量。因为 `N` 个原有元素需要向后移动，并且需要构造 `M` 个新元素。
+
+**语法 3 (插入一个范围)**：`vec.insert(iterator_pos, input_iterator_first, input_iterator_last);`
+*   **功能**：将在另一个容器或范围中，由迭代器 `[first, last)` 所表示的**半开区间**的所有元素，拷贝并插入到当前 `vector` 的 `iterator_pos` 位置**之前**。
+*   **返回值**：返回一个指向**第一个新插入元素**的迭代器。如果插入范围为空，则返回 `iterator_pos`。
+*   **性能**：**O(M + N)**。其中 M 是插入范围 `[first, last)` 中的元素数量，N 是从插入点到 `vector` 末尾的元素数量。
+
+**语法 4 (插入初始化列表)**：`vec.insert(iterator_pos, initializer_list);`
+*   **功能**：将在大括号 `{}` 中定义的**初始化列表**中的所有元素，插入到 `iterator_pos` 位置**之前**。这是C++11引入的便捷语法。
+*   **返回值**：返回一个指向**第一个新插入元素**的迭代器。
+*   **性能**：**O(M + N)**。其中 M 是初始化列表中的元素数量，N 是从插入点到 `vector` 末尾的元素数量。
+
+**代码示例**(`auto`关键字会自动识别变量的类型)：
+```cpp
+#include <iostream>
+#include <vector>
+
+// 辅助函数，用于打印vector内容
+void print_vector(const std::string& message, const std::vector<int>& vec) {
+    std::cout << message;
+    for (const int& num : vec) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    // === 语法 1: 插入单个元素 ===
+    std::vector<int> vec1 = { 10, 50 };
+    print_vector("vec1 初始: ", vec1);
+    auto it1 = vec1.insert(vec1.begin() + 1, 30); // 在50之前插入30
+    print_vector("插入单个元素后: ", vec1);
+    std::cout << "返回迭代器指向: " << *it1 << "\n\n";
+
+    // === 语法 2: 插入 n 个相同元素 ===
+    std::vector<int> vec2 = { 10, 50 };
+    print_vector("vec2 初始: ", vec2);
+    auto it2 = vec2.insert(vec2.begin() + 1, 3, 99); // 在50之前插入3个99
+    print_vector("插入3个99后: ", vec2);
+    std::cout << "返回迭代器指向: " << *it2 << "\n\n";
+
+    // === 语法 3: 插入一个范围 (源也是vector) ===
+    std::vector<int> vec3 = { 10, 50 };
+    std::vector<int> source_vec = { 20, 30, 40 }; // 源容器
+    print_vector("vec3 初始: ", vec3);
+    print_vector("待插入的源vector: ", source_vec);
+    auto it3 = vec3.insert(vec3.begin() + 1, source_vec.begin(), source_vec.end());
+    print_vector("插入范围后: ", vec3);
+    std::cout << "返回迭代器指向: " << *it3 << "\n\n";
+
+    // === 语法 4: 插入初始化列表 ===
+    std::vector<int> vec4 = { 10, 50 };
+    print_vector("vec4 初始: ", vec4);
+    auto it4 = vec4.insert(vec4.begin() + 1, { 22, 33, 44 }); // 插入初始化列表
+    print_vector("插入初始化列表后: ", vec4);
+    std::cout << "返回迭代器指向: " << *it4 << std::endl;
+
+    return 0;
+}
+```
+
+**输出结果：**
+```
+vec1 初始: 10 50
+插入单个元素后: 10 30 50
+返回迭代器指向: 30
+
+vec2 初始: 10 50
+插入3个99后: 10 99 99 99 50
+返回迭代器指向: 99
+
+vec3 初始: 10 50
+待插入的源vector: 20 30 40
+插入范围后: 10 20 30 40 50
+返回迭代器指向: 20
+
+vec4 初始: 10 50
+插入初始化列表后: 10 22 33 44 50
+返回迭代器指向: 22
+```
+
+#### 2. `erase()`: 删除指定位置或范围的元素
+`erase`函数可以删除迭代器指定位置的元素，或一个迭代器范围内的所有元素。
+
+*   **语法 1 (删除单个元素)**：`vec.erase(iterator_pos);`
+*   **语法 2 (删除一个范围)**：`vec.erase(iterator_first, iterator_last);`
+*   **功能**：
+    *   语法1: 删除迭代器`iterator_pos`指向的元素。
+    *   语法2: 删除从`iterator_first`到`iterator_last`之间的所有元素，同样是**左闭右开**区间 `[first, last)`。
+*   **返回值**：返回一个指向**被删除的最后一个元素的下一个元素**的迭代器。这个返回值非常重要，我们马上会看到它的关键作用。
+*   **性能**：**O(N)**。因为从删除点开始到`vector`末尾的所有元素都需要向前移动。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+void print_vector(const std::vector<int>& vec) {
+    for (const auto& num : vec) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> numbers = {10, 20, 99, 30, 40, 88, 77};
+    std::cout << "初始 vector: ";
+    print_vector(numbers);
+
+    // 删除第二个元素 (20)
+    numbers.erase(numbers.begin() + 1);
+    std::cout << "删除第二个元素后: ";
+    print_vector(numbers); // 10 99 30 40 88 77
+
+    // 删除一个范围，从索引2 (元素30) 到索引4 (元素88), 不包括88
+    // 即删除 30 和 40
+    numbers.erase(numbers.begin() + 2, numbers.begin() + 4);
+    std::cout << "删除一个范围后: ";
+    print_vector(numbers); // 10 99 88 77
+    
+    return 0;
+}
+```
+
+---
+
+### 迭代器失效规则
+
+这是使用`vector`（以及其他许多STL容器）时**最重要、最容易出错**的地方，必须高度重视。
+
+**迭代器失效**指的是，在对`vector`进行某些操作后，之前获取的迭代器、指针或引用突然变得无效，不再指向原来的合法位置。如果继续使用一个失效的迭代器，就会导致**未定义行为**（通常是程序崩溃）。
+
+**对于`vector`，迭代器失效的规则如下**：
+
+1.  **任何引起内存重分配的操作** (如`push_back`导致容量变化，或`reserve`, `shrink_to_fit`等)，会使**所有**指向该`vector`的迭代器、指针和引用**全部失效**。因为所有元素都被移动到了新的内存地址。
+
+2.  **`insert()` 操作**:
+    *   如果`insert`导致了内存重分配，同上，**所有迭代器失效**。
+    *   如果`insert`**没有**导致内存重分配，那么**插入点以及之后**的迭代器会失效，但插入点之前的迭代器仍然有效。
+
+3.  **`erase()` 操作**:
+    *   `erase`**不会**导致内存重分配。
+    *   但是，**被删除点以及其之后**的所有迭代器、指针和引用都会失效。因为它们后面的元素都向前移动了，迭代器指向的位置已经不对了。
+
+#### 错误示例：在循环中删除元素
+这是一个经典的错误，几乎每个C++初学者都会犯。
+
+```cpp
+// ！！！错误代码 - 会导致崩溃或跳过元素 ！！！
+std::vector<int> numbers = {1, 2, 3, 4, 5, 6};
+std::cout << "尝试用错误的方式删除所有偶数..." << std::endl;
+
+for (auto it = numbers.begin(); it != numbers.end(); ++it) {
+    if (*it % 2 == 0) { // 如果是偶数
+        // 当我们删除 *it 时, it 本身就失效了。
+        // 在下一次循环开始时，执行 ++it 就是对一个失效的迭代器进行操作，
+        // 这是未定义行为！
+        numbers.erase(it);
+    }
+}
+// 最终结果可能是错误的，甚至程序会直接崩溃。
+```
+
+#### 正确做法：使用`erase`的返回值
+
+如何解决这个问题？答案就在`erase`的返回值里！`erase`会返回一个指向被删除元素下一个位置的**有效**迭代器。我们应该用这个返回值来更新我们的循环迭代器。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+
+int main() {
+    std::vector<int> numbers = {10, 21, 30, 41, 50, 61};
+    std::cout << "原始数据: ";
+    for(int n : numbers) std::cout << n << " ";
+    std::cout << std::endl;
+
+    // 正确地删除所有偶数
+    std::cout << "正确删除所有偶数..." << std::endl;
+    for (auto it = numbers.begin(); it != numbers.end();) {
+        if (*it % 2 == 0) {
+            // 如果删除元素，用erase的返回值来更新it
+            // it现在已经指向了下一个需要检查的元素
+            it = numbers.erase(it); 
+        } else {
+            // 如果不删除，才手动将迭代器后移
+            ++it;
+        }
+    }
+
+    std::cout << "删除偶数后: ";
+    for(int n : numbers) std::cout << n << " ";
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**输出结果**：
+```
+原始数据: 10 21 30 41 50 61 
+正确删除所有偶数...
+删除偶数后: 21 41 61 
+```
+这个模式是`vector`编程中的一个核心技巧，请务必理解并牢记。
+
+---
+
+### 其他操作
+
+#### 1. 拷贝、移动与交换
+
+在处理`vector`时，我们经常需要对整个容器进行复制或交换内容。
+
+*   **拷贝赋值 (`=` operator)**
+    *   **语法**: `vec2 = vec1;`
+    *   **功能**: 这会执行一次**深拷贝 (Deep Copy)**。`vec2`会先清空自己的所有元素，然后分配新的内存，并将`vec1`中的所有元素**逐一复制**过来。操作完成后，`vec2`和`vec1`是两个内容相同但完全独立的`vector`。
+    *   **性能**: **O(N)**，因为需要复制所有元素。
+
+*   **移动赋值 (`= std::move(...)`)**
+    *   **语法**: `vec2 = std::move(vec1);`
+    *   **功能**: 这是C++11引入的一种高效的资源转移方式。它**不会**复制任何元素，而是将`vec1`内部的指向数据内存的指针等核心资源“转移”或“窃取”给`vec2`。操作完成后，`vec1`会被置于一个有效的、但未指定的状态（通常是空的），其资源已被`vec2`接管。
+    *   **性能**: **O(1)**，因为只涉及几个内部指针的交换，非常快。
+
+*   **交换 (`swap`)**
+    *   **语法**: `vec1.swap(vec2);` 或 `std::swap(vec1, vec2);`
+    *   **功能**: 交换两个`vector`的内容。这也是一个极为高效的操作，它只交换两个`vector`内部的管理数据（如指向内存的指针、size、capacity等），而不涉及任何元素的复制或移动。
+    *   **性能**: **O(1)**。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <utility> // for std::move
+
+// 辅助函数，打印vector的详细信息，包括内存地址
+void print_info(const std::string& name, const std::vector<int>& vec) {
+    std::cout << "Vector '" << name << "': ";
+    std::cout << "Size=" << vec.size() << ", Cap=" << vec.capacity();
+    // vec.data()返回底层数组的指针，可以用来观察内存地址是否改变
+    std::cout << ", Addr=" << (vec.empty() ? nullptr : vec.data()) << ", Elem=";
+    for(int x : vec) std::cout << x << " ";
+    std::cout << std::endl;
+}
+
+int main() {
+    // --- 拷贝赋值 ---
+    std::vector<int> v1 = {1, 2, 3};
+    std::vector<int> v2;
+    v2 = v1; // 拷贝
+    std::cout << "--- 拷贝赋值后 ---" << std::endl;
+    print_info("v1", v1);
+    print_info("v2", v2); // v2有自己的内存地址和数据副本
+
+    // --- 移动赋值 ---
+    std::vector<int> v3;
+    v3 = std::move(v1); // 移动
+    std::cout << "\n--- 移动赋值后 ---" << std::endl;
+    print_info("v1", v1); // v1被“掏空”，大小为0，地址通常为null
+    print_info("v3", v3); // v3接管了v1的内存和数据，地址与原v1相同
+
+    // --- 交换 ---
+    std::vector<int> v4 = {9, 8, 7};
+    v4.reserve(20);
+    std::cout << "\n--- 交换前 ---" << std::endl;
+    print_info("v2", v2);
+    print_info("v4", v4);
+
+    v2.swap(v4); // 交换
+
+    std::cout << "\n--- 交换后 ---" << std::endl;
+    print_info("v2", v2); // v2现在拥有v4的数据、容量和地址
+    print_info("v4", v4); // v4现在拥有v2的数据、容量和地址
+
+    return 0;
+}
+```
+
+#### 2. `emplace`系列函数
+
+C++11引入了一系列`emplace`函数，如 `emplace_back`, `emplace`。它们的功能与`push_back`和`insert`类似，但在处理复杂对象时效率更高。
+
+*   **区别**：
+    *   `push_back(T(...))` 或 `insert(pos, T(...))`：需要先在外部**创建一个临时对象** `T(...)`，然后再将这个临时对象**拷贝或移动**到`vector`中。
+    *   `emplace_back(...)` 或 `emplace(pos, ...)`：**直接在`vector`内部的内存空间中，就地构造** 对象。它将构造对象所需的**参数**直接传递给函数，省去了创建临时对象和后续拷贝/移动的开销。
+
+*   **结论**：当存储的是**类对象**时，优先使用`emplace`系列函数可以获得更好的性能。对于`int`这样的基本类型，两者性能差异不大。
+
+**代码示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+// 一个简单的类，用于观察构造和拷贝/移动行为
+class MyObject {
+public:
+    std::string name;
+    MyObject(const std::string& n) : name(n) {
+        std::cout << "  构造函数 (构造了 '" << name << "')" << std::endl;
+    }
+    // 拷贝构造函数
+    MyObject(const MyObject& other) : name(other.name) {
+        std::cout << "  拷贝构造 (拷贝了 '" << name << "')" << std::endl;
+    }
+    // 移动构造函数
+    MyObject(MyObject&& other) noexcept : name(std::move(other.name)) {
+        std::cout << "  移动构造 (移动了 '" << name << "')" << std::endl;
+    }
+};
+
+int main() {
+    std::vector<MyObject> vec;
+    vec.reserve(2); // 预留空间，避免重分配干扰观察
+
+    std::cout << "使用 push_back:" << std::endl;
+    // 1. 先调用构造函数创建临时对象 MyObject("A")
+    // 2. 再调用移动构造函数将临时对象移动到vector中
+    vec.push_back(MyObject("A"));
+
+    std::cout << "\n使用 emplace_back:" << std::endl;
+    // 直接在vector内部调用构造函数，使用参数 "B"
+    // 只有一次构造函数调用
+    vec.emplace_back("B");
+    
+    return 0;
+}
+```
+**输出结果**：
+```
+使用 push_back:
+  构造函数 (构造了 'A')
+  移动构造 (移动了 'A')
+
+使用 emplace_back:
+  构造函数 (构造了 'B')
+```
+可以看到，`emplace_back`少了一次移动构造的调用，效率更高。
+
+---
+
+### 章节总结
+
+`std::vector`是C++程序员工具箱中最重要的一件工具，本章我们学习了：
+1.  **基本概念**：`vector`是封装了**动态数组**的模板类，存储在**连续内存**中。
+2.  **构造**：可以通过默认、填充、列表、拷贝等方式创建`vector`。
+3.  **元素访问**：
+    *   `[]`: 速度快，但不安全（无边界检查）。
+    *   `at()`: 安全（有边界检查，会抛异常），推荐使用。
+    *   `front()`/`back()`: 方便地访问首尾元素。
+4.  **容量管理**：
+    *   `size()`是实际元素数，`capacity()`是预留空间。
+    *   `reserve()`是重要的性能优化手段，可避免不必要的内存重分配。
+    *   `shrink_to_fit()`可请求释放多余内存。
+5.  **插入与删除**：
+    *   `push_back()`/`pop_back()`在尾部操作，均摊`O(1)`，效率高。
+    *   `insert()`/`erase()`在中间操作，`O(N)`，效率低。
+6.  **迭代器**：
+    *   是访问容器元素的通用接口，行为像指针。
+    *   `begin()`/`end()`定义了`vector`的左闭右开区间。
+    *   范围for循环是遍历`vector`的首选方式，其底层就是迭代器。
+7.  **迭代器失效**：这是最关键的注意事项。任何可能改变`vector`内存布局或元素位置的操作（`insert`, `erase`, `reserve`等）都可能导致迭代器失效，必须谨慎处理，尤其是在循环中删除元素时，要利用`erase`的返回值。
+8.  **高级操作**：`emplace`系列函数可以就地构造元素，比`push/insert`更高效。`swap`和`move`提供了`O(1)`的容器内容交换和转移能力。
+
+---
+
+### 综合示例：学生成绩单
+
+下面我们用一个完整的例子，来模拟管理一个班级的学生成绩单。我们将定义一个`Student`结构体，并用`std::vector<Student>`来存储所有学生信息，实现添加、删除、查找和显示学生等功能。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <limits>
+
+struct Student {
+    std::string name;
+    double score;
+};
+
+// 学生成绩单管理类
+class ScoreSheet {
+private:
+    std::vector<Student> students_;
+
+public:
+    // 1. 添加学生
+    void addStudent() {
+        std::string name;
+        double score;
+
+        std::cout << "请输入学生姓名: ";
+        std::cin >> name;
+        std::cout << "请输入学生成绩: ";
+        std::cin >> score;
+
+        // 检查输入是否有效
+        if (std::cin.fail() || score < 0 || score > 100) {
+            std::cout << "错误：成绩输入无效，应为0-100之间的数字。" << std::endl;
+            std::cin.clear(); // 清除错误标志
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); // 清空输入缓冲区
+            return;
+        }
+
+        // 使用 emplace_back 高效地添加学生对象
+        // 直接将构造Student所需的参数传递进去
+        students_.emplace_back(Student{name, score});
+        std::cout << "成功添加学生: " << name << std::endl;
+    }
+
+    // 2. 显示所有学生信息
+    void displayAll() const {
+        std::cout << "\n--- 所有学生成绩单 (共 " << students_.size() << " 人) ---" << std::endl;
+        if (students_.empty()) {
+            std::cout << "成绩单为空。" << std::endl;
+        } else {
+            // 使用范围for循环和常量引用，安全且高效
+            for (const auto& student : students_) {
+                std::cout << "姓名: " << student.name << ", 成绩: " << student.score << std::endl;
+            }
+        }
+        std::cout << "---------------------------------" << std::endl;
+    }
+
+    // 3. 按姓名查找学生
+    void findStudent() const {
+        std::cout << "请输入要查找的学生姓名: ";
+        std::string name_to_find;
+        std::cin >> name_to_find;
+
+        bool found = false;
+        for (const auto& student : students_) {
+            if (student.name == name_to_find) {
+                std::cout << "找到了学生: ";
+                std::cout << "姓名: " << student.name << ", 成绩: " << student.score << std::endl;
+                found = true;
+                // 这里可以break，如果只找第一个同名学生
+            }
+        }
+        if (!found) {
+            std::cout << "未找到姓名为 '" << name_to_find << "' 的学生。" << std::endl;
+        }
+    }
+
+    // 4. 按姓名删除学生
+    void removeStudent() {
+        std::cout << "请输入要删除的学生姓名: ";
+        std::string name_to_remove;
+        std::cin >> name_to_remove;
+
+        bool removed = false;
+        // 必须使用迭代器循环来安全地删除
+        for (auto it = students_.begin(); it != students_.end(); ) {
+            // 使用 -> 操作符访问迭代器指向对象的成员
+            if (it->name == name_to_remove) {
+                // 使用erase的返回值来安全地更新迭代器
+                it = students_.erase(it);
+                std::cout << "成功删除学生: " << name_to_remove << std::endl;
+                removed = true;
+                // 这里可以break，如果只删除第一个同名学生
+            } else {
+                // 如果不删除，才将迭代器后移
+                ++it;
+            }
+        }
+
+        if (!removed) {
+            std::cout << "删除失败: 未找到姓名为 '" << name_to_remove << "' 的学生。" << std::endl;
+        }
+    }
+};
+
+void showMenu() {
+    std::cout << "\n===== 学生成绩管理系统 =====" << std::endl;
+    std::cout << "1. 添加学生" << std::endl;
+    std::cout << "2. 删除学生" << std::endl;
+    std::cout << "3. 查找学生" << std::endl;
+    std::cout << "4. 显示所有学生" << std::endl;
+    std::cout << "5. 退出" << std::endl;
+    std::cout << "============================" << std::endl;
+    std::cout << "请输入您的选择: ";
+}
+
+int main() {
+    ScoreSheet sheet;
+    int choice;
+    
+    while (true) {
+        showMenu();
+        std::cin >> choice;
+
+        if (std::cin.fail()) {
+            std::cout << "输入无效，请输入数字。" << std::endl;
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            continue;
+        }
+
+        switch (choice) {
+            case 1: sheet.addStudent(); break;
+            case 2: sheet.removeStudent(); break;
+            case 3: sheet.findStudent(); break;
+            case 4: sheet.displayAll(); break;
+            case 5:
+                std::cout << "感谢使用，再见！" << std::endl;
+                return 0;
+            default:
+                std::cout << "无效的选择，请重新输入。" << std::endl;
+                break;
+        }
+    }
+
+    return 0;
+}
+```
+
+---
+
+### 本章课后习题
+#### 题目一：动态名册
+
+**题目描述**
+
+请你创建一个简单的学生名册，该名册可以动态添加学生姓名。
+
+1.  创建一个 `std::vector`，用于存储 `std::string` 类型的学生姓名。
+2.  使用 `push_back` 方法向名册中添加三位学生："张三"、"李四"、"王五"。
+3.  打印出当前名册中的学生总数（使用 `size()` 方法）。
+4.  使用 **范围for循环 (range-based for loop)** 遍历整个名册，并依次打印出每位学生的名字。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+int main() {
+    // 1. 创建一个存储string的vector
+    vector<string> nameList;
+
+    // 2. 添加学生姓名
+    nameList.push_back("张三");
+    nameList.push_back("李四");
+    nameList.push_back("王五");
+
+    // 3. 打印学生总数
+    cout << "当前名册中的学生总数: " << nameList.size() << endl;
+
+    // 4. 使用范围for循环遍历并打印
+    cout << "名册中的所有学生如下:" << endl;
+    for (const string& name : nameList) {
+        cout << name << endl;
+    }
+
+    return 0;
+}
+```
+
+##### 预期输出
+```
+当前名册中的学生总数: 3
+名册中的所有学生如下:
+张三
+李四
+王五
+```
+
+</details>
+
+---
+
+#### 题目二：过滤掉不合格的分数
+
+**题目描述**
+
+你有一个存储了一批学生分数的 `vector`，现在需要将其中所有低于60分（不合格）的分数全部移除。
+
+**请务必使用迭代器 (iterator) 来遍历 `vector` 并完成删除操作。**
+
+**任务：**
+1.  创建一个 `vector<int>` 并初始化包含以下分数：`{88, 59, 92, 75, 45, 99, 50, 61}`。
+2.  使用 `for` 循环和迭代器遍历该 `vector`。
+3.  在循环中，如果发现一个分数低于60，就使用 `erase` 方法将其从 `vector` 中删除。
+4.  确保你的循环在删除元素后能够继续正确、安全地运行。
+5.  最后，打印出过滤后 `vector` 中剩余的所有分数。
+
+<details>
+<summary>点击查看答案与解析</summary>
+
+##### 参考代码
+```cpp
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+int main() {
+    // 1. 初始化分数列表
+    vector<int> scores = {88, 59, 92, 75, 45, 99, 50, 61};
+
+    cout << "原始分数: ";
+    for (int score : scores) {
+        cout << score << " ";
+    }
+    cout << endl;
+
+    // 2. & 3. & 4. 使用迭代器安全地删除元素
+    for (auto it = scores.begin(); it != scores.end();) {
+        if (*it < 60) {
+            it = scores.erase(it); 
+        } else {
+            ++it;
+        }
+    }
+
+    // 5. 打印过滤后的结果
+    cout << "过滤后的合格分数: ";
+    for (int score : scores) {
+        cout << score << " ";
+    }
+    cout << endl;
+
+    return 0;
+}
+```
+
+##### 预期输出
+```
+原始分数: 88 59 92 75 45 99 50 61 
+过滤后的合格分数: 88 92 75 99 61 
+```
+
+##### 答案解析
+本题精准地考察了本章的 **重中之重** —— **迭代器失效问题**。
+1.  **为什么迭代器会失效？**：`vector` 的 `erase` 操作会导致被删除元素之后的所有元素向前移动，以填补空缺。这个移动过程改变了 `vector` 的内部结构，导致指向这些被移动元素的、以及已删除元素的迭代器全部 **失效**。
+2.  **错误的写法**：如果写成 `if (*it < 60) { scores.erase(it); } ++it;`，当 `erase` 执行后，`it` 已经失效，再对一个失效的迭代器执行 `++it` 是未定义行为，通常会导致程序崩溃或逻辑错误。
+3.  **正确的解决方案**：`vector::erase(it)` 方法非常贴心地设计了一个返回值——它会返回一个指向 **被删除元素之后那个位置的新迭代器**。因此，正确的做法是 `it = scores.erase(it);`。这样，`it` 就被立即更新为下一个需要检查的有效迭代器，循环得以安全继续。当没有删除元素时，我们才需要手动执行 `++it`。
+</details>
+
+## 第34章：list容器
+**知识点**  
+- 双向链表结构与节点特性  
+- 基本操作：`push_front` / `push_back` / `insert` / `erase` / `splice`  
+- 成员算法：`remove` / `remove_if` / `unique` / `merge` / `sort` / `reverse`  
+- 迭代器永不失效特性  
+- 与 `vector` 的效率对比与场景选择  
+- 内存分配器与异常安全  
+**示例程序**：LRU 缓存
+
+## 第35章：deque容器
+**知识点**  
+- 分段连续内存模型与随机访问  
+- 双端常数级 `push_front` / `push_back`  
+- 插入删除、容量查询、迭代器  
+- 作为 `stack` / `queue` 缺省底层容器  
+- 与 `vector`、`list` 的综合对比  
+**示例程序**：窗口滑动平均
+
+## 第36章：有序关联
+**知识点**  
+- 红黑树概念与节点结构  
+- `set` / `map` / `multiset` / `multimap` 的插入、删除、查找  
+- 迭代器与区间：`lower_bound` / `upper_bound` / `equal_range`  
+- 自定义比较仿函数与键值对操作  
+- `try_emplace` / `insert_or_assign` 现代接口  
+- 迭代器失效与复杂度  
+**示例程序**：在线排名榜
+
+## 第37章：无序关联
+**知识点**  
+- 哈希桶、负载因子、`rehash`  
+- `unordered_set` / `unordered_map` / `unordered_mult*` 基本操作  
+- 自定义哈希函数与键等价谓词  
+- 迭代器特性与并发修改限制  
+- 与有序容器的时间、空间对比  
+**示例程序**：词频统计器
+
+## 第38章：迭代器
+**知识点**  
+- 五类迭代器：输入、输出、前向、双向、随机  
+- 迭代器 traits、`distance`、`advance`  
+- 反向迭代器、常量迭代器  
+- 插入迭代器：`back_inserter` / `front_inserter` / `inserter`  
+- 流迭代器：`istream_iterator` / `ostream_iterator`  
+- 迭代器适配器失效与调试技巧  
+**示例程序**：文本合并工具
+
+## 第39章：核心算法
+**知识点**  
+- 非修改性：`for_each` / `find` / `count` / `all_of` / `any_of` / `mismatch`  
+- 修改性：`copy` / `move` / `swap_ranges` / `remove` / `replace` / `transform`  
+- 排列与重排：`reverse` / `rotate` / `shuffle` / `partition`  
+- 通用原则：算法 + 迭代器 + 谓词  
+- 避免手写循环与算法组合技  
+**示例程序**：日志清洗
+
+## 第40章：排序数值
+**知识点**  
+- 排序族：`sort` / `stable_sort` / `partial_sort` / `nth_element`  
+- 二分查找族：`binary_search` / `lower_bound` / `upper_bound`  
+- 数值算法：`accumulate` / `inner_product` / `adjacent_difference` / `iota`  
+- 标准函数对象：`plus` / `less` / `hash` …  
+- Lambda 表达式：捕获、可变、泛型、`std::function`  
+- 性能优化：比较器内联、并行算法概览(C++17 `std::execution`)  
+**示例程序**：排行榜生成
 
 # 第十一部分：异常处理与程序调试
 **部分描述**：学习如何编写健壮的程序，掌握错误处理和调试技巧。
 
-## 第37章：异常处理机制
+## 第41章：异常处理机制
 **知识点**：
 - 异常的概念
 - try-catch块
@@ -21986,7 +23556,7 @@ int main() {
 - 异常处理的最佳实践
 - **示例程序**：安全的数学运算库、文件操作异常处理
 
-## 第38章：程序调试技巧
+## 第42章：程序调试技巧
 **知识点**：
 - 常见程序错误类型
 - 编译错误的解决
@@ -22002,7 +23572,7 @@ int main() {
 # 第十二部分：文件操作与流
 **部分描述**：学习如何进行文件读写操作，掌握C++的流操作机制。
 
-## 第39章：文件输入输出
+## 第43章：文件输入输出
 **知识点**：
 - 文件流类（ifstream、ofstream、fstream）
 - 文件的打开和关闭
@@ -22014,7 +23584,7 @@ int main() {
 - 缓冲区管理
 - **示例程序**：文本编辑器、二进制文件查看器
 
-## 第40章：流的高级操作
+## 第44章：流的高级操作
 **知识点**：
 - 流的格式化
 - 操纵符的使用
@@ -22029,7 +23599,7 @@ int main() {
 # 第十三部分：高级特性与C++11/14/17新特性
 **部分描述**：学习现代C++的新特性，掌握更高效的编程方法。
 
-## 第41章：智能指针与内存管理
+## 第45章：智能指针与内存管理
 **知识点**：
 - unique_ptr的使用
 - shared_ptr的使用
@@ -22042,7 +23612,7 @@ int main() {
 - 完美转发简介
 - **示例程序**：资源管理类、对象池实现
 
-## 第42章：现代C++新特性
+## 第46章：现代C++新特性
 **知识点**：
 - auto关键字
 - 范围for循环
@@ -22056,7 +23626,7 @@ int main() {
 - 可变参数模板
 - **示例程序**：现代C++风格的实用工具集
 
-## 第43章：并发编程初步
+## 第47章：并发编程初步
 **知识点**：
 - 线程的创建（std::thread）
 - 线程的同步
@@ -22068,55 +23638,3 @@ int main() {
 - 线程安全问题
 - 死锁的避免
 - **示例程序**：多线程下载器、生产者消费者模型
-
-# 第十四部分：项目实战与最佳实践
-**部分描述**：通过完整项目巩固所学知识，学习实际开发中的最佳实践。
-
-## 第44章：编程规范与最佳实践
-**知识点**：
-- 命名规范
-- 代码风格
-- 注释规范
-- 头文件保护
-- 前向声明
-- const正确性
-- 资源管理原则
-- 错误处理策略
-- 性能优化原则
-- 代码重构基础
-- **示例程序**：代码规范检查工具、重构示例
-
-## 第45章：小型项目实战
-**知识点**：
-- 项目需求分析
-- 系统设计
-- 模块划分
-- 接口设计
-- 实现与测试
-- 文档编写
-- 版本控制基础
-- 持续改进
-- **示例程序**：通讯录管理系统、简单数据库实现
-
-## 第46章：综合项目开发
-**知识点**：
-- 大型项目的组织结构
-- 多文件编程
-- Makefile基础
-- 库的创建和使用
-- 第三方库的集成
-- 跨平台开发考虑
-- 发布和部署
-- 维护和升级
-- **示例程序**：学生成绩管理系统完整版、简单游戏引擎
-
-## 第47章：C++学习总结与进阶方向
-**知识点**：
-- C++知识体系回顾
-- 常见面试题型
-- 进阶学习资源
-- 专业方向选择（游戏开发、系统编程、嵌入式等）
-- 开源项目参与
-- 持续学习的重要性
-- C++20及未来展望
-- **示例程序**：知识点速查工具、个人学习笔记系统
