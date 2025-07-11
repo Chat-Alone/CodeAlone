@@ -22697,30 +22697,52 @@ std::vector<int> v = {10, 20, 30, 40, 50};
 
 如果你对一个只支持前向移动的迭代器（如 `std::forward_list::iterator`）使用 `--`，代码将无法编译。
 
-**代码示例：获取并理解`begin`和`end`**
+#### 连续移动
+
+我们可以用 `+n` 或 `-n` 来进行连续的迭代器移动。
+
+这涉及到C++迭代器一个更深层次的概念——**迭代器类别 (Iterator Categories)**。**只有特定类型的迭代器可以支持 `+n` 或 `-n` 的操作，并非所有迭代器。**
+
+具体来说，只有**随机访问迭代器 (Random Access Iterator)** 才支持这种“跳跃式”的多步移动，这取决于容器底层的**数据结构**。
+
+*   **可以 `+n` 的容器 (如 `std::vector`)**:
+    *   `std::vector` 的数据存储在**一块连续的内存**中，就像一个普通的数组。
+    *   当你想从当前位置移动 `n` 步时，计算机可以做一个非常简单的数学计算：`当前地址 + n * sizeof(元素类型)`，就能立刻得到新地址。这是一个**O(1)**复杂度的操作，非常快。
+    *   因为这种操作高效且有意义，所以C++标准允许 `vector` 的迭代器支持 `+n`。
+
+*   **不可以 `+n` 的容器 (如 `std::list`)**:
+    *   `std::list` 是一个**双向链表**。它的元素在内存中是分散存储的，每个元素只知道它的前一个和后一个元素在哪里。
+    *   当你想从当前位置移动 `n` 步时，唯一的办法就是**一个一个地**沿着链表移动 `n` 次。这是一个**O(n)**复杂度的操作。
+    *   如果C++允许你对 `list` 的迭代器写 `it + 5`，这会给人一种错觉，以为它和 `vector` 的 `it + 5` 一样快，但实际上它背后隐藏了一个循环。为了避免这种性能陷阱和误导，C++标准**禁止**了非随机访问迭代器使用 `+` 和 `-` 进行算术运算。
+
+支持 `+n`, `-n`, `+=`, `-=` 以及比较大小（`<`, `>`, `<=`, `>=`）的随机访问迭代器主要来自于以下容器：
+
+*   `std::vector`
+*   `std::deque`
+*   `std::string`
+*   C风格的普通数组（指针本身就是一种随机访问迭代器）
+
+**示例代码：**
 ```cpp
 #include <iostream>
 #include <vector>
 
 int main() {
-    std::vector<int> numbers = {10, 20, 30};
+    std::vector<int> v = {10, 20, 30, 40, 50, 60};
+    auto it = v.begin(); // it 指向 10
 
-    // 获取迭代器
-    // 注意迭代器的类型是 std::vector<int>::iterator
-    std::vector<int>::iterator it_begin = numbers.begin();
-    std::vector<int>::iterator it_end = numbers.end();
+    // 使用 +n 移动
+    auto it2 = it + 3;   // it2 直接指向 40 (10 -> 20 -> 30 -> 40)
+    std::cout << *it2 << std::endl; // 输出 40
 
-    // 使用解引用操作符 * 来获取迭代器指向的元素值
-    std::cout << "begin() 指向的元素是: " << *it_begin << std::endl; // 输出 10
+    // 使用 -= n 移动
+    it2 -= 2;            // it2 从 40 的位置回退 2 步，指向 20
+    std::cout << *it2 << std::endl; // 输出 20
 
-    // 移动迭代器
-    // 使用 ++ 操作符将迭代器移动到下一个元素
-    ++it_begin; 
-    std::cout << "将begin()迭代器++后，指向的元素是: " << *it_begin << std::endl; // 输出 20
-    
-    // end() 不指向任何有效元素，对它解引用是未定义行为！
-    // std::cout << *it_end << std::endl; // ！！！错误！！！
-    
+    // 甚至可以计算两个迭代器之间的距离
+    auto distance = v.end() - v.begin();
+    std::cout << "Vector size is: " << distance << std::endl; // 输出 6
+
     return 0;
 }
 ```
