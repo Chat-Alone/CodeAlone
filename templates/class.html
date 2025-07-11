@@ -905,6 +905,14 @@
                 class="sticky top-0 z-20 bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-[#374151] shadow-sm">
                 <div class="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 lg:px-6">
                     <div class="flex items-center min-w-0">
+                        <button id="back-to-home"
+                            class="p-1.5 sm:p-2 mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626] flex-shrink-0"
+                            title="返回首页">
+                            <div
+                                class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                                <i class="ri-arrow-left-line ri-lg"></i>
+                            </div>
+                        </button>
                         <button id="open-sidebar"
                             class="p-1.5 sm:p-2 mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626] lg:hidden flex-shrink-0">
                             <div
@@ -949,6 +957,7 @@
             const sidebarOverlay = document.getElementById('sidebar-overlay');
             const openSidebarBtn = document.getElementById('open-sidebar');
             const closeSidebarBtn = document.getElementById('close-sidebar');
+            const backToHomeBtn = document.getElementById('back-to-home');
             const backToTopButton = document.getElementById('back-to-top');
             const themeToggle = document.getElementById('theme-toggle');
             const htmlElement = document.documentElement;
@@ -1029,6 +1038,9 @@
             if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
             if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
             if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+            if (backToHomeBtn) backToHomeBtn.addEventListener('click', () => {
+                window.location.href = '/';
+            });
 
             function toggleBackToTopButton() {
                 if (window.scrollY > 300) {
