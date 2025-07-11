@@ -24810,15 +24810,1102 @@ int main() {
 
 这个示例完美地展示了`deque`的威力。每一步循环，我们都高效地执行`push_back`和`pop_front`，使得整个滑动窗口算法的时间复杂度为O(N)，其中N是数据序列的长度。如果我们每次都重新计算窗口内的和，复杂度会是O(N*k)。通过维护一个`current_sum`变量，每次只减去移出的元素再加上移入的元素，还可以进一步将求和的开销也降到O(1)，让整个算法更高效。但为了教学清晰，我们这里保留了每次重新求和的方式。
 
-## 第36章：有序关联
-**知识点**  
-- 红黑树概念与节点结构  
-- `set` / `map` / `multiset` / `multimap` 的插入、删除、查找  
-- 迭代器与区间：`lower_bound` / `upper_bound` / `equal_range`  
-- 自定义比较仿函数与键值对操作  
-- `try_emplace` / `insert_or_assign` 现代接口  
-- 迭代器失效与复杂度  
-**示例程序**：在线排名榜
+## 第36章：有序关联容器
+
+在前面的章节中，我们学习了`vector`、`list`和`deque`。这些都属于**序列容器**，它们的核心特征是元素的排列顺序由我们插入的位置和时机决定。
+
+然而，在许多编程场景中，我们面临一个更严峻的挑战：数据量可能很大，而我们需要非常迅速地判断“某个数据是否存在”或“查找某个数据对应的信息”。在`vector`中进行查找，最坏情况下需要检查每一个元素，时间复杂度为**O(n)**，当n非常大时，这是无法接受的。
+
+为此，STL提供了**关联容器**。这类容器中的元素位置不再由插入顺序决定，而是由元素自身的**值**（或被称为**键**）来决定。容器内部会自动维护一个特定的结构，使得查找、插入和删除操作都极为高效。本章，我们聚焦于其中的**有序关联容器**。
+
+### 红黑树（Red-Black Tree）
+
+有序关联容器之所以能实现高效的操作，是因为它们的底层通常是基于一种名为**红黑树**的复杂数据结构实现的。
+
+作为使用者，你**不需要**去亲手实现红黑树，但理解其核心原理，是理解`set`和`map`性能表现的关键。
+
+红黑树本质上是一种**自平衡二叉搜索树（Self-Balancing Binary Search Tree）**。我们来分解这个术语：
+
+1.  **二叉搜索树 (Binary Search Tree, BST)**：
+    *   它是一棵树状结构，每个节点最多有两个子节点。
+    *   它遵循一个严格的规则：对于任意一个节点，其**左子树**中所有节点的值（或键）都**小于**该节点的值；其**右子树**中所有节点的值（或键）都**大于**该节点的值。
+    *   这个规则使得查找过程极其高效。从根节点开始，每一次比较都能将搜索范围缩小一半，从而快速定位目标。
+    &nbsp;
+    假设我们有这样一棵树，想找数字“25”：
+    ```
+          (30)
+         /    \
+       (20)    (40)
+      /   \
+    (15)  (25)
+    ```
+    *   **第一步**：从根节点`30`开始。`25`比`30`小，所以我们往**左**走。
+    *   **第二步**：到达节点`20`。`25`比`20`大，所以我们往**右**走。
+    *   **第三步**：到达节点`25`。找到了！
+
+    你看，我们只用了3次比较，就从一堆数里找到了目标。
+
+2.  **自平衡 (Self-Balancing)**：
+    *   普通的BST有一个缺陷：在特定插入顺序下（如依次插入1, 2, 3, 4），树会退化成一个链表，查找效率会下降到O(n)。
+    *   红黑树通过一套精密的内部规则（涉及节点的“颜色”属性、以及在增删节点时进行的“旋转”和“重新着色”操作），确保树始终保持一个“大致平衡”的状态。它严格保证从根到最远叶子节点的路径长度，不会超过到最近叶子节点路径长度的两倍。
+
+**核心结论：**
+红黑树的自平衡特性，从根本上保证了无论容器中有多少个元素（n个），其**插入（insert）、删除（erase）和查找（find）** 操作的时间复杂度都能稳定在**O(log n)**。这是一种对数时间复杂度，增长极为缓慢，即使面对海量数据也能保持出色的性能。
+
+这是什么概念？
+*   如果容器有1,000个元素，查找最多需要约10次比较。
+*   如果容器有1,000,000个元素，查找最多需要约20次比较。
+*   如果容器有1,000,000,000个元素，查找最多只需要约30次比较！
+
+### 前置知识：`std::pair`
+
+在学习`map`之前，我们必须先掌握一个简单而重要的小工具：`std::pair`。`map`的内部就用它来存储元素。
+
+`std::pair`是一个结构体模板，它的作用非常单纯：将两个不同类型（或相同类型）的值捆绑在一起，作为一个单元来处理。
+
+*   **头文件**: `#include <utility>` (但在很多情况下，包含`<map>`或`<iostream>`等常用头文件时，它也会被间接包含进来)。
+*   **结构**: `std::pair`有两个公开的成员变量：
+    *   `first`: 第一个元素。
+    *   `second`: 第二个元素。
+
+#### `std::pair`代码示例
+
+```cpp
+#include <iostream>
+#include <utility>
+#include <string>
+
+int main() {
+    // 创建一个pair，第一个元素是string，第二个是int
+    std::pair<std::string, int> student("Alice", 95);
+
+    // 访问它的成员
+    std::cout << "学生姓名: " << student.first << std::endl;
+    std::cout << "学生分数: " << student.second << std::endl;
+
+    // 修改它的成员
+    student.first = "Bob";
+    student.second = 88;
+    std::cout << "修改后，学生姓名: " << student.first << ", 分数: " << student.second << std::endl;
+    
+    // 也可以使用辅助函数 std::make_pair 来创建，它能自动推导类型
+    auto another_student = std::make_pair("Charlie", 92);
+    std::cout << "另一个学生: " << another_student.first << std::endl;
+    
+    return 0;
+}
+```
+
+现在你已经理解`std::pair`是什么了，我们就可以正式开始学习`set`和`map`。
+
+### `std::set`：集合
+
+`std::set`是STL中最基础的有序关联容器。它的核心使命是维护一个**元素唯一**且始终**保持有序**的集合。这里的“有序”指的是`set`会根据元素自身的值（对于数字是大小，对于字符串是字典序等）自动进行内部组织，而不是按照我们插入的顺序。
+
+*   **头文件**: `#include <set>`
+*   **模板参数**: `std::set<T>`，其中`T`是你想要存储的元素的类型。
+
+#### `set`的声明与初始化
+
+1.  **默认构造（最常用）**：创建一个空的`set`。
+    ```cpp
+    std::set<int> s1; // 创建一个空的、可以存储int的set
+    ```
+
+2.  **列表初始化 (推荐)**：使用花括号`{}`提供一组初始值。`set`会自动处理重复元素并排序。
+    ```cpp
+    std::set<std::string> s2 = {"orange", "apple", "banana", "apple"};
+    // s2在创建后，内容会是 {"apple", "banana", "orange"}
+    ```
+
+3.  **拷贝构造**：使用一个已存在的`set`来创建一个新的、内容完全相同的`set`。
+    ```cpp
+    std::set<std::string> s3 = s2; // s3是s2的一个完整副本
+    ```
+
+4.  **迭代器范围构造**：使用来自另一个容器（不一定是`set`）的一对迭代器来初始化`set`。这是一种非常强大的通用方法。
+    ```cpp
+    std::vector<int> vec = {10, 20, 10, 30, 20};
+    // 使用vec的开始和结束迭代器来构造set
+    std::set<int> s4(vec.begin(), vec.end()); 
+    // s4的内容将会是 {10, 20, 30}
+    ```
+
+#### `set`的核心操作：成员函数详解
+
+##### `insert`：插入元素
+
+*   **语法**: `pair<iterator, bool> insert(const value_type& value);`
+*   **功能**: 尝试将一个元素`value`插入到`set`中。
+*   **行为**: `set`会首先检查`value`是否已经存在。
+    *   **如果不存在**：`value`被插入到`set`内部红黑树的正确位置，以维持其有序性。
+    *   **如果已存在**：插入操作失败，`set`的内容不会有任何改变。
+*   **返回值**: `insert`的返回值是一个`std::pair`，这个`pair`包含了两个关键信息，必须掌握：
+    1.  `pair.first`：一个迭代器。
+        *   如果插入成功，该迭代器指向**新插入**的那个元素。
+        *   如果插入失败（元素已存在），该迭代器指向`set`中**已经存在**的那个元素。
+    2.  `pair.second`：一个`bool`值。
+        *   如果插入成功，为`true`。
+        *   如果插入失败，为`false`。
+
+**代码示例：深入理解`insert`的返回值**
+```cpp
+#include <iostream>
+#include <set>
+#include <string>
+
+void printSetState(const std::set<int>& s) {
+    std::cout << "  当前Set内容: { ";
+    for (int elem : s) {
+        std::cout << elem << " ";
+    }
+    std::cout << "}, 大小: " << s.size() << std::endl;
+}
+
+int main() {
+    std::set<int> mySet;
+    printSetState(mySet);
+
+    // 插入一个新元素 20
+    std::cout << "\n1. 插入 20:" << std::endl;
+    auto result1 = mySet.insert(20);
+    std::cout << "  - 返回的bool值: " << (result1.second ? "true" : "false") << " (表示插入成功)" << std::endl;
+    std::cout << "  - 返回的迭代器指向的值: " << *result1.first << std::endl;
+    printSetState(mySet);
+
+    // 再次插入 20
+    std::cout << "\n2. 再次插入 20:" << std::endl;
+    auto result2 = mySet.insert(20);
+    std::cout << "  - 返回的bool值: " << (result2.second ? "true" : "false") << " (表示插入失败)" << std::endl;
+    std::cout << "  - 返回的迭代器指向的值: " << *result2.first << std::endl;
+    printSetState(mySet);
+
+    // 插入一个不同的元素 10
+    std::cout << "\n3. 插入 10:" << std::endl;
+    auto result3 = mySet.insert(10);
+    std::cout << "  - 返回的bool值: " << (result3.second ? "true" : "false") << " (表示插入成功)" << std::endl;
+    std::cout << "  - 返回的迭代器指向的值: " << *result3.first << std::endl;
+    printSetState(mySet); // 注意set会自动排序
+
+    return 0;
+}
+```
+**预期输出:**
+```
+  当前Set内容: { }, 大小: 0
+
+1. 插入 20:
+  - 返回的bool值: true (表示插入成功)
+  - 返回的迭代器指向的值: 20
+  当前Set内容: { 20 }, 大小: 1
+
+2. 再次插入 20:
+  - 返回的bool值: false (表示插入失败)
+  - 返回的迭代器指向的值: 20
+  当前Set内容: { 20 }, 大小: 1
+
+3. 插入 10:
+  - 返回的bool值: true (表示插入成功)
+  - 返回的迭代器指向的值: 10
+  当前Set内容: { 10 20 }, 大小: 2
+```
+
+##### `find`：查找元素
+
+*   **语法**: `iterator find(const Key& key) const;`
+*   **功能**: 在`set`中高效地（O(log n)）查找一个与`key`相等的元素。
+*   **返回值**:
+    *   如果找到了该元素，`find`返回一个指向该元素的**迭代器**。
+    *   如果没有找到，`find`返回一个特殊的哨兵迭代器，即该`set`的`end()`迭代器（`mySet.end()`）。
+
+**`find`是检查元素是否存在的标准、安全的方式。**
+
+##### `count`：统计元素数量
+
+*   **语法**: `size_type count(const Key& key) const;`
+*   **功能**: 返回`set`中与`key`相等的元素的数量。
+*   **返回值**: 对于`std::set`，由于其元素的唯一性，返回值只可能是`0`（元素不存在）或`1`（元素存在）。因此，`count`也可以用来检查元素是否存在，并且比`find`写起来更简洁。
+
+**代码示例：`find`与`count`的对比**
+```cpp
+#include <iostream>
+#include <set>
+
+int main() {
+    std::set<int> mySet = {10, 20, 30, 40};
+
+    // --- 使用 find ---
+    int key_to_find = 30;
+    std::cout << "使用 find 查找 " << key_to_find << "..." << std::endl;
+    auto it = mySet.find(key_to_find);
+    if (it != mySet.end()) {
+        std::cout << "  找到了! 迭代器指向 " << *it << std::endl;
+    } else {
+        std::cout << "  未找到。" << std::endl;
+    }
+
+    // --- 使用 count ---
+    int key_to_count = 40;
+    std::cout << "\n使用 count 检查 " << key_to_count << "..." << std::endl;
+    if (mySet.count(key_to_count) > 0) {
+        std::cout << "  存在! count返回值为: " << mySet.count(key_to_count) << std::endl;
+    } else {
+        std::cout << "  不存在。" << std::endl;
+    }
+    
+    key_to_count = 50;
+    std::cout << "\n使用 count 检查 " << key_to_count << "..." << std::endl;
+    std::cout << "  count返回值为: " << mySet.count(key_to_count) << " (表示不存在)" << std::endl;
+    
+    return 0;
+}
+```
+
+##### `erase`：删除元素
+
+`erase`有多种重载形式，我们学习最常用的两种：
+
+1.  **按值删除**:
+    *   **语法**: `size_type erase(const key_type& key);`
+    *   **功能**: 查找并删除`set`中值等于`key`的元素。
+    *   **返回值**: 一个`size_t`类型，表示实际被删除的元素数量。对于`set`，返回值只能是`0`或`1`。
+
+2.  **按迭代器删除**:
+    *   **语法**: `iterator erase(iterator position);`
+    *   **功能**: 删除迭代器`position`所指向的那个元素。**调用前必须确保`position`是有效的，且不等于`end()`迭代器。**
+    *   **返回值**: 一个指向被删除元素**之后**的元素的迭代器。这个特性在循环中删除元素时非常重要，可以防止迭代器失效。
+
+**代码示例：`erase`的用法**
+```cpp
+#include <iostream>
+#include <set>
+
+void printSetState(const std::set<int>& s) {
+    std::cout << "  当前Set内容: { ";
+    for (int elem : s) {
+        std::cout << elem << " ";
+    }
+    std::cout << "}" << std::endl;
+}
+
+int main() {
+    std::set<int> mySet = {10, 20, 30, 40, 50};
+    printSetState(mySet);
+
+    // 1. 按值删除
+    std::cout << "\n1. 按值删除 30:" << std::endl;
+    size_t num_erased = mySet.erase(30);
+    std::cout << "  删除的元素数量: " << num_erased << std::endl;
+    printSetState(mySet);
+
+    // 2. 按迭代器删除
+    std::cout << "\n2. 按迭代器删除 40:" << std::endl;
+    auto it_to_erase = mySet.find(40);
+    if (it_to_erase != mySet.end()) {
+        auto next_it = mySet.erase(it_to_erase);
+        std::cout << "  删除成功。" << std::endl;
+        if(next_it != mySet.end()) {
+            std::cout << "  erase返回的迭代器指向: " << *next_it << std::endl;
+        } else {
+            std::cout << "  erase返回的迭代器是end()。" << std::endl;
+        }
+    }
+    printSetState(mySet);
+
+    return 0;
+}
+```
+**预期输出:**
+```
+  当前Set内容: { 10 20 30 40 50 }
+
+1. 按值删除 30:
+  删除的元素数量: 1
+  当前Set内容: { 10 20 40 50 }
+
+2. 按迭代器删除 40:
+  删除成功。
+  erase返回的迭代器指向: 50
+  当前Set内容: { 10 20 50 }
+```
+
+---
+
+### `std::map`：按键组织的键值对字典
+
+我们刚刚掌握了`std::set`，现在，我们来认识它的升级版：`std::map`。
+
+如果说`set`是存储单词的集合，那么`map`就是一本真正的**字典**，它不仅存储“单词”（我们称之为**键 Key**），还存储了与之对应的“释义”（我们称之为**值 Value**）。
+
+`std::map`是一个关联容器，它存储的元素是**键值对（Key-Value Pair）**。它的所有行为都围绕着“键”来展开：
+
+*   **头文件**: `#include <map>`
+*   **核心特性**:
+    1.  **键值对存储**: 每个元素都是一个`std::pair`，由一个键和一个值构成。
+    2.  **键的唯一性**: `map`中所有元素的**键**必须是唯一的。
+    3.  **按键自动组织**: `map`会根据**键**来自动组织所有键值对，这使得通过键进行的查找、插入和删除操作都极为高效（O(log n)）。
+
+`map`的模板参数需要两个类型：`std::map<KeyType, ValueType>`。例如，`std::map<std::string, int>`就是一个以字符串为键、整数为值的字典。
+
+其内部存储的元素类型是`std::pair<const KeyType, ValueType>`。再次强调`const KeyType`，这意味着一旦一个键值对被插入`map`，它的**键就不能被修改**，否则会破坏`map`的内部结构。但它的**值可以随时被修改**。
+
+#### `map`的声明与初始化
+
+`map`的初始化方式与`set`非常相似，只是初始化的元素变成了键值对。
+
+1.  **默认构造**：创建一个空的`map`。
+    ```cpp
+    std::map<std::string, int> student_scores; // 创建一个空map
+    ```
+
+2.  **列表初始化 (推荐)**：这是最直观的方式。你需要提供一系列的键值对，用花括号`{}`包围。每个键值对自身也用花括号包围。
+    ```cpp
+    std::map<std::string, int> scores = {
+        {"Alice", 95},
+        {"Bob", 88},
+        {"Charlie", 92}
+    };
+    // 注意：如果初始值里有重复的键，只有第一个会生效。
+    // 例如: {{"A", 1}, {"A", 2}} -> 最终map里只有{"A", 1}
+    ```
+
+3.  **拷贝构造**：
+    ```cpp
+    std::map<std::string, int> scores_copy = scores;
+    ```
+
+4.  **迭代器范围构造**：
+    ```cpp
+    std::vector<std::pair<std::string, int>> score_vec = {{"David", 77}, {"Eve", 89}};
+    std::map<std::string, int> scores_from_vec(score_vec.begin(), score_vec.end());
+    ```
+
+#### `map`的核心操作：成员函数详解
+
+`map`的成员函数与`set`高度对应，只是它们操作的目标是**键**。
+
+##### `insert`：插入键值对
+
+*   **语法**: `pair<iterator, bool> insert(const value_type& value);`
+    *   `value_type`在这里就是`std::pair<const Key, T>`。
+*   **功能**: 尝试将一个键值对`value`插入到`map`中。
+*   **行为**: `map`检查`value`的**键**是否已经存在。
+    *   如果**键不存在**，则将该键值对插入`map`。
+    *   如果**键已存在**，插入失败，`map`内容不变。
+*   **返回值**: 与`set`完全一样，返回`std::pair<iterator, bool>`。
+    *   `pair.second` (bool): `true`表示插入成功，`false`表示键已存在。
+    *   `pair.first` (iterator): 迭代器，指向`map`中键与我们试图插入的键相等的那个元素（键值对）。
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::map<std::string, int> scores;
+
+    // 1. 插入一个新键值对
+    auto result1 = scores.insert({"Alice", 95});
+    if (result1.second) {
+        std::cout << "1. 插入 {'Alice', 95} 成功。" << std::endl;
+    }
+
+    // 2. 尝试插入一个已存在的键
+    auto result2 = scores.insert({"Alice", 100});
+    if (!result2.second) {
+        std::cout << "2. 插入 {'Alice', 100} 失败，因为键 'Alice' 已存在。" << std::endl;
+        // 让我们看看result2的迭代器指向了什么
+        std::cout << "   迭代器指向的键: " << result2.first->first 
+                  << ", 及其对应的值: " << result2.first->second << " (值未被更新)" << std::endl;
+    }
+    return 0;
+}
+```
+
+##### `find`, `count`, `erase`
+
+这三个函数的操作逻辑与`set`完全相同，都是基于**键**来进行的。
+*   `find(key)`: 查找一个键，如果找到，返回指向该键值对的迭代器；否则返回`.end()`。
+*   `count(key)`: 对于`map`，返回值也只能是`0`或`1`。
+*   `erase(key)`: 删除指定键的键值对。
+
+#### `map`的王牌：`operator[]` (下标操作符)
+
+这是`map`与`set`最显著的区别，也是`map`最强大、最便捷的功能。`set`没有`[]`操作符，而`map`有。
+
+*   **语法**: `T& operator[](const Key& key);`
+*   **功能**: 通过`key`来直接访问其对应的**值（Value）**。
+*   **行为**——这是关键中的关键：
+    1.  **如果`key`存在**：`map[key]`会返回一个指向该键对应**值**的**引用**。你可以像操作普通变量一样读取或修改它。
+    2.  **如果`key`不存在**：`map`会立即在内部**创建一个新的键值对**。这个新条目的键就是你提供的`key`，而它的值会被**默认初始化**（`int`是`0`, `double`是`0.0`, `std::string`是空字符串，类是构造函数等）。然后，`operator[]`会返回这个**新创建的值的引用**。
+
+这个“如果不存在就创建”的特性，让代码写起来非常简洁，但也是一个常见的“陷阱”来源。
+
+**代码示例：深入探索`operator[]`**
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+void printMapState(const std::map<std::string, int>& m) {
+    std::cout << "  当前Map内容:" << std::endl;
+    for (const auto& pair : m) {
+        std::cout << "    { " << pair.first << ": " << pair.second << " }" << std::endl;
+    }
+    std::cout << "  大小: " << m.size() << std::endl;
+}
+
+int main() {
+    std::map<std::string, int> scores;
+    
+    // --- 场景1: 使用[]进行插入 ---
+    std::cout << "--- 场景1: 使用[]进行插入 ---" << std::endl;
+    scores["Alice"] = 95; // "Alice"不存在 -> 创建{"Alice", 0} -> 赋值为95
+    scores["Bob"] = 88;   // "Bob"不存在 -> 创建{"Bob", 0} -> 赋值为88
+    printMapState(scores);
+
+    // --- 场景2: 使用[]进行修改 ---
+    std::cout << "\n--- 场景2: 使用[]进行修改 ---" << std::endl;
+    std::cout << "  修改前, Alice的分数是: " << scores["Alice"] << std::endl;
+    scores["Alice"] = 99; // "Alice"存在，直接修改其值
+    std::cout << "  修改后, Alice的分数是: " << scores["Alice"] << std::endl;
+    printMapState(scores);
+
+    // --- 场景3: [ ]的陷阱：只读访问一个不存在的键 ---
+    std::cout << "\n--- 场景3: [ ]的陷阱 ---" << std::endl;
+    std::cout << "  当前只想查看'David'的分数(假设他存在)..." << std::endl;
+    // 下面这行代码会悄无声息地创建一个新条目！
+    std::cout << "  scores[\"David\"] is " << scores["David"] << std::endl;
+    std::cout << "  ...操作完成后..." << std::endl;
+    printMapState(scores); // 你会发现 David 已经被添加进去了，值为0
+
+    // --- 安全的只读访问方式 ---
+    // 正确的做法是使用 .find()
+    std::cout << "\n--- 正确的只读访问方式 ---" << std::endl;
+    std::string key_to_check = "Eve";
+    auto it = scores.find(key_to_check);
+    if (it != scores.end()) {
+        std::cout << "  " << key_to_check << " 的分数是 " << it->second << std::endl;
+    } else {
+        std::cout << "  " << key_to_check << " 不存在于字典中，且没有被创建。" << std::endl;
+    }
+    printMapState(scores); // 大小没有变化
+
+    return 0;
+}
+```
+
+**输出如下：**
+```
+--- 场景1: 使用[]进行插入 ---
+  当前Map内容:
+    { Alice: 95 }
+    { Bob: 88 }
+  大小: 2
+
+--- 场景2: 使用[]进行修改 ---
+  修改前, Alice的分数是: 95
+  修改后, Alice的分数是: 99
+  当前Map内容:
+    { Alice: 99 }
+    { Bob: 88 }
+  大小: 2
+
+--- 场景3: [ ]的陷阱 ---
+  当前只想查看'David'的分数(假设他存在)...
+  scores["David"] is 0
+  ...操作完成后...
+  当前Map内容:
+    { Alice: 99 }
+    { Bob: 88 }
+    { David: 0 }
+  大小: 3
+
+--- 正确的只读访问方式 ---
+  Eve 不存在于字典中，且没有被创建。
+  当前Map内容:
+    { Alice: 99 }
+    { Bob: 88 }
+    { David: 0 }
+  大小: 3
+```
+
+#### `map::at()`: `[]`的安全替代品
+
+C++11为`map`提供了一个`at()`成员函数，可以看作是`operator[]`的一个更安全的版本。
+
+*   **语法**: `T& at(const Key& key);`
+*   **行为**:
+    *   如果`key`存在，它的行为与`operator[]`完全相同，返回值的引用。
+    *   如果`key`不存在，它**不会**创建新元素，而是会**抛出一个`std::out_of_range`异常**。
+
+在我们的学习进度中，我们尚未深入讲解异常处理，但你可以这样理解：使用`.at()`访问一个不存在的键，会导致程序因一个明确的错误而终止，而不是像`operator[]`那样静默地创建一个你不想要的新元素。这在很多时候是更可取的行为，因为它能让错误尽早暴露。
+
+```cpp
+std::map<std::string, int> scores = {{"Alice", 95}};
+std::cout << scores.at("Bob"); // 这行代码会使程序崩溃，并报告一个 out_of_range 错误
+```
+
+---
+
+我们已经深入掌握了`std::set`（唯一、有序）和`std::map`（唯一键、有序）。现在，我们来认识它们的“兄弟”版本：`multiset`和`multimap`。它们的核心功能与前者几乎完全相同，只有一个关键区别，但这一个区别带来了全新的应用场景。
+
+### `std::multiset`：允许元素重复的有序集合
+
+`std::multiset`可以被看作是一个允许出现重复值的`std::set`。当你需要一个能自动保持元素有序，但又需要记录下每一个元素（即使它们的值相同）的场景时，`multiset`就是你的不二之选择。
+
+*   **头文件**: `#include <set>` (`multiset`与`set`在同一个头文件中)
+*   **核心特性**:
+    1.  **允许重复**: 这是与`set`唯一的区别。你可以插入任意多个值相同的元素。
+    2.  **有序性**: 容器内所有元素，包括重复的元素，都会被自动组织成有序状态。
+
+#### `multiset`的核心操作差异
+
+`multiset`拥有与`set`几乎一样的成员函数，但在处理重复元素时，它们的行为和返回值需要特别注意。
+
+##### `insert`
+
+*   **语法**: `iterator insert(const value_type& value);` (这是最常用的重载)
+*   **行为**: `multiset`的`insert`**总是会成功**，并将新元素插入到其在有序序列中的正确位置。
+*   **返回值**: 它不像`set`那样返回一个`pair`来告诉你是否成功（因为它总是成功），而是直接返回一个**迭代器**，指向**新插入**的那个元素。
+
+##### `count`
+
+*   **语法**: `size_type count(const Key& key) const;`
+*   **行为**: `count`在`multiset`中变得非常有用。它会返回容器中值等于`key`的**元素的总数量**。
+
+##### `erase`
+
+*   **按值删除**: `size_type erase(const key_type& key);`
+    *   这个版本的`erase`会**删除所有**值等于`key`的元素。
+    *   返回值是被删除元素的总数。
+
+**代码示例：使用`multiset`统计投票**
+
+假设我们在一个班级里对最喜欢的水果进行投票，每个人的投票都被记录下来。
+
+```cpp
+#include <iostream>
+#include <set>
+#include <string>
+#include <vector>
+
+void printMultiSet(const std::multiset<std::string>& ms) {
+    std::cout << "  { ";
+    for (const auto& item : ms) {
+        std::cout << item << " ";
+    }
+    std::cout << "}" << std::endl;
+}
+
+int main() {
+    std::vector<std::string> votes = {"apple", "banana", "apple", "orange", "banana", "apple"};
+    std::multiset<std::string> vote_counts;
+
+    // 1. 使用 insert 添加所有投票
+    std::cout << "--- 插入投票记录 ---" << std::endl;
+    for (const auto& vote : votes) {
+        vote_counts.insert(vote);
+    }
+    std::cout << "所有投票记录 (已自动排序):";
+    printMultiSet(vote_counts);
+
+    // 2. 使用 count 统计特定水果的票数
+    std::cout << "\n--- 使用 count 统计票数 ---" << std::endl;
+    std::string fruit_to_check = "apple";
+    std::cout << "水果 '" << fruit_to_check << "' 获得了 " << vote_counts.count(fruit_to_check) << " 票。" << std::endl;
+    fruit_to_check = "banana";
+    std::cout << "水果 '" << fruit_to_check << "' 获得了 " << vote_counts.count(fruit_to_check) << " 票。" << std::endl;
+    fruit_to_check = "grape";
+    std::cout << "水果 '" << fruit_to_check << "' 获得了 " << vote_counts.count(fruit_to_check) << " 票。" << std::endl;
+
+    // 3. 使用 erase 删除所有 'apple' 的投票
+    std::cout << "\n--- 使用 erase 删除所有 'apple' ---" << std::endl;
+    size_t num_erased = vote_counts.erase("apple");
+    std::cout << "删除了 " << num_erased << " 条 'apple' 的记录。" << std::endl;
+    std::cout << "删除后的投票记录:";
+    printMultiSet(vote_counts);
+
+    return 0;
+}
+```
+
+**预期输出:**
+```
+--- 插入投票记录 ---
+所有投票记录 (已自动排序):  { apple apple apple banana banana orange }
+
+--- 使用 count 统计票数 ---
+水果 'apple' 获得了 3 票。
+水果 'banana' 获得了 2 票。
+水果 'grape' 获得了 0 票。
+
+--- 使用 erase 删除所有 'apple' ---
+删除了 3 条 'apple' 的记录。
+删除后的投票记录:  { banana banana orange }
+```
+
+### `std::multimap`：允许键重复的字典
+
+与`multiset`的逻辑完全对应，`std::multimap`就是一个允许**键重复**的`std::map`。当一个键需要关联多个值时，`multimap`就派上了用场。
+
+*   **头文件**: `#include <map>` (`multimap`与`map`在同一个头文件中)
+*   **核心特性**:
+    1.  **键值对存储**。
+    2.  **允许键重复**。
+    3.  **按键自动组织**。
+
+一个经典的例子就是一本真正的字典，一个单词（键）可能有多种词性和多种释义（多个值）。
+
+#### `multimap`的核心操作差异
+
+##### `insert`
+与`multiset`一样，`multimap`的`insert`也总是成功的，并返回一个指向新插入的键值对的迭代器。
+
+##### `operator[]`
+这是**最重要**的区别：因为一个键可以对应多个值，`multimap`**没有定义`operator[]`**。如果你写`myMultiMap["key"]`，编译器会报错，因为它无法确定你想要访问或修改哪一个与`"key"`关联的值。
+
+##### `erase(key)`
+同样，`erase(key)`会删除所有键等于`key`的键值对。
+
+**如何查找和使用`multimap`中的数据？**
+既然不能用`[]`，我们该如何获取一个键对应的所有值呢？这正是我们下一节将要学习的`lower_bound`, `upper_bound`, `equal_range`等区间查找函数大显身手的舞台。在学习它们之前，我们先用一个简单的例子展示`multimap`的基本用法。
+
+**代码示例：存储一个多义词字典**
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::multimap<std::string, std::string> dictionary;
+
+    // 使用 insert 添加多个释义
+    dictionary.insert({"run", "v. 跑"});
+    dictionary.insert({"run", "v. 经营, 管理"});
+    dictionary.insert({"run", "n. 一段连续的时期"});
+
+    dictionary.insert({"set", "v. 放置"});
+    dictionary.insert({"set", "n. 一套, 一组"});
+
+    // 使用 count 检查一个词有多少个释义
+    std::string word_to_check = "run";
+    std::cout << "单词 '" << word_to_check << "' 有 " << dictionary.count(word_to_check) << " 个释义。" << std::endl;
+
+    // 如何遍历所有释义？一种基础方法是使用 find 和迭代器递增
+    std::cout << "单词 'run' 的所有释义如下:" << std::endl;
+    // find只会找到第一个
+    auto it = dictionary.find(word_to_check); 
+    if (it != dictionary.end()) {
+        // 我们需要手动循环，直到键不再是 "run"
+        for (; it != dictionary.end() && it->first == word_to_check; ++it) {
+            std::cout << "  - " << it->second << std::endl;
+        }
+    }
+    
+    // 上面的遍历方法比较笨拙，下一节的 equal_range 将提供一个优雅得多的解决方案。
+
+    return 0;
+}
+```
+
+**预期输出:**
+```
+单词 'run' 有 3 个释义。
+单词 'run' 的所有释义如下:
+  - v. 跑
+  - v. 经营, 管理
+  - n. 一段连续的时期
+```
+
+---
+
+### 迭代器与区间：`lower_bound` / `upper_bound` / `equal_range`
+
+`find`函数能帮我们精确定位一个元素，但有序容器的威力远不止于此。由于其内部元素始终有序，我们可以执行更复杂的**区间查找**。`lower_bound`, `upper_bound` 和 `equal_range` 就是为此而生的三个强大工具。它们对于`multiset`和`multimap`尤其有用。
+
+为了理解这三个函数，我们假设一个有序序列：`[10, 20, 20, 20, 30, 40]`。
+
+#### `lower_bound`
+
+*   **含义**: “下界”~~不是mc的那个~~。
+*   **功能**: 查找**第一个不小于**（也就是**大于或等于**）给定键`key`的元素。
+*   **返回值**: 指向该元素的迭代器。如果所有元素都小于`key`，则返回`.end()`。
+
+在序列 `[10, 20, 20, 20, 30, 40]` 中：
+*   `lower_bound(20)` 返回指向**第一个**`20`的迭代器。
+*   `lower_bound(21)` 返回指向`30`的迭代器（第一个不小于21的数）。
+*   `lower_bound(50)` 返回`.end()`。
+*   `lower_bound(5)` 返回指向`10`的迭代器。
+
+#### `upper_bound`
+
+*   **含义**: “上界”。
+*   **功能**: 查找**第一个严格大于**给定键`key`的元素。
+*   **返回值**: 指向该元素的迭代器。如果所有元素都小于或等于`key`，则返回`.end()`。
+
+在序列 `[10, 20, 20, 20, 30, 40]` 中：
+*   `upper_bound(20)` 返回指向`30`的迭代器（第一个大于20的数）。
+*   `upper_bound(21)` 同样返回指向`30`的迭代器。
+*   `upper_bound(50)` 返回`.end()`。
+*   `upper_bound(40)` 返回`.end()`。
+*   `upper_bound(5)` 返回指向`10`的迭代器。
+
+#### `equal_range`
+
+`equal_range`是最强大的一个，它将`lower_bound`和`upper_bound`的结果捆绑在一起返回。
+
+*   **功能**: 返回一个包含与给定键`key`相等的所有元素的**半开区间 `[first, second)`**。
+*   **返回值**: 一个`std::pair`，其中包含两个迭代器：
+    *   `pair.first`：等价于 `lower_bound(key)` 的结果。
+    *   `pair.second`：等价于 `upper_bound(key)` 的结果。
+
+你可以遍历从`pair.first`开始，到`pair.second`结束（不包含`second`）的所有迭代器，来访问所有与`key`相等的元素。这对于处理`multimap`或`multiset`中的重复键至关重要。
+
+**代码示例：在 `multimap` 中查找所有匹配项**
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+int main() {
+    std::multimap<std::string, std::string> contacts;
+    contacts.insert({"Alice", "123-4567"});
+    contacts.insert({"Bob", "987-6543"});
+    contacts.insert({"Alice", "555-1111"}); // Alice的第二个号码
+    contacts.insert({"Charlie", "222-3333"});
+    contacts.insert({"Alice", "888-9999"}); // Alice的第三个号码
+
+    std::string key_to_find = "Alice";
+    std::cout << "查找所有属于 '" << key_to_find << "' 的电话号码:" << std::endl;
+
+    // 使用 equal_range 获取包含所有 "Alice" 条目的区间
+    auto range = contacts.equal_range(key_to_find);
+
+    // 遍历这个区间
+    // it 从区间的开始 (range.first) 循环，直到区间的结束 (range.second)
+    for (auto it = range.first; it != range.second; ++it) {
+        std::cout << "  - 找到了号码: " << it->second << std::endl;
+    }
+    
+    // 如果区间为空 (first == second), 表示没有找到
+    std::string another_key = "David";
+    auto another_range = contacts.equal_range(another_key);
+    if (another_range.first == another_range.second) {
+        std::cout << "\n没有找到 '" << another_key << "' 的任何号码。" << std::endl;
+    }
+    
+    return 0;
+}
+```
+**预期输出:**
+```
+查找所有属于 'Alice' 的电话号码:
+  - 找到了号码: 123-4567
+  - 找到了号码: 555-1111
+  - 找到了号码: 888-9999
+
+没有找到 'David' 的任何号码。
+```
+
+### 自定义比较仿函数与键值对操作
+
+到目前为止，我们使用的`set`和`map`似乎都“凭空”知道了如何排序：`int`按数值大小，`std::string`按字典顺序。这并非魔法，而是因为C++的`<`运算符已经为这些基础类型定义了“小于”比较。有序容器默认就使用`<`来判断两个元素（或键）的相对顺序。
+
+但现实世界是复杂的，我们经常会遇到以下情况：
+1.  我们想改变默认的排序方式，比如让数字从大到小排列。
+2.  我们想让容器存储自定义的`struct`或`class`，但容器本身并不知道该如何比较两个自定义对象的大小。
+
+为了解决这些问题，我们需要向容器提供一个明确的**比较规则**。`std::set`和`std::map`的模板定义实际上是这样的：
+```cpp
+template <
+    class Key,
+    class Compare = std::less<Key>, // 第二个模板参数：比较器
+    class Allocator = std::allocator<Key>
+> class set;
+```
+这里的`Compare`就是比较器类型，它的默认值是`std::less<Key>`。`std::less`是一个STL提供的标准**仿函数**，其内部就调用了`<`运算符。
+
+所以，要自定义比较规则，本质上就是替换掉这个`Compare`模板参数。主要有三种方法可以实现。
+
+#### 核心概念：严格弱序（Strict Weak Ordering）
+
+在我们提供任何比较规则之前，必须理解它需要满足的数学概念：**严格弱序**。简单来说，你提供的比较规则（我们称之为`comp(a, b)`）必须像`<`号一样工作，并满足以下条件：
+1.  **非自反性**: `comp(a, a)`必须永远为`false`。（一个元素不能小于它自己）
+2.  **非对称性**: 如果`comp(a, b)`为`true`，那么`comp(b, a)`必须为`false`。（如果a < b，那么b不能小于a）
+3.  **传递性**: 如果`comp(a, b)`为`true`且`comp(b, c)`为`true`，那么`comp(a, c)`也必须为`true`。（如果a < b且b < c，那么a < c）
+
+容器使用`comp(a, b)`和`comp(b, a)`来判断两个元素`a`和`b`的等价性。当`comp(a, b)`和`comp(b, a)`**都为`false`**时，容器就认为`a`和`b`是**等价**的（对于`set`和`map`来说，就是重复的键）。**千万不要在比较函数中使用`<=`或`>=`**，这会破坏严格弱序，导致未定义行为。
+
+#### 方法一：重载 `<` 运算符（侵入式，但不失方便）
+
+对于自定义的`struct`或`class`，最直接的方法是为其重载`<`运算符。这样做的好处是，一旦重载，所有需要比较该对象的STL组件（包括`set`、`map`以及排序算法等）都能自动使用这个规则。
+
+*   **优点**：一次定义，处处可用。代码看起来最“自然”。
+*   **缺点**：这是“侵入式”的，它修改了类本身的定义。如果你想对同一个类使用多种不同的排序方式，此方法就不适用了。
+
+**示例：让`set`能够存储自定义的`Person`对象**
+
+```cpp
+#include <iostream>
+#include <set>
+#include <string>
+
+struct Person {
+    std::string name;
+    int age;
+
+    // 我们需要告诉set如何比较两个Person对象。
+    // 这必须是一个const成员函数，因为在比较期间不应修改对象。
+    // 它接收另一个const Person的引用，返回bool。
+    bool operator<(const Person& other) const {
+        // 如果当前对象的年龄小于另一个对象的年龄，
+        // 我们就认为当前这个对象“小于”另一个对象。
+        return this->age < other.age;
+    }
+};
+
+int main() {
+    // 因为Person类现在有了<运算符，set知道如何比较它们了。
+    // 我们可以直接使用默认的std::set<Person>。
+    std::set<Person> person_set;
+    
+    // 插入时，set会使用我们定义的operator<来找到正确的位置
+    person_set.insert({"Alice", 30});
+    person_set.insert({"Charlie", 25}); // 25 < 30，会被放在Alice前面
+    person_set.insert({"Bob", 40});     // 40 > 30，会被放在Alice后面
+
+    // 尝试插入一个等价的对象
+    // 我们按年龄比较，所以只要年龄相同，就被认为是等价的
+    person_set.insert({"David", 25}); // David的年龄和Charlie一样，插入会失败
+
+    std::cout << "Set中的Person对象 (按年龄排序):" << std::endl;
+    for (const auto& p : person_set) {
+        std::cout << "  { " << p.name << ", " << p.age << " }" << std::endl;
+    }
+    // 输出会是：
+    // { Charlie, 25 }
+    // { Alice, 30 }
+    // { Bob, 40 }
+    
+    return 0;
+}
+```
+
+#### 方法二：提供自定义仿函数（Functor）（最常用、最灵活）
+
+**仿函数（Functor）**，也叫函数对象，是一个重载了函数调用运算符`()`的类。这使得它的实例可以像函数一样被调用。这是向STL容器和算法传递自定义逻辑的标准方式。
+
+*   **优点**：
+    *   **非侵入式**：不需要修改类本身的定义。
+    *   **灵活性高**：可以为同一个类定义多种不同的比较器（比如一个按年龄排，一个按姓名排），在使用时按需选择。
+    *   **可以有状态**：虽然在比较器中不常见，但仿函数作为类可以有自己的成员变量。
+*   **缺点**：需要在声明`set`或`map`时显式指定比较器类型，语法稍长。
+
+**示例：使用不同仿函数实现多种排序**
+
+```cpp
+#include <iostream>
+#include <set>
+#include <string>
+#include <functional> // 为了使用std::greater
+
+struct Person {
+    std::string name;
+    int age;
+};
+
+// --- 仿函数 1: 按年龄升序比较 ---
+struct ComparePersonByAge {
+    // 关键是这个 operator()
+    // 它必须是const的，接收两个待比较对象的const引用，返回bool
+    bool operator()(const Person& a, const Person& b) const {
+        // 如果a的年龄小于b的年龄，我们认为a应该排在b前面
+        return a.age < b.age;
+    }
+};
+
+// --- 仿函数 2: 按姓名（字典序）降序比较 ---
+struct ComparePersonByNameDescending {
+    bool operator()(const Person& a, const Person& b) const {
+        // 如果a的姓名 > b的姓名，我们认为a应该排在b前面（实现降序）
+        return a.name > b.name;
+    }
+};
+
+
+int main() {
+    Person p1 = {"Alice", 30};
+    Person p2 = {"Bob", 25};
+    Person p3 = {"Charlie", 25};
+
+    // --- 使用按年龄排序的set ---
+    // 在模板参数中，第二个参数指定了我们的比较器类型
+    std::set<Person, ComparePersonByAge> age_sorted_set;
+    age_sorted_set.insert(p1);
+    age_sorted_set.insert(p2);
+    age_sorted_set.insert(p3); // p3的年龄和p2相同，根据规则是等价的，插入失败
+    
+    std::cout << "按年龄升序排列:" << std::endl;
+    for(const auto& p : age_sorted_set) {
+        std::cout << "  { " << p.name << ", " << p.age << " }" << std::endl;
+    }
+    
+    // --- 使用按姓名降序排序的set ---
+    std::set<Person, ComparePersonByNameDescending> name_sorted_set;
+    name_sorted_set.insert(p1);
+    name_sorted_set.insert(p2);
+    name_sorted_set.insert(p3);
+    
+    std::cout << "\n按姓名降序排列:" << std::endl;
+    for(const auto& p : name_sorted_set) {
+        std::cout << "  { " << p.name << ", " << p.age << " }" << std::endl;
+    }
+    
+    return 0;
+}
+```
+**预期输出:**
+```
+按年龄升序排列:
+  { Bob, 25 }
+  { Alice, 30 }
+
+按姓名降序排列:
+  { Charlie, 25 }
+  { Bob, 25 }
+  { Alice, 30 }
+```
+
+#### 方法三：使用Lambda表达式
+
+对于临时的、一次性的比较需求，编写一个完整的仿函数类显得有些繁琐。C++11引入的Lambda表达式提供了一种就地定义匿名函数对象的简洁语法。
+
+*   **优点**：语法极其简洁，代码紧凑，避免形成使山代码，非常适合一次性使用的简单比较逻辑。
+*   **缺点**：类型声明比较复杂。需要使用`decltype`来获取lambda的类型，或者将比较器作为构造函数参数传入（这超出了我们目前的范围）。
+
+目前我们主要掌握前两种方法。Lambda作为一种高级技巧，我们在此仅作了解。
+
+**总结一下：**
+*   当你能修改类定义，且该类的“小于”比较逻辑是全局统一且唯一的，**重载`operator<`** 最方便。
+*   当你不能修改类，或者需要为同一个类提供多种排序逻辑时，**自定义仿函数**是标准、强大且灵活的解决方案。
+
+---
+
+### `try_emplace` / `insert_or_assign` 现代接口
+
+C++17为`std::map`引入了两个非常有用的新成员函数，它们在特定场景下比传统的`insert`和`operator[]`更高效、更明确。
+
+#### `try_emplace` (仅`map`和`multimap`)
+
+`try_emplace`旨在解决一个`insert`的性能痛点。回想一下`scores.insert({"Alice", 100});`，即使键`"Alice"`已经存在，我们仍然在原地构造了一个`{"Alice", 100}`的临时`pair`对象，然后才发现插入失败，白白浪费了构造的开销。
+
+`try_emplace`则更聪明：
+
+*   **语法**: `pair<iterator, bool> try_emplace(const Key& key, Args&&... args);`
+*   **行为**:
+    1.  它会先用`key`去查找`map`。
+    2.  如果**键已存在**，它**什么都不做**，直接返回指向现有元素的迭代器和`false`。
+    3.  如果**键不存在**，它才会在`map`中**就地构造**一个新的值对象，使用的参数是`args...`。
+
+**优点**：避免了在插入失败时构造不必要的**值**对象。
+
+#### `insert_or_assign` (仅`map`)
+
+`insert_or_assign`的行为像是`operator[]`的更清晰、更可控的版本。
+
+*   **语法**: `pair<iterator, bool> insert_or_assign(const Key& key, M&& obj);`
+*   **行为**:
+    1.  查找`key`。
+    2.  如果**键不存在**，它会**插入**一个新的键值对`{key, obj}`。
+    3.  如果**键已存在**，它会用`obj`来**赋值**给现有的值。
+*   **返回值**: `pair.second`在**插入**时为`true`，在**赋值**时为`false`。
+
+**与`operator[]`的对比**:
+*   `scores[key] = value;`：无论是插入还是赋值，这行代码看起来都一样。
+*   `insert_or_assign(key, value)`：通过返回值可以清晰地区分出本次操作是“插入”还是“赋值”。
+
+**代码示例**
+
+```cpp
+#include <iostream>
+#include <map>
+#include <string>
+
+struct ComplexObject {
+    ComplexObject() { std::cout << "  (默认构造 ComplexObject)" << std::endl; }
+    ComplexObject(const std::string& s) { std::cout << "  (用string '"<< s <<"' 构造 ComplexObject)" << std::endl; }
+    ComplexObject(const ComplexObject& other) { std::cout << "  (拷贝构造 ComplexObject)" << std::endl; }
+    ComplexObject& operator=(const ComplexObject& other) { 
+        std::cout << "  (赋值 ComplexObject)" << std::endl;
+        return *this;
+    }
+};
+
+int main() {
+    std::map<int, ComplexObject> myMap;
+    
+    std::cout << "--- 1. 使用 try_emplace ---" << std::endl;
+    std::cout << "尝试插入键 10:" << std::endl;
+    // "Hello" 被直接用于在map内部构造ComplexObject，没有临时对象
+    myMap.try_emplace(10, "Hello"); 
+    
+    std::cout << "\n再次尝试插入键 10:" << std::endl;
+    // 键10已存在，try_emplace什么都不做，"World"甚至不会被用来构造任何东西
+    myMap.try_emplace(10, "World"); 
+
+    std::cout << "\n--- 2. 使用 insert_or_assign ---" << std::endl;
+    std::cout << "对键 20 进行 insert_or_assign:" << std::endl;
+    // 键20不存在，会插入一个新值
+    myMap.insert_or_assign(20, ComplexObject("New"));
+    
+    std::cout << "\n再次对键 20 进行 insert_or_assign:" << std::endl;
+    // 键20已存在，会进行赋值
+    myMap.insert_or_assign(20, ComplexObject("Updated"));
+
+    return 0;
+}
+```
+**预期输出 (构造/赋值日志):**
+```
+--- 1. 使用 try_emplace ---
+尝试插入键 10:
+  (用string 'Hello' 构造 ComplexObject)
+
+再次尝试插入键 10:
+
+--- 2. 使用 insert_or_assign ---
+对键 20 进行 insert_or_assign:
+  (用string 'New' 构造 ComplexObject)
+
+再次对键 20 进行 insert_or_assign:
+  (用string 'Updated' 构造 ComplexObject)
+  (赋值 ComplexObject)
+```
+
+### 迭代器失效与复杂度
+
+最后，我们来谈谈有序关联容器的稳定性和性能保证。
+
+**迭代器失效**：
+这是`set`和`map`最令人愉悦的特性之一。由于它们的底层是基于节点的树状结构，插入或删除一个节点，只会影响到那个节点本身和它的直接父子关系，**不会**导致其他节点在内存中的位置发生移动。
+
+*   **`insert`**: **不会**使任何已存在的迭代器、指针或引用失效。
+*   **`erase`**: 只会使**指向被删除元素**的迭代器、指针和引用失效。其他所有迭代器保持有效。
+
+这种强大的稳定性，与`vector`（插入/删除可能导致所有迭代器失效）和`deque`（插入/删除也可能使所有迭代器失效）形成了鲜明对比，使得在`set`/`map`上进行安全的迭代和修改操作要简单得多。
+
+**复杂度**：
+正如本章开头所述，得益于红黑树的自平衡特性，所有核心操作的复杂度都得到了保证：
+
+| 操作                                        | 平均/最坏时间复杂度 |
+| ------------------------------------------- | --------------------- |
+| `insert`, `erase`, `find`, `count`          | **O(log n)**          |
+| `lower_bound`, `upper_bound`, `equal_range` | **O(log n)**          |
+| `operator[]` (`map` only)                     | **O(log n)**          |
+| `try_emplace`, `insert_or_assign` (`map` only) | **O(log n)**          |
 
 ## 第37章：无序关联
 **知识点**  
