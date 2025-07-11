@@ -905,11 +905,8 @@
                 class="sticky top-0 z-20 bg-white dark:bg-[#1a1a1a] border-b border-gray-200 dark:border-[#374151] shadow-sm">
                 <div class="flex items-center justify-between px-3 py-2.5 sm:px-4 sm:py-3 lg:px-6">
                     <div class="flex items-center min-w-0">
-                        <button id="back-to-home"
-                            class="p-1.5 sm:p-2 mr-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626] flex-shrink-0"
-                            title="返回首页">
-                            <div
-                                class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                        <button id="back-to-home" class="hidden sm:block p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
+                            <div class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-gray-500 dark:text-gray-400">
                                 <i class="ri-arrow-left-line ri-lg"></i>
                             </div>
                         </button>
@@ -934,8 +931,10 @@
                                 class="py-1.5 sm:py-2 pl-8 sm:pl-10 pr-3 sm:pr-4 w-32 min-[540px]:w-48 sm:w-full text-xs sm:text-sm text-gray-900 dark:text-gray-100 bg-gray-100 dark:bg-[#262626] rounded-lg border-none focus:ring-2 focus:ring-primary focus:ring-opacity-20 focus:outline-none"
                                 placeholder="搜索文档...">
                         </div>
-                        <button id="theme-toggle" class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
-                            <div class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-gray-500 dark:text-gray-400">
+                        <button id="theme-toggle"
+                            class="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#262626]">
+                            <div
+                                class="w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center text-gray-500 dark:text-gray-400">
                                 <i class="ri-sun-line dark:hidden"></i><i class="ri-moon-line hidden dark:block"></i>
                             </div>
                         </button>
@@ -957,8 +956,8 @@
             const sidebarOverlay = document.getElementById('sidebar-overlay');
             const openSidebarBtn = document.getElementById('open-sidebar');
             const closeSidebarBtn = document.getElementById('close-sidebar');
-            const backToHomeBtn = document.getElementById('back-to-home');
             const backToTopButton = document.getElementById('back-to-top');
+            const backToHomeBtn = document.getElementById('back-to-home');
             const themeToggle = document.getElementById('theme-toggle');
             const htmlElement = document.documentElement;
             const searchInput = document.querySelector('input[type="text"][placeholder="搜索文档..."]');
@@ -1038,9 +1037,12 @@
             if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
             if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
             if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
-            if (backToHomeBtn) backToHomeBtn.addEventListener('click', () => {
-                window.location.href = '/';
-            });
+
+            if (backToHomeBtn) {
+                backToHomeBtn.addEventListener('click', () => {
+                    window.location.href = '/';
+                });
+            }
 
             function toggleBackToTopButton() {
                 if (window.scrollY > 300) {
@@ -1424,7 +1426,7 @@
                     console.error("加载课程失败:", error);
                 }
             }
-            
+
             initializeCoursePage();
         });
     </script>
