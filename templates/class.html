@@ -1098,6 +1098,36 @@
                 });
             }
 
+            function scrollSidebarToActiveChapter() {
+                const sidebarNav = document.querySelector('.sidebar-nav');
+                const activeLink = document.querySelector('.sidebar-nav .nav-link.active');
+                
+                if (!sidebarNav || !activeLink) return;
+
+                const sidebarRect = sidebarNav.getBoundingClientRect();
+                const activeLinkRect = activeLink.getBoundingClientRect();
+                
+                const relativeLinkTop = activeLinkRect.top - sidebarRect.top + sidebarNav.scrollTop;
+                
+                const idealScrollTop = relativeLinkTop - (sidebarNav.clientHeight / 2) + (activeLinkRect.height / 2);
+                
+                const maxScrollTop = sidebarNav.scrollHeight - sidebarNav.clientHeight;
+                
+                let targetScrollTop;
+                if (idealScrollTop < 0) {
+                    targetScrollTop = 0;
+                } else if (idealScrollTop > maxScrollTop) {
+                    targetScrollTop = maxScrollTop;
+                } else {
+                    targetScrollTop = idealScrollTop;
+                }
+                
+                sidebarNav.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+            }
+
             function loadChapter(index, positionToRestore = null) {
                 currentChapterIndex = index;
                 const chapter = chapters[index];
@@ -1146,6 +1176,11 @@
                 docContentEl.innerHTML = content;
                 docContentEl.appendChild(chapterNav);
                 updateActiveSection();
+                
+                setTimeout(() => {
+                    scrollSidebarToActiveChapter();
+                }, 100);
+                
                 initializeCopyButtons();
 
                 if (searchInput) {
