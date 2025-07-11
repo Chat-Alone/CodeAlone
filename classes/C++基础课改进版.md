@@ -3759,25 +3759,25 @@ do {
 using namespace std;
 
 int main() {
-    char choice;
+    int quantity;
+
     do {
-        cout << "\n--- 菜单 ---" << endl;
-        cout << "A. 开始游戏" << endl;
-        cout << "B. 加载存档" << endl;
-        cout << "Q. 退出游戏" << endl;
-        cout << "请输入您的选择: ";
-        cin >> choice;
+        cout << "请输入您要购买的数量 (必须是正整数): ";
+        cin >> quantity;
 
-        // 这里可以加入switch语句处理用户的选择，为了简化，我们暂时省略
-        
-    } while (choice != 'Q' && choice != 'q'); // 当用户的选择不是'Q'或'q'时，循环继续
+        if (quantity <= 0) {
+            cout << "错误：数量必须大于0，请重新输入！" << endl;
+        }
 
-    cout << "感谢使用，再见！" << endl;
+    } while (quantity <= 0);
+
+    cout << "\n操作成功！您已将 " << quantity << " 件商品加入购物车。" << endl;
 
     return 0;
 }
+
 ```
-这个程序会先显示一次菜单，然后根据用户的输入决定是否再次显示。这种“至少执行一次”的场景非常适合使用`do-while`。
+这个程序会先显示一次菜单，它有一个明确的目标：获取一个大于0的数字。在没有得到这个数字之前，程序会“卡”在这一步，反复要求用户输入。这种“至少执行一次”的场景非常适合使用`do-while`。
 
 ---
 
