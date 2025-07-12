@@ -4984,7 +4984,7 @@ int main() {
 
 ##### 1. 无符号溢出
 
-无符号整数（`unsigned`）的溢出行为是C++标准**明确定义**的，它表现为一种**环绕（Wrap-around）**或**取模（Modulo）**的行为。
+无符号整数（`unsigned`）的溢出行为是C++标准**明确定义**的，它表现为一种**环绕（Wrap-around）** 或**取模（Modulo）** 的行为。
 
 这就像汽车的里程表。如果一个6位的里程表显示 `999999`，再开一公里，它不会卡住或报错，而是会“环绕”到 `000000`。
 
@@ -5853,7 +5853,7 @@ int main() {
 *   **函数**实现了代码的**模块化**和**复用**。
 *   一个函数由**返回类型、函数名、参数列表**和**函数体**组成。
 *   通过**函数声明（原型）**，我们可以先调用函数，再给出其定义。
-*   **`void`**表示函数无返回值；**`return`**用于返回值和退出函数。
+*   `void`表示函数无返回值；`return`用于返回值和退出函数。
 *   **形参**是函数的占位符，**实参**是调用时传入的真实数据。
 *   **局部变量**生存在函数内部，**全局变量**生存在整个程序中（应少用）。
 *   **静态局部变量**拥有局部作用域和全局生命周期，能在多次函数调用间保持其值。
@@ -6248,7 +6248,7 @@ void printNumber(const int& num) {
 **默认参数**（Default Arguments）允许我们在函数声明时，为一个或多个参数指定默认值。当调用者没有为这些参数提供实参时，编译器就会自动使用这些默认值。
 
 **规则**：
-1.  默认参数必须在**函数声明（原型）**中指定。
+1.  默认参数必须在**函数声明（原型）** 中指定。
 2.  设置了默认值的参数，其**右边**的所有参数也必须有默认值。
 
 ```cpp
@@ -8488,7 +8488,7 @@ Pop 20 成功, 当前栈顶在索引 0
 
 *   栈的核心原则是**后进先出（LIFO）**，所有操作都在**栈顶**进行。
 *   栈的四大基本操作是**Push（入栈）**、**Pop（出栈）**、**Peek（查看栈顶）**和**isEmpty（判空）**。
-*   我们可以使用**数组**和一个**`top`索引变量**来轻松地实现一个栈。`top`通常初始化为-1。
+*   我们可以使用**数组**和一个`top`索引变量来轻松地实现一个栈。`top`通常初始化为-1。
 *   在实现时，必须时刻警惕**栈溢出**（对满栈Push）和**栈下溢**（对空栈Pop）这两个经典错误，并通过`isFull`和`isEmpty`检查来避免它们。
 *   栈是计算机科学中的一个基础概念，最著名的应用之一就是程序的**函数调用栈**。
 
@@ -8750,7 +8750,7 @@ int main() {
 ```
 
 ##### 答案解析
-本题是对本章核心知识**“使用数组和`top`索引实现栈”**的直接考察。
+本题是对本章核心知识“使用数组和`top`索引实现栈”的直接考察。
 1.  **`top` 索引的管理**：`top` 是栈实现的核心。`top = -1` 是判断栈为空的关键标志。每次 `push`，`top` 先自增再赋值；每次 `pop`，`top` 直接自减，这清晰地体现了栈顶的动态变化。
 2.  **通过引用传递`top`**：在 `push` 和 `pop` 函数中，参数 `int& top` 使用了引用传递。这是因为这两个函数需要修改 `main` 函数中 `top` 变量的实际值。如果不使用引用，函数内对 `top` 的修改将不会影响到 `main` 函数，栈的状态也就无法被正确更新。
 3.  **错误处理**：通过 `isFull` 和 `isEmpty` 函数进行前置检查，程序能够优雅地处理栈溢出和栈下溢这两种经典错误，这是健壮程序设计的重要体现。
@@ -8834,7 +8834,7 @@ int main() {
 ```
 
 ##### 答案解析
-本题是栈应用的绝佳范例，深刻体现了其**处理嵌套结构和“最近匹配”**的能力。
+本题是栈应用的绝佳范例，深刻体现了其处理嵌套结构和“最近匹配”的能力。
 1.  **核心逻辑**：
     *   **遇到开括号**：就好像许下一个“承诺”，需要一个对应的闭括号来“兑现”。我们将这个“承诺”（开括号）压入栈中保存起来。
     *   **遇到闭括号**：我们立即检查栈顶的“承诺”。如果栈是空的（没有承诺），或者栈顶的承诺与当前闭括号不匹配，说明语法错误。如果匹配，就兑现承诺，将开括号从栈中弹出。
@@ -15382,7 +15382,7 @@ int main() {
 ### 章节总结
 
 本章我们正式进入了面向对象编程的世界，学习了其最基本的构建块：
--   **类 `class`** 是一个蓝图，它将**数据（成员变量）**和**操作数据的函数（成员函数）**封装在一起。
+-   **类 `class`** 是一个蓝图，它将**数据（成员变量）** 和**操作数据的函数（成员函数）** 封装在一起。
 -   **对象 `object`** 是根据类这个蓝图创建出来的具体实例。
 -   **访问控制**（`public`, `private`）是实现**封装**的关键，它隐藏了内部实现，只暴露安全的公共接口。
 -   **类的作用域**允许我们将函数的声明和实现分离，使用`::`进行关联。
@@ -19215,10 +19215,10 @@ public:
 
 本章我们深入学习了C++多态的精髓，这是面向对象设计模式的基础。
 -   **多态**允许我们通过基类接口处理不同派生类的对象，实现“同一接口，不同行为”。
--   通过在基类中声明**`virtual`函数**，并使用**基类指针/引用**指向派生类对象，可以触发**动态绑定**。
+-   通过在基类中声明`virtual`函数，并使用**基类指针/引用**指向派生类对象，可以触发**动态绑定**。
 -   **纯虚函数 (`= 0`)**用于定义接口，包含纯虚函数的类是**抽象类**，不能被实例化。
 -   **虚析构函数**是多态编程中保证资源正确释放的关键，任何可能作为基类的类都应有虚析构函数。
--   **`override`**关键字能保证重写的正确性，**`final`**关键字能阻止进一步的继承或重写，它们是现代C++的推荐实践。
+-   `override`关键字能保证重写的正确性，`final`关键字能阻止进一步的继承或重写，它们是现代C++的推荐实践。
 
 ---
 
@@ -22710,12 +22710,12 @@ std::vector<int> v = {10, 20, 30, 40, 50};
 
 *   **可以 `+n` 的容器 (如 `std::vector`)**:
     *   `std::vector` 的数据存储在**一块连续的内存**中，就像一个普通的数组。
-    *   当你想从当前位置移动 `n` 步时，计算机可以做一个非常简单的数学计算：`当前地址 + n * sizeof(元素类型)`，就能立刻得到新地址。这是一个**O(1)**复杂度的操作，非常快。
+    *   当你想从当前位置移动 `n` 步时，计算机可以做一个非常简单的数学计算：`当前地址 + n * sizeof(元素类型)`，就能立刻得到新地址。这是一个 **O(1)** 复杂度的操作，非常快。
     *   因为这种操作高效且有意义，所以C++标准允许 `vector` 的迭代器支持 `+n`。
 
 *   **不可以 `+n` 的容器 (如 `std::list`)**:
     *   `std::list` 是一个**双向链表**。它的元素在内存中是分散存储的，每个元素只知道它的前一个和后一个元素在哪里。
-    *   当你想从当前位置移动 `n` 步时，唯一的办法就是**一个一个地**沿着链表移动 `n` 次。这是一个**O(n)**复杂度的操作。
+    *   当你想从当前位置移动 `n` 步时，唯一的办法就是**一个一个地**沿着链表移动 `n` 次。这是一个 **O(n)** 复杂度的操作。
     *   如果C++允许你对 `list` 的迭代器写 `it + 5`，这会给人一种错觉，以为它和 `vector` 的 `it + 5` 一样快，但实际上它背后隐藏了一个循环。为了避免这种性能陷阱和误导，C++标准**禁止**了非随机访问迭代器使用 `+` 和 `-` 进行算术运算。
 
 支持 `+n`, `-n`, `+=`, `-=` 以及比较大小（`<`, `>`, `<=`, `>=`）的随机访问迭代器主要来自于以下容器：
@@ -27057,7 +27057,7 @@ struct Student {
 -   我们从底层原理出发，理解了**哈希表**如何通过**哈希函数**将键映射到**桶**，并使用**链地址法**处理**哈希冲突**。
 -   我们学习了**负载因子**和**重哈希**机制如何动态维护哈希表的性能，确保插入、删除和查找操作的平均时间复杂度达到**摊还O(1)**。
 -   我们详细掌握了`std::unordered_map`和`std::unordered_set`的常用API，包括插入(`[]` vs `insert`)、访问(`at` vs `find`)、删除和遍历，并了解了`multi`版本的用途。
--   一个关键技能是让我们自己的**自定义类型**能够作为键使用，这需要我们为其提供**`operator==`**和特化的**`std::hash`**模板。
+-   一个关键技能是让我们自己的**自定义类型**能够作为键使用，这需要我们为其提供`operator==`和特化的`std::hash`模板。
 -   我们还讨论了无序容器的**迭代器特性**，特别是**迭代器失效**的风险，并学会了在遍历时安全删除元素的方法。
 -   最后，我们通过详细的**对比表格**，明确了有序容器和无序容器在性能、内存和功能上的差异，为在实际项目中做出正确的技术选型提供了依据。
 
@@ -27888,13 +27888,1070 @@ Step 3: Odd Numbers (Inserted into Set): { 50 }
 ```
 
 ## 第39章：核心算法
-**知识点**  
-- 非修改性：`for_each` / `find` / `count` / `all_of` / `any_of` / `mismatch`  
-- 修改性：`copy` / `move` / `swap_ranges` / `remove` / `replace` / `transform`  
-- 排列与重排：`reverse` / `rotate` / `shuffle` / `partition`  
-- 通用原则：算法 + 迭代器 + 谓词  
-- 避免手写循环与算法组合技  
-**示例程序**：日志清洗
+在之前的章节中，我们学习了C++标准库提供的各种**容器**（如`vector`、`list`）来存储数据，以及**迭代器**来遍历这些数据。这就像我们拥有了各种类型的仓库和在仓库里移动的叉车。现在，我们将学习第三个关键部分——**算法**。算法是在这些数据上执行的各种标准化操作，例如查找、排序、修改等。
+
+本章的目标是学习并掌握标准库中位于`<algorithm>`头文件里的核心算法。熟练使用这些算法能让你的代码变得更简洁、更高效、更不易出错。它们是无数C++工程师智慧的结晶，经过了高度优化和严格测试。我们的目标是：**尽可能用标准算法替代手写循环**。
+
+### 通用原则：算法 + 迭代器 + 谓词
+
+几乎所有的标准库算法都遵循一个共同的设计模式。理解这个模式是高效使用算法库的关键。
+
+*   **算法（Algorithm）**：你要执行的操作，例如`find`（查找）、`copy`（复制）或`sort`（排序）。这些都是以函数模板形式存在的全局函数。
+*   **迭代器（Iterator）**：算法操作的数据范围。通常，算法通过一对迭代器参数来定义一个**左闭右开**的区间 `[first, last)`。`first`指向范围的第一个元素，而`last`指向范围最后一个元素的**下一个**位置。算法会处理从`first`开始，直到`last`之前的所有元素。
+*   **谓词（Predicate）**：一个返回布尔值（`true`或`false`）的“可调用对象”。**可调用对象**在这里可以简单理解为一个函数或函数指针。谓词允许我们向算法传递自定义的判断逻辑。例如，我们不想简单地查找一个数字`5`，而是想查找“第一个偶数”，这时就需要一个判断“是否为偶数”的谓词。
+
+让我们来看一个简单的谓词函数：
+```cpp
+// 这是一个谓词，它接受一个整数，如果该整数是偶数，则返回true，否则返回false
+bool isEven(int number) {
+    return number % 2 == 0;
+}
+```
+这个`isEven`函数就可以被传递给需要自定义判断条件的算法中。
+
+总结来说，我们通过迭代器告诉算法“在哪里”工作，通过谓词告诉算法“如何”工作，而算法本身决定了“做什么”。
+
+在使用标准算法前，必须包含头文件：
+```cpp
+#include <algorithm>
+```
+
+### 非修改性序列操作
+
+这类算法只会读取容器中的数据，对数据进行检查、计数或查找，但**绝不会修改容器中元素的值**。它们是“只读”操作，因此使用起来非常安全。
+
+#### `for_each`：对范围中的每个元素执行操作
+`for_each`可能是最简单的算法之一。它接受一个范围 `[first, last)` 和一个函数，然后对范围内的每个元素调用该函数。
+
+**定义**：
+`for_each(InputIt first, InputIt last, UnaryFunction f);`
+
+*   `first`, `last`: 定义操作范围的输入迭代器。
+*   `f`: 应用于每个元素的一元函数（即只接受一个参数的函数）。
+
+**示例**：
+假设我们有一个整数`vector`，我们想打印其中的每一个元素。
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// 这是一个普通函数，用于打印一个整数
+void printElement(int n) {
+    std::cout << n << " ";
+}
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30, 40, 50};
+
+    std::cout << "使用for_each打印vector中的元素: ";
+    // 将printElement函数应用到numbers的每个元素上
+    std::for_each(numbers.begin(), numbers.end(), printElement);
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+使用for_each打印vector中的元素: 10 20 30 40 50 
+```
+这比手写一个`for`循环来遍历和打印更加简洁，更能体现“做什么”（对每个元素执行打印）而不是“怎么做”（获取迭代器、循环、解引用、递增）。
+
+#### `find` / `find_if`：查找元素
+`find`和`find_if`用于在序列中查找第一个满足条件的元素。
+
+*   `find`：查找一个**特定的值**。
+*   `find_if`：查找第一个**满足谓词**的元素。
+
+**定义**：
+`find(InputIt first, InputIt last, const T& value);`
+`find_if(InputIt first, InputIt last, UnaryPredicate p);`
+
+**返回值**：
+这两个函数都返回一个迭代器。
+*   如果找到了元素，返回指向**第一个匹配元素**的迭代器。
+*   如果未找到，返回`last`迭代器（即传入的范围的终点）。
+
+判断是否找到元素的标准方法是检查`find`或`find_if`的返回值是否等于范围的`end()`迭代器。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// 谓词：判断一个数是否大于25
+bool isGreaterThan25(int n) {
+    return n > 25;
+}
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30, 40, 50};
+
+    // 1. 使用 find 查找特定值 30
+    auto it_find = std::find(numbers.begin(), numbers.end(), 30);
+
+    if (it_find != numbers.end()) {
+        std::cout << "找到了数字 30，它的值是: " << *it_find << std::endl;
+    } else {
+        std::cout << "没有找到数字 30" << std::endl;
+    }
+
+    // 2. 使用 find_if 查找第一个大于 25 的数
+    auto it_find_if = std::find_if(numbers.begin(), numbers.end(), isGreaterThan25);
+
+    if (it_find_if != numbers.end()) {
+        std::cout << "找到了第一个大于25的数，它是: " << *it_find_if << std::endl;
+    } else {
+        std::cout << "没有找到大于25的数" << std::endl;
+    }
+
+    // 3. 查找一个不存在的元素
+    it_find = std::find(numbers.begin(), numbers.end(), 99);
+    if (it_find == numbers.end()) {
+        std::cout << "确认，数字 99 未在vector中找到。" << std::endl;
+    }
+
+    return 0;
+}
+```
+**输出**：
+```
+找到了数字 30，它的值是: 30
+找到了第一个大于25的数，它是: 30
+确认，数字 99 未在vector中找到。
+```
+
+#### `count` / `count_if：计数元素`
+`count`和`count_if`用于统计序列中满足条件的元素个数。
+
+*   `count`：统计**特定值**出现的次数。
+*   `count_if`：统计**满足谓词**的元素数量。
+
+**定义**：
+`count(InputIt first, InputIt last, const T& value);`
+`count_if(InputIt first, InputIt last, UnaryPredicate p);`
+
+**返回值**：
+返回一个整数类型（通常是`size_t`），表示匹配元素的数量。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// 谓词：判断一个数是否为奇数
+bool isOdd(int n) {
+    return n % 2 != 0;
+}
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 3, 6, 7, 3};
+
+    // 1. 使用 count 统计数字 3 出现的次数
+    int count_of_3 = std::count(numbers.begin(), numbers.end(), 3);
+    std::cout << "数字 3 出现了 " << count_of_3 << " 次。" << std::endl;
+
+    // 2. 使用 count_if 统计奇数的个数
+    int count_of_odds = std::count_if(numbers.begin(), numbers.end(), isOdd);
+    std::cout << "vector中有 " << count_of_odds << " 个奇数。" << std.endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+数字 3 出现了 3 次。
+vector中有 5 个奇数。
+```
+
+#### `all_of` / `any_of` / `none_of：检查范围属性`
+这组算法用于检查整个范围内的元素是否满足某个谓词。
+
+*   `all_of`：如果范围内**所有**元素都满足谓词，返回`true`。
+*   `any_of`：如果范围内**至少有一个**元素满足谓词，返回`true`。
+*   `none_of`：如果范围内**没有一个**元素满足谓词，返回`true`。
+
+**定义**：
+`all_of(InputIt first, InputIt last, UnaryPredicate p);`
+`any_of(InputIt first, InputIt last, UnaryPredicate p);`
+`none_of(InputIt first, InputIt last, UnaryPredicate p);`
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// 谓词：判断一个数是否为正数
+bool isPositive(int n) {
+    return n > 0;
+}
+
+int main() {
+    std::vector<int> v1 = {1, 2, 3, 4, 5};
+    std::vector<int> v2 = {-1, 0, 1, 2, 3};
+    std::vector<int> v3 = {-1, -2, -3};
+
+    // 检查 v1
+    if (std::all_of(v1.begin(), v1.end(), isPositive)) {
+        std::cout << "v1 中所有元素都是正数。" << std::endl;
+    }
+    // 检查 v2
+    if (std::any_of(v2.begin(), v2.end(), isPositive)) {
+        std::cout << "v2 中至少有一个元素是正数。" << std::endl;
+    }
+    // 检查 v3
+    if (std::none_of(v3.begin(), v3.end(), isPositive)) {
+        std::cout << "v3 中所有元素都不是正数。" << std::endl;
+    }
+
+    return 0;
+}
+```
+**输出**：
+```
+v1 中所有元素都是正数。
+v2 中至少有一个元素是正数。
+v3 中所有元素都不是正数。
+```
+
+#### `mismatch`：查找第一个不匹配的位置
+`mismatch`用于比较两个序列，并找出它们第一个不匹配的元素对。
+
+**定义**：
+`mismatch(InputIt1 first1, InputIt1 last1, InputIt2 first2);`
+它比较 `[first1, last1)` 和从 `first2` 开始的等长序列。
+
+**返回值**：
+返回一个`std::pair`，包含两个迭代器。第一个迭代器指向第一个序列中的不匹配元素，第二个迭代器指向第二个序列中对应的不匹配元素。如果两个序列在比较范围内完全匹配，那么返回的`pair`中第一个迭代器将是`last1`。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+
+int main() {
+    std::vector<int> v1 = {1, 2, 3, 4, 5};
+    std::vector<int> v2 = {1, 2, 99, 4, 5}; // 在第3个元素处不同
+    std::vector<int> v3 = {1, 2, 3};
+
+    // 比较 v1 和 v2
+    auto pair_mismatch = std::mismatch(v1.begin(), v1.end(), v2.begin());
+
+    if (pair_mismatch.first != v1.end()) {
+        std::cout << "v1 和 v2 在位置 " << std::distance(v1.begin(), pair_mismatch.first) 
+                  << " 处首次不匹配。" << std::endl;
+        std::cout << "v1 中的值是: " << *pair_mismatch.first << std::endl;
+        std::cout << "v2 中的值是: " << *pair_mismatch.second << std::endl;
+    } else {
+        std::cout << "v1 和 v2 在比较范围内完全匹配。" << std::endl;
+    }
+
+    // 比较 v1 的前三个元素和 v3
+    pair_mismatch = std::mismatch(v1.begin(), v1.begin() + 3, v3.begin());
+    if (pair_mismatch.first != (v1.begin() + 3) ) {
+        // 这段代码不会执行，因为前三个元素是匹配的
+    } else {
+        std::cout << "\nv1 的前三个元素和 v3 完全匹配。" << std::endl;
+    }
+
+    return 0;
+}
+```
+**输出**：
+```
+v1 和 v2 在位置 2 处首次不匹配。
+v1 中的值是: 3
+v2 中的值是: 99
+
+v1 的前三个元素和 v3 完全匹配。
+```
+**注**：`std::distance`是一个辅助函数（位于`<iterator>`头文件），用于计算两个迭代器之间的距离（元素个数）。
+
+---
+
+### 修改性序列操作
+
+与非修改性算法不同，修改性算法会**改变**容器中元素的值或位置。在使用它们时，需要特别注意操作的目标范围是否有效，以及是否会产生非预期的副作用。
+
+#### `copy` / `copy_if`：复制元素
+`copy`算法将一个序列的元素复制到另一个序列中。
+
+**定义**：
+`copy(InputIt first, InputIt last, OutputIt d_first);`
+`copy_if(InputIt first, InputIt last, OutputIt d_first, UnaryPredicate p);`
+
+*   `first`, `last`: 源序列的范围 `[first, last)`。
+*   `d_first`: **目标序列的起始迭代器**。这是元素将被复制到的地方。
+*   `p`: `copy_if`使用的谓词，只有满足条件的元素才会被复制。
+
+**警告**：`copy`算法假定**目标范围是有效且足够大的**。如果你向一个空的`vector`或一个没有足够容量的容器中复制，会导致**未定义行为**（通常是程序崩溃）。这是初学者最常犯的错误之一。
+
+**如何确保目标容器足够大？**
+1.  **预先`resize()`**：在复制前，调用目标容器的`resize()`方法，为其分配足够的空间。
+2.  **使用插入迭代器**：例如`std::back_inserter`，它会自动调用容器的`push_back`方法来添加元素，从而动态扩展容器。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <iterator> // 为了使用 std::back_inserter
+
+// 谓词：判断是否为偶数
+bool isEven(int n) {
+    return n % 2 == 0;
+}
+
+void printVector(const std::string& msg, const std::vector<int>& vec) {
+    std::cout << msg;
+    for (int n : vec) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> source = {1, 2, 3, 4, 5, 6, 7, 8};
+    
+    // --- 正确示范 1: 使用 resize ---
+    std::vector<int> dest1;
+    dest1.resize(source.size()); // 确保 dest1 有足够空间
+    std::copy(source.begin(), source.end(), dest1.begin());
+    printVector("dest1 (使用resize): ", dest1);
+
+    // --- 正确示范 2: 使用 back_inserter ---
+    std::vector<int> dest2;
+    // std::back_inserter(dest2) 创建一个特殊的迭代器
+    // 每次给这个迭代器赋值，它都会在 dest2 尾部调用 push_back
+    std::copy(source.begin(), source.end(), std::back_inserter(dest2));
+    printVector("dest2 (使用back_inserter): ", dest2);
+    
+    // --- 错误示范 ---
+    // std::vector<int> dest_error; // dest_error 是空的
+    // 下一行代码会导致未定义行为，因为 dest_error 没有内存空间来接收数据
+    // std::copy(source.begin(), source.end(), dest_error.begin());
+
+    // --- 使用 copy_if ---
+    std::vector<int> even_numbers;
+    // 只复制偶数到 even_numbers 中
+    std::copy_if(source.begin(), source.end(), std::back_inserter(even_numbers), isEven);
+    printVector("偶数 (使用copy_if): ", even_numbers);
+    
+    return 0;
+}
+```
+**输出**：
+```
+dest1 (使用resize): 1 2 3 4 5 6 7 8 
+dest2 (使用back_inserter): 1 2 3 4 5 6 7 8 
+偶数 (使用copy_if): 2 4 6 8 
+```
+
+#### `move`：移动元素
+`move`算法与`copy`类似，但它不进行复制，而是进行**移动**。移动操作通常比复制更高效，特别是对于持有动态分配内存的复杂对象（如`std::string`或`std::vector`）。移动后，**源对象的状态是有效的但未指定的**，你不应该对其值做任何假设，除了可以安全地销毁它或给它赋新值。
+
+**定义**：
+`move(InputIt first, InputIt last, OutputIt d_first);`
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <iterator>
+
+void printVector(const std::string& msg, const std::vector<std::string>& vec) {
+    std::cout << msg;
+    for (const auto& s : vec) {
+        std::cout << "\"" << s << "\" ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<std::string> source = {"apple", "banana", "cherry"};
+    std::vector<std::string> destination;
+
+    printVector("移动前 source: ", source);
+    printVector("移动前 destination: ", destination);
+
+    // 使用 move 将 source 的内容移动到 destination
+    // 同样，需要使用 back_inserter 来确保 destination 可以增长
+    std::move(source.begin(), source.end(), std::back_inserter(destination));
+
+    printVector("移动后 source: ", source); // 源对象内容已不可靠
+    printVector("移动后 destination: ", destination);
+
+    return 0;
+}
+```
+**输出**（`source`中的字符串具体值可能不同，但通常为空）：
+```
+移动前 source: "apple" "banana" "cherry" 
+移动前 destination: 
+移动后 source: "" "" "" 
+移动后 destination: "apple" "banana" "cherry" 
+```
+
+#### `remove` / `remove_if`：移除元素（逻辑上的）
+
+`std::remove`和`std::remove_if`是C++标准库中用于准备删除元素的算法。**它们只移动元素，不删除元素。**
+
+**核心功能**：将一个区间内的元素重新排列，把所有“要保留的”元素移动到区间的前面。
+
+*   **`std::remove(begin, end, value)`**：将所有值**不等于** `value` 的元素移动到区间前面。
+*   **`std::remove_if(begin, end, predicate)`**：将所有**不满足谓词**的元素移动到区间前面。围。
+
+**返回值**：
+返回一个指向新的有效序列末尾的迭代器。即最后一个被保留的元素之后的位置。
+
+要真正从容器中删除这些元素，你需要结合容器的erase成员函数使用，这被称为 erase-remove idiom（移除-擦除手法）。`erase()` 方法可以接受一个范围 `[first, last)`，并删除这个范围内的所有元素。结合 `remove` 的返回值，我们可以完美地指定要删除的范
+
+**标准语法**:
+```cpp
+container.erase(
+    std::remove(container.begin(), container.end(), value_to_remove),
+    container.end()
+);
+```
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+void printVector(const std::string& msg, const std::vector<int>& vec) {
+    std::cout << msg << " (size=" << vec.size() << "): ";
+    for (int n : vec) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30, 40, 20, 50, 20};
+    printVector("初始状态", numbers);
+
+    // 1. 使用 std::remove "移除"所有值为 20 的元素
+    auto new_end = std::remove(numbers.begin(), numbers.end(), 20);
+    
+    printVector("std::remove之后", numbers);
+    std::cout << "新的逻辑终点之前的元素是: ";
+    for (auto it = numbers.begin(); it != new_end; ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    // 2. 使用 erase 真正删除元素
+    numbers.erase(new_end, numbers.end());
+    printVector("erase之后", numbers);
+
+    return 0;
+}
+```
+**输出**：
+```
+初始状态 (size=7): 10 20 30 40 20 50 20 
+std::remove之后 (size=7): 10 30 40 50 20 50 20 
+新的逻辑终点之前的元素是: 10 30 40 50 
+erase之后 (size=4): 10 30 40 50 
+```
+可以看到，`std::remove`只是把`10, 30, 40, 50`移动到了前面，容器大小仍然是7。`erase`调用才真正缩减了容器的大小。
+
+#### `replace` / `replace_if`：替换元素
+`replace`和`replace_if`会遍历一个序列，将满足特定条件的元素替换为新值。
+
+*   `replace`：将所有等于某个旧值的元素替换为新值。
+*   `replace_if`：将所有满足谓词的元素替换为新值。
+
+**定义**：
+`replace(ForwardIt first, ForwardIt last, const T& old_value, const T& new_value);`
+`replace_if(ForwardIt first, ForwardIt last, UnaryPredicate p, const T& new_value);`
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// 谓词：判断是否为负数
+bool isNegative(int n) {
+    return n < 0;
+}
+
+void printVector(const std::string& msg, const std::vector<int>& vec) {
+    std::cout << msg;
+    for (int n : vec) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> data = {1, -2, 3, -4, 5, -2};
+    printVector("初始数据: ", data);
+    
+    // 1. 使用 replace 将所有 -2 替换为 99
+    std::replace(data.begin(), data.end(), -2, 99);
+    printVector("replace后: ", data);
+
+    // 2. 使用 replace_if 将所有负数替换为 0
+    // 重置数据
+    data = {1, -2, 3, -4, 5, -2}; 
+    std::replace_if(data.begin(), data.end(), isNegative, 0);
+    printVector("replace_if后: ", data);
+
+    return 0;
+}
+```
+**输出**：
+```
+初始数据: 1 -2 3 -4 5 -2 
+replace后: 1 99 3 -4 5 99 
+replace_if后: 1 0 3 0 5 0 
+```
+
+#### `transform`：转换序列
+`transform`是一个非常强大的算法，它可以对一个序列（或两个序列）的每个元素应用一个操作，并将结果存储到目标序列中。
+
+**定义（一元操作）**：
+`transform(InputIt first1, InputIt last1, OutputIt d_first, UnaryOperation op);`
+它对`[first1, last1)`中的每个元素应用`op`操作，并将结果写入从`d_first`开始的序列。
+
+**定义（二元操作）**：
+`transform(InputIt1 first1, InputIt1 last1, InputIt2 first2, OutputIt d_first, BinaryOperation op);`
+它从`[first1, last1)`和从`first2`开始的序列中成对地取出元素，应用`op`操作，并将结果写入`d_first`。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <iterator>
+#include <string>
+
+// 一元操作函数：将整数乘以2
+int multiplyByTwo(int n) {
+    return n * 2;
+}
+
+// 一元操作函数：将字符串转为大写
+std::string toUpper(const std::string& s) {
+    std::string result = s;
+    for (char& c : result) {
+        if (c >= 'a' && c <= 'z') {
+            c = c - ('a' - 'A');
+        }
+    }
+    return result;
+}
+
+// 二元操作函数：将两个整数相加
+int add(int a, int b) {
+    return a + b;
+}
+
+int main() {
+    std::vector<int> v1 = {1, 2, 3, 4, 5};
+    std::vector<int> v2 = {10, 20, 30, 40, 50};
+    
+    // 示例1：一元操作，将v1中每个元素乘以2，存入v3
+    std::vector<int> v3;
+    std::transform(v1.begin(), v1.end(), std::back_inserter(v3), multiplyByTwo);
+
+    std::cout << "v1 * 2 = ";
+    for (int n : v3) std::cout << n << " ";
+    std::cout << std::endl;
+
+    // 示例2：二元操作，将v1和v2的对应元素相加，存入v4
+    std::vector<int> v4;
+    v4.resize(v1.size()); // 预先分配空间
+    std::transform(v1.begin(), v1.end(), v2.begin(), v4.begin(), add);
+
+    std::cout << "v1 + v2 = ";
+    for (int n : v4) std::cout << n << " ";
+    std::cout << std::endl;
+    
+    // 示例3: 转换字符串
+    std::vector<std::string> words = {"hello", "world"};
+    std::vector<std::string> upper_words;
+    // transform会为words中的每个字符串调用一次toUpper函数
+    std::transform(words.begin(), words.end(), std::back_inserter(upper_words), toUpper);
+    
+    std::cout << "大写转换: ";
+    for (const auto& s : upper_words) std::cout << s << " ";
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+v1 * 2 = 2 4 6 8 10 
+v1 + v2 = 11 22 33 44 55 
+大写转换: HELLO WORLD 
+```
+
+### 排列与重排
+
+这类算法用于改变序列中元素的顺序。
+
+#### `reverse`：反转序列
+`reverse`将指定范围内的元素顺序颠倒。
+
+**定义**：
+`reverse(BidirIt first, BidirIt last);`
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    std::cout << "反转前: ";
+    for (int n : numbers) std::cout << n << " ";
+    std::cout << std::endl;
+
+    std::reverse(numbers.begin(), numbers.end());
+
+    std::cout << "反转后: ";
+    for (int n : numbers) std::cout << n << " ";
+    std::cout << std::endl;
+    
+    std::string s = "C++";
+    std::reverse(s.begin(), s.end());
+    std::cout << "字符串反转: " << s << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+反转前: 1 2 3 4 5 
+反转后: 5 4 3 2 1 
+字符串反转: ++C
+```
+
+#### `rotate`：旋转序列
+`rotate`将序列中的元素向左旋转，使得某个指定的元素成为新的第一个元素。
+
+**定义**：
+`rotate(ForwardIt first, ForwardIt n_first, ForwardIt last);`
+操作完成后，`[first, last)` 范围内的元素 `n_first` 会成为新的 `first`。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+void printVector(const std::vector<int>& vec) {
+    for (int n : vec) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> numbers = {10, 20, 30, 40, 50, 60};
+    std::cout << "初始序列: ";
+    printVector(numbers);
+
+    // 把30旋转到队首
+    // 找到30的迭代器
+    auto it_30 = std::find(numbers.begin(), numbers.end(), 30);
+    std::rotate(numbers.begin(), it_30, numbers.end());
+
+    std::cout << "旋转后 (30在队首): ";
+    printVector(numbers);
+
+    return 0;
+}
+```
+**输出**：
+```
+初始序列: 10 20 30 40 50 60 
+旋转后 (30在队首): 30 40 50 60 10 20 
+```
+
+#### `shuffle`：随机打乱序列
+`shuffle`可以随机地重排一个序列中的元素。它需要一个**随机数引擎**作为参数，以提供随机性来源。
+
+**定义**：
+`shuffle(RandomIt first, RandomIt last, URBG&& g);`
+*   `g`: 一个满足要求的随机数引擎，例如 `std::mt19937`。
+
+**注意**：要使用`shuffle`，你需要包含`<random>`和`<chrono>`头文件。我们通常使用当前时间作为随机数种子，以确保每次运行程序时得到不同的随机序列。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <random>    // For std::mt19937
+#include <chrono>    // For std::chrono::high_resolution_clock
+
+void printVector(const std::vector<int>& vec) {
+    for (int n : vec) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> deck = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    std::cout << "原始牌堆: ";
+    printVector(deck);
+
+    // 1. 创建随机数引擎
+    // 使用当前时间作为种子，确保每次运行的随机性
+    unsigned seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    std::mt19937 gen(seed);
+
+    // 2. 使用 shuffle 打乱牌堆
+    std::shuffle(deck.begin(), deck.end(), gen);
+
+    std::cout << "打乱后: ";
+    printVector(deck);
+    
+    // 再次打乱
+    std::shuffle(deck.begin(), deck.end(), gen);
+    std::cout << "再次打乱: ";
+    printVector(deck);
+
+    return 0;
+}
+```
+**输出**（每次运行结果会不同）：
+```
+原始牌堆: 1 2 3 4 5 6 7 8 9 10 
+打乱后: 3 10 4 7 1 6 8 2 5 9 
+再次打乱: 5 1 2 9 8 7 3 4 10 6 
+```
+
+#### `partition`：划分序列
+`partition`根据一个谓词，将序列重排为两组：所有满足谓词的元素在前，所有不满足的在后。它不保证两组内部的相对顺序。
+
+**定义**：
+`partition(BidirIt first, BidirIt last, UnaryPredicate p);`
+
+**返回值**：
+返回一个迭代器，指向第二组（不满足谓词的元素）的第一个元素。
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// 谓词：判断是否为偶数
+bool isEven(int n) {
+    return n % 2 == 0;
+}
+
+void printVector(const std::vector<int>& vec) {
+    for (int n : vec) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    std::cout << "划分前: ";
+    printVector(numbers);
+
+    // 按是否为偶数进行划分
+    auto partition_point = std::partition(numbers.begin(), numbers.end(), isEven);
+
+    std::cout << "划分后: ";
+    printVector(numbers);
+
+    std::cout << "偶数部分: ";
+    for (auto it = numbers.begin(); it != partition_point; ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "奇数部分: ";
+    for (auto it = partition_point; it != numbers.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**输出**（划分后两组内部顺序不定）：
+```
+划分前: 1 2 3 4 5 6 7 8 9 
+划分后: 8 2 6 4 5 3 7 1 9 
+偶数部分: 8 2 6 4 
+奇数部分: 5 3 7 1 9 
+```
+
+### 避免手写循环与算法组合技
+学习标准算法的最终目的，是培养一种“算法思维”。当你遇到一个问题，比如“从一个vector中删除所有负数，并将结果乘以2”，你应该想到：
+
+1.  **删除所有负数**：这不就是 `erase-remove_if` 手法吗？
+2.  **将结果乘以2**：这不就是 `transform` 吗？
+
+这种思维方式可以让你写出更清晰、更健壮、更具表达力的代码。
+
+**组合示例**：
+将一个`vector`中的所有偶数移动到前面，并保持偶数和奇数各自的相对顺序不变。`std::partition`无法保证相对顺序，但有一个它的变体`std::stable_partition`可以。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+bool isEven(int n) {
+    return n % 2 == 0;
+}
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+    std::cout << "原始序列: 1 2 3 4 5 6 7 8 9" << std::endl;
+
+    std::stable_partition(numbers.begin(), numbers.end(), isEven);
+
+    std::cout << "稳定划分后: ";
+    for(int n : numbers) std::cout << n << " ";
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+原始序列: 1 2 3 4 5 6 7 8 9
+稳定划分后: 2 4 6 8 1 3 5 7 9
+```
+
+### 章节总结
+本章我们深入探索了C++标准库中的核心算法，它们是泛型编程的强大工具。
+*   我们理解了**算法、迭代器和谓词**协同工作的通用模式。
+*   我们区分了**非修改性算法**（如`find`, `count`）和**修改性算法**（如`copy`, `remove`, `transform`），并学会了安全地使用它们。
+*   我们掌握了`remove`的真正含义，并学会了使用 **erase-remove idiom** 进行物理删除。
+*   我们学习了如何使用`reverse`, `rotate`, `shuffle`, `partition`等算法来**重排序列**。
+*   最重要的是，我们开始培养一种**用算法思考**的习惯，以组合标准算法的方式来解决问题，而不是手写繁琐且易错的循环。这不仅能提升开发效率，还能让代码更加清晰和高效。
+
+---
+
+### 示例程序：日志清洗
+假设我们正在处理一个服务器日志文件，每一行日志都是一个字符串。我们需要对这些日志进行清洗，规则如下：
+1.  移除所有空白日志行。
+2.  将所有包含 "DEBUG" 级别的日志移动到日志集合的末尾，以备后续分析，但不立即删除。
+3.  将所有 "ERROR" 字符串替换为 "CRITICAL_ERROR"。
+4.  为所有非DEBUG、非CRITICAL_ERROR的日志行加上时间戳前缀。
+
+**实现思路**：
+这个任务中，有些操作（如判断字符串是否为空）可以直接用普通函数完成。但对于第四步“添加时间戳”，操作需要一个额外的数据（时间戳字符串）。一个普通的函数无法轻易“携带”这个额外数据。
+
+这时，我们可以使用我们之前提到过的**函数对象（Functor）**。函数对象本质上是一个重载了函数调用运算符`()`的`struct`或`class`的对象。这使得我们可以创建一个行为像函数、但又能像对象一样存储数据的“智能函数”，这是我们之前学习过的面向对象知识和泛型算法的完美结合。
+
+下面我们将为每一步操作定义相应的**辅助函数**或**函数对象**。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <ctime> // 用于生成时间戳，是C++标准的一部分
+
+// --- 辅助函数和函数对象定义 ---
+
+// 获取当前时间戳字符串
+std::string getCurrentTimestamp() {
+    // time(0) 获取当前时间的秒数
+    std::time_t now = std::time(0); 
+    // localtime 将秒数转换为本地时间的结构体，这个函数在多线程条件下不安全
+    std::tm* ltm = std::localtime(&now);
+
+    // 格式化时间为 "[YYYY-MM-DD HH:MM:SS] "
+    char buffer[80];
+    // strftime 是一个C风格的函数，用于格式化时间
+    // 它将ltm中的时间信息，按照指定的格式，存入buffer中
+    std::strftime(buffer, sizeof(buffer), "[%Y-%m-%d %H:%M:%S] ", ltm);
+    
+    return std::string(buffer);
+}
+
+// 打印日志
+void printLogs(const std::string& title, const std::vector<std::string>& logs) {
+    std::cout << "--- " << title << " ---" << std::endl;
+    for (size_t i = 0; i < logs.size(); ++i) {
+        std::cout << logs[i] << std::endl;
+    }
+    std::cout << "---------------------\n" << std::endl;
+}
+
+// 谓词函数，用于步骤1：判断字符串是否为空
+bool isLogEmpty(const std::string& s) {
+    return s.empty();
+}
+
+// 谓词函数，用于步骤2：判断日志是否不是DEBUG级别
+bool isNotDebugLog(const std::string& s) {
+    // s.find("DEBUG") == 0 表示 "DEBUG" 在字符串的开头
+    return s.find("DEBUG") != 0;
+}
+
+// 操作函数，用于步骤3：替换ERROR
+void replaceError(std::string& s) {
+    // string::find 返回找到的子串的起始位置
+    size_t pos = s.find("ERROR");
+    if (pos != std::string::npos) { // std::string::npos 表示未找到
+        // string::replace 从 pos 开始，替换 5 个字符 ("ERROR"的长度)
+        s.replace(pos, 5, "CRITICAL_ERROR"); 
+    }
+}
+
+// 函数对象(Functor)，用于步骤4：添加时间戳前缀
+// 我们需要一个能“记住”时间戳前缀的“函数”，所以定义一个函数对象
+struct TimestampAdder {
+    // 成员变量，用于存储状态（这里是时间戳前缀）
+    std::string prefix;
+
+    // 构造函数，用于初始化这个状态
+    explicit TimestampAdder(const std::string& p) : prefix(p) {}
+
+    // 重载函数调用运算符 ()。
+    // std::transform 会为每个元素调用这个 operator()
+    std::string operator()(const std::string& log) const {
+        return prefix + log;
+    }
+};
+
+// --- 主程序 ---
+
+int main() {
+    // 原始日志数据
+    std::vector<std::string> logs = {
+        "INFO: User logged in",
+        "DEBUG: Connection pool status",
+        "", // 空白行
+        "ERROR: Database connection failed",
+        "WARNING: Low disk space",
+        "DEBUG: Caching object #123",
+        "INFO: Data processing complete",
+        "", // 空白行
+        "ERROR: Null pointer exception"
+    };
+
+    printLogs("原始日志", logs);
+
+    // 步骤 1: 移除所有空白日志行
+    // 使用 erase-remove_if idiom 和我们的 isLogEmpty 函数
+    logs.erase(
+        std::remove_if(logs.begin(), logs.end(), isLogEmpty),
+        logs.end()
+    );
+    printLogs("移除空白行后", logs);
+
+    // 步骤 2: 将所有DEBUG日志移动到末尾
+    // 使用 stable_partition 和我们的 isNotDebugLog 函数，这样非DEBUG日志的相对顺序保持不变
+    std::vector<std::string>::iterator first_debug_log = 
+        std::stable_partition(logs.begin(), logs.end(), isNotDebugLog);
+    printLogs("划分DEBUG日志后", logs);
+
+    // 步骤 3: 将所有 "ERROR" 替换为 "CRITICAL_ERROR"
+    // 使用 for_each 和我们的 replaceError 函数，只处理非DEBUG日志部分
+    // 范围是从容器开始到第一个DEBUG日志之前
+    std::for_each(logs.begin(), first_debug_log, replaceError);
+    printLogs("替换ERROR后", logs);
+
+    // 步骤 4: 为非DEBUG日志添加时间戳
+    // 创建一个 TimestampAdder 函数对象实例，它“携带”了当前的时间戳
+    TimestampAdder adder(getCurrentTimestamp());
+    // 使用 transform 和我们的函数对象，在原地修改非DEBUG日志
+    // 范围同样是从容器开始到第一个DEBUG日志之前
+    std::transform(logs.begin(), first_debug_log, logs.begin(), adder);
+    printLogs("添加时间戳后 (最终结果)", logs);
+    
+    // 打印出被分离的DEBUG日志，以验证它们被移到了末尾
+    std::cout << "--- 分离出的DEBUG日志 ---" << std::endl;
+    // 使用普通的for循环来打印
+    for (std::vector<std::string>::iterator it = first_debug_log; it != logs.end(); ++it) {
+        std::cout << *it << std::endl;
+    }
+    std::cout << "-------------------------" << std::endl;
+
+    return 0;
+}
+```
+
+**输出如下：**
+```
+--- 原始日志 ---
+INFO: User logged in
+DEBUG: Connection pool status
+
+ERROR: Database connection failed
+WARNING: Low disk space
+DEBUG: Caching object #123
+INFO: Data processing complete
+
+ERROR: Null pointer exception
+---------------------
+
+--- 移除空白行后 ---
+INFO: User logged in
+DEBUG: Connection pool status
+ERROR: Database connection failed
+WARNING: Low disk space
+DEBUG: Caching object #123
+INFO: Data processing complete
+ERROR: Null pointer exception
+---------------------
+
+--- 划分DEBUG日志后 ---
+INFO: User logged in
+ERROR: Database connection failed
+WARNING: Low disk space
+INFO: Data processing complete
+ERROR: Null pointer exception
+DEBUG: Connection pool status
+DEBUG: Caching object #123
+---------------------
+
+--- 替换ERROR后 ---
+INFO: User logged in
+CRITICAL_ERROR: Database connection failed
+WARNING: Low disk space
+INFO: Data processing complete
+CRITICAL_ERROR: Null pointer exception
+DEBUG: Connection pool status
+DEBUG: Caching object #123
+---------------------
+
+--- 添加时间戳后 (最终结果) ---
+[2025-07-12 15:01:21] INFO: User logged in
+[2025-07-12 15:01:21] CRITICAL_ERROR: Database connection failed
+[2025-07-12 15:01:21] WARNING: Low disk space
+[2025-07-12 15:01:21] INFO: Data processing complete
+[2025-07-12 15:01:21] CRITICAL_ERROR: Null pointer exception
+DEBUG: Connection pool status
+DEBUG: Caching object #123
+---------------------
+
+--- 分离出的DEBUG日志 ---
+DEBUG: Connection pool status
+DEBUG: Caching object #123
+-------------------------
+```
 
 ## 第40章：排序数值
 **知识点**  
