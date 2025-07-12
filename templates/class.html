@@ -1128,7 +1128,7 @@
                 });
             }
 
-            function loadChapter(index, positionToRestore = null) {
+            function loadChapter(index, positionToRestore = null, shouldScrollSidebar = false) {
                 currentChapterIndex = index;
                 const chapter = chapters[index];
                 const docContentEl = document.querySelector('.doc-content');
@@ -1177,9 +1177,11 @@
                 docContentEl.appendChild(chapterNav);
                 updateActiveSection();
                 
-                setTimeout(() => {
-                    scrollSidebarToActiveChapter();
-                }, 100);
+                if (shouldScrollSidebar) {
+                    setTimeout(() => {
+                        scrollSidebarToActiveChapter();
+                    }, 100);
+                }
                 
                 initializeCopyButtons();
 
@@ -1443,7 +1445,7 @@
                     }
 
                     if (chapters.length > 0) {
-                        loadChapter(initialIndex, initialPosition);
+                        loadChapter(initialIndex, initialPosition, true);
                     } else {
                         docContentEl.innerHTML = `<div class="text-center p-8"><p class="text-gray-500">课程内容为空。</p></div>`;
                     }

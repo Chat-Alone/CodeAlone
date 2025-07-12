@@ -25907,14 +25907,1337 @@ int main() {
 | `operator[]` (`map` only)                     | **O(log n)**          |
 | `try_emplace`, `insert_or_assign` (`map` only) | **O(log n)**          |
 
-## 第37章：无序关联
-**知识点**  
-- 哈希桶、负载因子、`rehash`  
-- `unordered_set` / `unordered_map` / `unordered_mult*` 基本操作  
-- 自定义哈希函数与键等价谓词  
-- 迭代器特性与并发修改限制  
-- 与有序容器的时间、空间对比  
-**示例程序**：词频统计器
+## 第37章：无序关联容器
+在之前对标准库容器的学习中，我们掌握了 `std::map` 和 `std::set`。它们被称为**有序关联容器**，其核心优势在于内部元素始终根据键（Key）自动排序。这种有序性使得区间遍历和基于顺序的操作非常方便，但其所有操作（查找、插入、删除）的平均时间复杂度为 **O(log N)**。
+
+然而，在许多应用场景中，我们对数据的核心需求是**快速存取**，而并非维持顺序。例如，根据用户ID查询用户信息，我们只关心能否在最短时间内定位到该用户，而不关心所有用户ID的排列顺序。为了满足这类对极致查找性能的追求，C++标准库提供了**无序关联容器**。本章，我们将深入探讨这类容器，它们能够提供平均`O(1)`的查找效率。
+
+**本章学习目标：**
+-   理解无序容器的底层数据结构——**哈希表**的构成与工作原理。
+-   掌握 `std::unordered_map` 和 `std::unordered_set` 的核心API与使用方法。
+-   学会为自定义数据类型提供必要的组件，使其能作为无序容器的键。
+-   清晰对比并选择合适的关联容器（有序 vs. 无序）。
+
+---
+
+### 哈希表：底层数据结构
+无序关联容器的性能源于其底层的实现机制——**哈希表 (Hash Table)**。
+
+#### 什么是哈希表？
+哈希表是一种数据结构，它通过一种巧妙的映射关系，实现了从**键 (Key)**到**存储位置**的直接计算，从而达到快速访问元素的目的。这个过程主要涉及三个核心概念：哈希函数、桶和冲突处理。
+
+1.  **哈希函数**
+    -   **定义**：**哈希函数**是一个函数，它的作用是接收一个任意类型的键（例如一个整数`int`，一个字符串`std::string`，或一个自定义类的对象）作为输入，并输出一个固定大小的整数。这个输出的整数被称为**哈希值 (Hash Value)** 或 **哈希码 (Hash Code)**。
+    -   **说明**：哈希函数是整个机制的核心。它为我们提供了一种方法，能将千差万别的键，统一转换成可以作为数组索引的整数，这是实现“直接计算存储位置”的前提。
+    -   **特性**：
+        -   **确定性**：对于同一个键，每次调用哈希函数必须返回完全相同的哈希值。
+        -   **高效性**：计算哈希值的过程必须非常快，否则就失去了性能优势。
+        -   **分布性**：一个理想的哈希函数应将不同的键尽可能均匀地映射到不同的哈希值上。如果许多不同的键都生成了相同的哈希值，性能会下降。
+
+2.  **桶 (Bucket)**
+    -   **定义**：在哈希表内部，维护着一个连续的存储空间，通常是一个数组。这个数组的每一个元素被称为一个**桶**。桶的数量决定了哈希表的基础容量。
+    -   **工作原理**：当需要存储一个键值对时，哈希表执行以下步骤：
+        1.  使用哈希函数计算键的哈希值。
+        2.  通过取模运算（`hash_value % bucket_count`），将哈希值转换为一个有效的数组索引。这个索引直接指向一个桶。
+        3.  将该键值对存入此索引对应的桶中。
+
+    因为从键到桶索引的计算是一个固定的数学运算，其时间复杂度为O(1)，所以理论上我们可以瞬间定位到数据应在的位置。
+
+3.  **哈希冲突 (Hash Collision) 与解决方案**
+    -   **定义**：一个现实问题是，由于桶的数量是有限的，而键的可能性是无限的，不同的键可能会通过哈希函数和取模运算被映射到同一个桶索引上。这种情况被称为**哈希冲突**。
+    -   **为什么会发生冲突**：这是由“鸽巢原理”决定的，当键的数量超过桶的数量时，冲突必然发生。一个好的哈希函数能减少冲突，但不能完全避免。
+    -   **解决方案**：C++标准库中的无序容器普遍采用**链地址法 (Chaining)** 来解决冲突。其原理是，每个桶不再是只能存放一个元素，而是一个可以容纳多个元素的容器，通常是一个**链表**。
+        -   当一个元素被映射到一个桶时，它被添加到该桶的链表中。
+        -   如果后续有其他元素也映射到这个桶（发生冲突），它们会被依次追加到同一个链表的末尾。
+    -   **对性能的影响**：
+        -   查找一个元素时，首先通过哈希计算定位到桶（O(1)），然后需要遍历该桶中的链表，逐个比较键是否完全相等。
+        -   只要哈希函数分布均匀，每个桶内的链表就会很短，遍历成本极低，整体性能就接近O(1)。
+        -   最坏情况：所有元素都冲突到同一个桶中，哈希表退化为一个长链表，查找复杂度变为O(N)。
+
+---
+
+#### 负载因子与重哈希
+
+为了防止上面说的最坏情况，也就是哈希表性能退化为链表，无序容器引入了两个重要的管理机制。
+
+-   **负载因子 (Load Factor)**
+    -   **定义**：负载因子是衡量哈希表当前“拥挤程度”的指标。它被严格定义为：
+        `负载因子 = 容器内的总元素数量 / 桶的总数量`
+    -   它直接反映了平均每个桶里元素的数量。负载因子越低，冲突越少，链表越短，查询越快。负载因子越高，则性能越差。
+
+-   **重哈希 (Rehashing)**
+    -   **定义**：当负载因子超过一个预设的阈值（通过`max_load_factor()`可以查询和设置，默认通常为1.0）时，容器会自动执行**重哈希**操作。
+    -   重哈希是一个内部的、自动进行的过程。它会：
+        1.  创建一个新的、尺寸更大的桶数组（通常是原大小的两倍以上）。
+        2.  遍历旧桶数组中的每一个元素。
+        3.  对每个元素，使用新的桶数量重新计算其索引（`hash_value % new_bucket_count`），并将其插入到新桶数组的正确位置。
+        4.  释放旧的桶数组。
+    -   **性能**：重哈希本身是一个耗时的O(N)操作，因为它需要移动所有元素。但是，由于它发生的频率不高，其成本被**分摊**到多次快速的插入操作中。因此，我们说无序容器的插入操作具有**摊还常数时间**复杂度，也就是均摊O(1)时间复杂度。
+
+理解了以上原理，我们就可以开始学习C++标准库中最常用的无序容器：`std::unordered_map`。
+
+---
+
+### `std::unordered_map`：基于哈希的键值对容器
+`std::unordered_map` 是一个关联容器，用于存储**键值对**。它的每个元素都将一个唯一的键与一个值关联起来，并利用哈希表在内部组织这些元素，实现了基于键的快速检索。
+
+要使用 `std::unordered_map`，必须包含头文件 `<unordered_map>`。
+
+#### 声明与初始化
+
+`std::unordered_map` 是一个类模板，其声明语法如下：
+`std::unordered_map<Key, T> map_name;`
+-   `Key`：键的数据类型。
+-   `T`：值的数据类型。
+
+**1. 默认构造**
+最简单的声明方式就是创建一个空的`unordered_map`。
+
+```cpp
+#include <iostream>
+#include <string>
+#include <unordered_map> // 必须包含的头文件
+
+int main() {
+    // 声明一个空的 unordered_map
+    // 键的类型是 std::string，值的类型是 int
+    std::unordered_map<std::string, int> student_ages;
+
+    // 此时容器为空
+    std::cout << "Initial size: " << student_ages.size() << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+Initial size: 0
+```
+
+**2. 使用初始化列表构造**
+-   **语法**：`std::unordered_map<Key, T> map_name = {{key1, value1}, {key2, value2}, ...};`
+
+```cpp
+#include <iostream>
+#include <string>
+#include <unordered_map>
+
+int main() {
+    // 使用初始化列表来创建一个非空的 unordered_map
+    std::unordered_map<std::string, int> city_population = {
+        {"Beijing", 2189},
+        {"Shanghai", 2487},
+        {"Guangzhou", 1867}
+    };
+
+    std::cout << "Initialized map size: " << city_population.size() << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+Initialized map size: 3
+```
+**重要**：在初始化列表中，如果提供了重复的键，只有**第一个**出现的键值对会生效，后续重复的键将被忽略。这是因为`unordered_map`的键必须是唯一的。
+
+```cpp
+#include <iostream>
+#include <string>
+#include <unordered_map>
+
+int main() {
+    std::unordered_map<std::string, int> scores = {
+        {"Alice", 90},
+        {"Bob", 85},
+        {"Alice", 95} // "Alice"是重复的键
+    };
+
+    // 检查最终结果
+    std::cout << "Map size: " << scores.size() << std::endl; // 输出2，因为重复的键被忽略
+    std::cout << "Alice's score: " << scores.at("Alice") << std::endl; // 输出90，第一个值生效
+
+    return 0;
+}
+```
+**输出**：
+```
+Map size: 2
+Alice's score: 90
+```
+
+***
+
+#### 元素插入
+
+向`std::unordered_map`中添加新元素主要有两种方法：使用下标运算符`[]`和使用`insert()`成员函数。
+
+##### 使用下标运算符 `[]`
+
+下标运算符`[]`提供了最直观的元素插入与访问方式。
+
+-   **工作机制**：当你使用 `map_name[key]` 这样的表达式时，`unordered_map`会执行以下操作：
+    1.  在内部哈希表中查找键 `key`。
+    2.  **如果键存在**：运算符返回一个指向该键对应**值**的**引用**。你可以通过这个引用来读取或修改已存在的值。
+    3.  **如果键不存在**：这是`[]`运算符的关键特性。它会**自动插入一个新的元素**。这个新元素的键是 `key`，而其值会被**值初始化**。对于基本数据类型如`int`、`double`，值初始化意味着它们被设为0。对于类，则会调用默认构造函数。然后，运算符返回一个指向这个**新创建的值**的引用。
+
+-   **示例**：
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map>
+
+    int main() {
+        std::unordered_map<std::string, int> student_scores;
+
+        // 场景1: 键 "LiMing" 不存在，插入新元素
+        // student_scores["LiMing"] 会创建一个新条目 {"LiMing", 0}
+        // 然后通过赋值运算符 = 95 将其值更新为 95
+        student_scores["LiMing"] = 95;
+        std::cout << "LiMing's score set to: " << student_scores["LiMing"] << std::endl;
+        std::cout << "Map size: " << student_scores.size() << std::endl;
+        std::cout << "---------------------" << std::endl;
+
+        // 场景2: 键 "LiMing" 已存在，更新其值
+        // student_scores["LiMing"] 返回一个指向95的引用
+        // 然后通过赋值运算符 = 98 将其值更新为 98
+        student_scores["LiMing"] = 98;
+        std::cout << "LiMing's score updated to: " << student_scores["LiMing"] << std::endl;
+        std::cout << "Map size is still: " << student_scores.size() << std::endl;
+        std::cout << "---------------------" << std::endl;
+
+        // 场景3: 仅访问一个不存在的键，触发“静默插入”
+        std::cout << "Accessing non-existent key 'ZhangSan'..." << std::endl;
+        // 因为 "ZhangSan" 不存在，[]运算符会插入 {"ZhangSan", 0}
+        // 然后 cout 会打印出这个新创建的默认值 0
+        std::cout << "ZhangSan's score: " << student_scores["ZhangSan"] << std::endl;
+        std::cout << "Map size has now increased to: " << student_scores.size() << std::endl;
+
+        return 0;
+    }
+    ```
+    **输出**：
+    ```
+    LiMing's score set to: 95
+    Map size: 1
+    ---------------------
+    LiMing's score updated to: 98
+    Map size is still: 1
+    ---------------------
+    Accessing non-existent key 'ZhangSan'...
+    ZhangSan's score: 0
+    Map size has now increased to: 2
+    ```
+-   **重要警告**：`[]`运算符的自动插入行为是一把双刃剑。它在赋值时非常方便，但在**只读**查询时可能导致意料之外的副作用——即向容器中添加了你本不希望存在的元素。因此，在不确定键是否存在且不希望修改容器时，不应使用`[]`进行查询。
+
+##### 使用 `insert()` 成员函数
+
+`insert()`方法提供了更精确的插入控制，它不会覆盖已有的元素。
+
+-   **工作机制**：`insert()`尝试将一个键值对插入到`unordered_map`中。
+    1.  它接收一个`std::pair`对象作为参数，该对象包含了要插入的键和值。
+    2.  **如果键不存在**：成功插入该键值对。
+    3.  **如果键已存在**：插入操作**失败**，`insert()`不会做任何修改。容器中原有的键值对保持不变。
+
+-   **返回值**：`insert()`的返回值是一个`std::pair`，其构成如下：
+    `std::pair<iterator, bool>`
+    -   `second`成员 (类型为`bool`)：如果插入成功（键原先不存在），`second`为`true`。如果因键已存在而插入失败，`second`为`false`。
+    -   `first`成员 (类型为`iterator`)：这是一个指向元素的迭代器。
+        -   如果插入成功，它指向新插入的那个元素。
+        -   如果插入失败，它指向容器中那个**已存在的**、阻止了本次插入的元素。
+
+-   **示例**：
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map>
+    #include <utility> // for std::make_pair
+
+    int main() {
+        std::unordered_map<std::string, int> student_scores;
+
+        // 方式1: 使用 std::make_pair 构造要插入的键值对
+        // "LiMing" 不存在，插入成功
+        auto result1 = student_scores.insert(std::make_pair("LiMing", 95));
+        
+        if (result1.second) {
+            std::cout << "1. 'LiMing' inserted successfully." << std::endl;
+            // result1.first 是指向 {"LiMing", 95} 的迭代器
+            std::cout << "   Key: " << result1.first->first << ", Value: " << result1.first->second << std::endl;
+        }
+
+        std::cout << "---------------------" << std::endl;
+
+        // 方式2: 使用C++11的列表初始化语法，更简洁
+        // 尝试再次插入 "LiMing"，这次会失败
+        auto result2 = student_scores.insert({"LiMing", 99}); // 新值为99
+
+        if (!result2.second) {
+            std::cout << "2. 'LiMing' already exists. Insertion failed." << std::endl;
+            // result2.first 指向已存在的元素，其值仍然是95
+            std::cout << "   Existing Key: " << result2.first->first << ", Existing Value: " << result2.first->second << std::endl;
+        }
+
+        std::cout << "Final score for LiMing is: " << student_scores.at("LiMing") << std::endl;
+
+        return 0;
+    }
+    ```
+    **输出**：
+    ```
+    1. 'LiMing' inserted successfully.
+       Key: LiMing, Value: 95
+    ---------------------
+    2. 'LiMing' already exists. Insertion failed.
+       Existing Key: LiMing, Existing Value: 95
+    Final score for LiMing is: 95
+    ```
+    这个例子清晰地表明，`insert()`不会覆盖旧值，并能通过其返回值精确地告知我们操作的结果。
+
+#### 元素访问与查询
+
+##### `at()` 成员函数：安全的访问
+
+- `at(key)`用于访问指定键`key`所关联的值。
+    -   **如果键存在**：它返回一个指向该值的引用，可读可写。
+    -   **如果键不存在**：它不会创建新元素，而是会**抛出一个`std::out_of_range`异常**。
+
+##### `find()` 成员函数
+
+由于`[]`有副作用，而`at()`在键不存在时会终止程序，那么最常用和最安全的查询模式是：**先检查，后访问**。`find()`函数就是为此设计的。
+
+-   **工作机制**：`find(key)`在`unordered_map`中查找键`key`。
+    -   它**不返回**布尔值或元素值，而是返回一个**迭代器**。
+    -   **如果键存在**：返回指向该键值对元素的迭代器。
+    -   **如果键不存在**：返回尾迭代器，即`end()`，用于表示“未找到”。
+
+-   **查询模式**：标准的查询方法是，用`find()`的返回值和`end()`进行比较。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map>
+
+    void check_city_population(const std::unordered_map<std::string, int>& map, const std::string& city_name) {
+        // 使用find进行查找
+        auto it = map.find(city_name);
+
+        if (it != map.end()) {
+            // 不是end()，说明找到了
+            // it 是一个指向键值对的迭代器，通过 -> 访问其成员
+            // it->first 是键, it->second 是值
+            std::cout << "Found! Population of " << it->first << " is " << it->second << " ten thousands." << std::endl;
+        } else {
+            // 是end()，说明没找到
+            std::cout << "Sorry, population data for " << city_name << " is not available." << std::endl;
+        }
+    }
+
+    int main() {
+        std::unordered_map<std::string, int> city_population = {
+            {"Beijing", 2189},
+            {"Shanghai", 2487}
+        };
+
+        check_city_population(city_population, "Shanghai"); // 查找一个存在的键
+        check_city_population(city_population, "Tokyo");    // 查找一个不存在的键
+
+        return 0;
+    }
+    ```
+    **输出**：
+    ```
+    Found! Population of Shanghai is 2487 ten thousands.
+    Sorry, population data for Tokyo is not available.
+    ```
+
+#### 删除元素
+
+从`unordered_map`中移除元素可以使用`erase()`成员函数。`erase()`有多种重载形式。
+
+-   **按键删除**: `erase(key)`
+    -   **工作机制**: 直接根据键来删除元素。
+    -   **返回值**: 类型为`size_t`，表示被删除的元素的数量。对于`unordered_map`，由于键是唯一的，返回值只可能是**1**（删除成功）或**0**（键不存在，未删除任何东西）。
+
+-   **按迭代器删除**: `erase(iterator)`
+    -   **工作机制**: 删除迭代器所指向的那个元素。
+    -   **返回值**: 返回一个指向**被删除元素的下一个元素**的迭代器。这在循环中删除元素时非常重要，可以防止迭代器失效。
+    -   **警告**: 删除一个无效或`end()`迭代器是未定义行为，通常会导致程序崩溃。
+
+-   **示例**：
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map>
+
+    void print_map(const std::unordered_map<std::string, int>& map) {
+        std::cout << "Current map contents: { ";
+        for (const auto& pair : map) {
+            std::cout << pair.first << ":" << pair.second << " ";
+        }
+        std::cout << "}" << std::endl;
+    }
+
+    int main() {
+        std::unordered_map<std::string, int> city_population = {
+            {"Beijing", 2189},
+            {"Shanghai", 2487},
+            {"Guangzhou", 1867}
+        };
+        print_map(city_population);
+        std::cout << "---------------------" << std::endl;
+
+        // 1. 按键删除
+        size_t deleted_count = city_population.erase("Guangzhou");
+        std::cout << "Attempting to erase 'Guangzhou'..." << std::endl;
+        std::cout << "Number of elements erased: " << deleted_count << std::endl;
+        print_map(city_population);
+        std::cout << "---------------------" << std::endl;
+
+        // 2. 按迭代器删除
+        auto it = city_population.find("Beijing");
+        if (it != city_population.end()) {
+            std::cout << "Attempting to erase element pointed by iterator ('Beijing')..." << std::endl;
+            city_population.erase(it);
+            print_map(city_population);
+        }
+
+        return 0;
+    }
+    ```
+    **输出**:
+    ```
+    Current map contents: { Guangzhou:1867 Shanghai:2487 Beijing:2189 } // 顺序可能不同
+    ---------------------
+    Attempting to erase 'Guangzhou'...
+    Number of elements erased: 1
+    Current map contents: { Shanghai:2487 Beijing:2189 }
+    ---------------------
+    Attempting to erase element pointed by iterator ('Beijing')...
+    Current map contents: { Shanghai:2487 }
+    ```
+
+#### 迭代遍历
+遍历`unordered_map`与遍历其他容器类似，可以使用迭代器或范围`for`循环。
+
+-   **核心要点**: `unordered_map`是**无序**的。这意味着遍历时元素的出现顺序是不确定的，它既不按键的字母/数字顺序，也不按插入顺序。其顺序由内部哈希表的结构决定，甚至在重哈希之后会发生改变。
+
+-   **示例**:
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map>
+
+    int main() {
+        std::unordered_map<std::string, int> city_population = {
+            {"Beijing", 2189},
+            {"Shanghai", 2487},
+            {"Guangzhou", 1867},
+            {"Shenzhen", 1756}
+        };
+
+        std::cout << "Iterating through the map (order is not guaranteed):" << std::endl;
+        for (const auto& pair : city_population) {
+            const std::string& city = pair.first;
+            int population = pair.second;
+            std::cout << "- " << city << ": " << population << std::endl;
+        }
+        
+        return 0;
+    }
+    ```
+    **可能的输出 (每次运行或在不同编译器下，顺序可能都不同)**:
+    ```
+    Iterating through the map (order is not guaranteed):
+    - Shenzhen: 1756
+    - Guangzhou: 1867
+    - Shanghai: 2487
+    - Beijing: 2189
+    ```
+    如果你的应用需要按特定顺序处理数据，那么`unordered_map`不是合适的选择，你应该使用`std::map`。
+
+---
+
+### `unordered_set` / `unordered_multiset` / `unordered_multimap`
+
+掌握了 `std::unordered_map` 之后，理解其他无序容器就非常容易了，因为它们共享相同的底层哈希表原理和相似的接口设计。
+
+#### `std::unordered_set`：集合
+
+-   **定义**：`std::unordered_set`是一个只存储**键**的容器，它不包含与键关联的值。它的主要用途是快速判断一个元素是否存在于集合中。与`std::unordered_map`一样，`unordered_set`中的元素（键）也必须是**唯一的**。
+-   **与`std::unordered_map`的对比**：
+    -   **存储内容**：`unordered_map`存储`std::pair<const Key, T>`，而`unordered_set`直接存储`Key`。
+    -   **差异**：`unordered_set`没有`[]`或`at()`这类通过键访问值的操作，因为根本没有“值”这个概念。它的核心操作是`insert()`, `erase()`, 和 `find()`。
+
+-   **基本操作示例**：
+    要使用`std::unordered_set`，需要包含头文件`<unordered_set>`。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_set>
+
+    int main() {
+        // 声明一个存储std::string的unordered_set
+        std::unordered_set<std::string> unique_words;
+
+        // 1. 插入元素
+        unique_words.insert("hello");
+        unique_words.insert("world");
+        unique_words.insert("c++");
+
+        // 尝试插入一个重复元素
+        auto result = unique_words.insert("hello");
+        if (!result.second) {
+            std::cout << "'hello' already exists in the set. Insertion failed." << std::endl;
+        }
+
+        std::cout << "Set size: " << unique_words.size() << std::endl;
+
+        // 2. 查找元素
+        std::string word_to_find = "c++";
+        if (unique_words.find(word_to_find) != unique_words.end()) {
+            std::cout << "Found '" << word_to_find << "' in the set." << std::endl;
+        }
+
+        // 3. 删除元素
+        unique_words.erase("world");
+        if (unique_words.find("world") == unique_words.end()) {
+            std::cout << "'world' has been erased." << std::endl;
+        }
+
+        // 4. 遍历 (顺序不确定)
+        std::cout << "Elements in the set: ";
+        for (const auto& word : unique_words) {
+            std::cout << word << " ";
+        }
+        std::cout << std::endl;
+
+        return 0;
+    }
+    ```
+    **输出**：
+    ```
+    'hello' already exists in the set. Insertion failed.
+    Set size: 3
+    Found 'c++' in the set.
+    'world' has been erased.
+    Elements in the set: c++ hello 
+    ```
+
+#### `unordered_multimap` 和 `unordered_multiset`：允许重复键
+
+-   **定义**：
+    -   **`std::unordered_multimap`**：与`std::unordered_map`类似，但**允许存储具有相同键的多个键值对**。
+    -   **`std::unordered_multiset`**：与`std::unordered_set`类似，但**允许存储多个相同的键**。
+
+-   **区别**：
+    -   **`insert()`**：在`multi`版本的容器中，`insert()`总是会成功并添加一个新元素，即使键已经存在。
+    -   **`erase(key)`**：会删除所有与指定键匹配的元素，并返回被删除元素的数量。
+    -   **`find(key)`**：会返回一个指向**第一个**匹配该键的元素的迭代器。要找到所有匹配的元素，需要使用`equal_range()`或循环。
+    -   **`count(key)`**：返回具有指定键的元素的数量。
+    -   `multi`版本的容器没有`[]`和`at()`运算符，因为对于一个键可能存在多个值，这两个运算符无法明确返回哪一个。
+
+-   **`unordered_multimap` 示例**：
+    想象一个场景，一个学生可以选修多门课程，我们想用`unordered_multimap`来存储每个学生（键）选修的所有课程（值）。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map> // multimap也在这里
+
+    int main() {
+        std::unordered_multimap<std::string, std::string> student_courses;
+
+        // 插入数据，Alice选了多门课
+        student_courses.insert({"Alice", "Math"});
+        student_courses.insert({"Bob", "History"});
+        student_courses.insert({"Alice", "Physics"}); // Alice的第二个键
+        student_courses.insert({"Charlie", "Math"});
+
+        // 统计Alice选了几门课
+        std::cout << "Alice is taking " << student_courses.count("Alice") << " courses." << std::endl;
+
+        // 查找并打印Alice的所有课程
+        std::string student_name = "Alice";
+        auto range = student_courses.equal_range(student_name); 
+        // equal_range是查找所有匹配项的标准方法
+
+        // equal_range返回一个std::pair<iterator, iterator>
+        // first 是指向第一个匹配元素的迭代器
+        // second 是指向最后一个匹配元素之后位置的迭代器
+        std::cout << "Courses for " << student_name << ":" << std::endl;
+        for (auto it = range.first; it != range.second; ++it) {
+            std::cout << "- " << it->second << std::endl; // it->second是课程名
+        }
+        
+        return 0;
+    }
+    ```
+    **输出**：
+    ```
+    Alice is taking 2 courses.
+    Courses for Alice:
+    - Physics
+    - Math
+    ```
+
+---
+
+### 自定义哈希函数与键等价谓词
+到目前为止，我们使用的键都是`int`、`std::string`等基本类型。C++标准库已经为这些类型**预先定义好了哈希函数和等价比较规则**。
+
+但如果我们想使用自己定义的`struct`或`class`作为键，比如：
+```cpp
+struct Student {
+    int id;
+    std::string name;
+};
+```
+然后尝试这样做：
+`std::unordered_set<Student> class_roster;`
+
+编译器会立刻报错。错误信息应该会很长，但核心意思是它不知道两件事：
+1.  **怎么为`Student`对象生成哈希值？** (缺少哈希函数)
+2.  **怎么判断两个`Student`对象是否相等？** (缺少等价谓词)
+
+为了让自定义类型能作为无序容器的键，我们必须亲自提供这两个组件。
+
+#### 1. 提供哈希函数
+提供哈希函数最标准的方式是**特化 `std::hash` 模板**。
+
+-   **什么是`std::hash`？**
+    `std::hash`是一个在`<functional>`头文件中定义的类模板。无序容器默认就使用`std::hash<Key>`来计算键的哈希值。标准库为`int`, `double`, `std::string`, `std::vector<bool>`, 指针类型等都提供了特化版本。我们的任务就是为我们自己的`Student`类型也提供一个特化版本。
+
+-   **如何特化？**
+    我们需要在`std`命名空间内，为`std::hash<Student>`定义一个结构体，并实现一个公有的、`const`的`operator()`，这个函数就是哈希函数本体。
+
+-   **哈希函数的实现**：
+    实现一个好的哈希函数是一门艺术。对于初学者，自己设计一个哈希函数是不可能的。不过我们可以**利用已有的哈希函数来组合计算**。例如，对于`Student`，我们可以分别计算其`id`和`name`的哈希值，然后将它们组合起来。
+
+-   **示例：为`Student`类型特化`std::hash`**
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_set>
+    #include <functional> // 必须包含
+
+    // 自定义数据类型
+    struct Student {
+        int id;
+        std::string name;
+    };
+
+    // 在std命名空间中，为我们的Student类型特化std::hash模板
+    namespace std {
+        template <> // 这表示我们正在进行模板特化
+        struct hash<Student> {
+            // 哈希函数的返回值类型标准要求是size_t
+            size_t operator()(const Student& s) const noexcept {
+                // 1. 获取id的哈希值
+                size_t h1 = std::hash<int>{}(s.id);
+
+                // 2. 获取name的哈希值
+                size_t h2 = std::hash<std::string>{}(s.name);
+
+                // 3. 组合两个哈希值
+                return h1 ^ (h2 << 1); 
+            }
+        };
+    }
+    ```
+
+    `operator()` 必须返回一个 `size_t`，作为 `Student` 对象的**最终哈希值**。  
+    `return h1 ^ (h2 << 1);` 就是把两个子哈希 `h1` 和 `h2` **揉在一起** 并返回。
+    让我们看看这个位运算：
+    1. `h2 << 1`
+    * `<<` 是**按位左移**运算符。
+    * 把 `h2` 所有位整体左移1位，相当于乘以 2。
+    * 目的：  
+        - 改变 `h2` 的位分布，让它与 `h1` 在结果中占据不同的位区间，减少直接冲突。  
+        - 如果不移位而直接 `h1 ^ h2`，若 `h1` 与 `h2` 在某些位上经常相同，会导致抵消或重复。
+
+    2. `h1 ^ (…)`
+    * `^` 是**按位异或**运算符。
+    * 性质：  
+        - 相同位相同 → 0；不同 → 1。  
+        - 可逆，但又足够“搅拌”两个输入。  
+    * 用异或把 `h1` 与移位后的 `h2` 结合，得到一个新的、看似随机的比特模式。
+
+    **快速**：移位和异或都是单周期位运算，比调用复杂的混合函数要省时。
+    **足够分散**：  
+    - `id` 大多较小（高位为 0），`name` 的哈希往往高位变化更剧烈。  
+    - 左移后再异或，能让两者的高低位互补，降低碰撞概率。
+
+#### 2. 提供键等价谓词
+哈希冲突是不可避免的。当两个不同的`Student`对象（比如`s1`和`s2`）碰巧哈希到了同一个桶，容器就需要一种方法来精确地区分它们。它会问：“`s1`和`s2`真的是同一个键吗？”
+
+这个判断工作由**键等价谓词**完成。默认情况下，无序容器使用`std::equal_to<Key>`，而`std::equal_to`内部又会调用键类型的`operator==`。
+
+因此，最简单的方法就是为我们的`Student`类型**重载`operator==`**。
+
+-   **示例：为`Student`类型重载`operator==`**
+
+    ```cpp
+    // (接上例代码)
+    bool operator==(const Student& lhs, const Student& rhs) {
+        // 如果两个Student对象的id和name都相同，我们才认为它们相等
+        return lhs.id == rhs.id && lhs.name == rhs.name;
+    }
+
+    // 现在Student类型准备就绪了，可以放入unordered_set了
+    int main() {
+        std::unordered_set<Student> class_roster;
+
+        Student s1 = {101, "Alice"};
+        Student s2 = {102, "Bob"};
+        Student s3 = {101, "Alice"}; // 和s1完全相同
+
+        class_roster.insert(s1);
+        class_roster.insert(s2);
+        
+        // 尝试插入s3，因为s3 == s1，所以插入会失败
+        auto result = class_roster.insert(s3);
+
+        if (!result.second) {
+            std::cout << "Student {101, Alice} already exists. Insertion failed." << std::endl;
+        }
+
+        std::cout << "Final roster size: " << class_roster.size() << std::endl;
+        
+        // 查找
+        Student to_find = {102, "Bob"};
+        if (class_roster.find(to_find) != class_roster.end()) {
+            std::cout << "Found student {102, Bob}." << std::endl;
+        }
+
+        return 0;
+    }
+    ```
+-   **完整可运行代码**：
+    将上面的代码片段整合起来，就构成了一个完整的、使用自定义类型作为`unordered_set`键的例子。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_set>
+    #include <functional>
+
+    struct Student {
+        int id;
+        std::string name;
+    };
+
+    // 为Student重载operator==，用于判断键是否相等
+    bool operator==(const Student& lhs, const Student& rhs) {
+        return lhs.id == rhs.id && lhs.name == rhs.name;
+    }
+
+    // 在std命名空间中特化std::hash
+    namespace std {
+        template <>
+        struct hash<Student> {
+            size_t operator()(const Student& s) const noexcept {
+                size_t h1 = std::hash<int>{}(s.id);
+                size_t h2 = std::hash<std::string>{}(s.name);
+                return h1 ^ (h2 << 1);
+            }
+        };
+    }
+
+    int main() {
+        std::unordered_set<Student> class_roster;
+        class_roster.insert({101, "Alice"});
+        class_roster.insert({102, "Bob"});
+
+        // 查找
+        Student to_find = {101, "Alice"};
+        if (class_roster.count(to_find)) {
+            std::cout << "Student {101, Alice} is in the roster." << std::endl;
+        }
+
+        return 0;
+    }
+    ```
+
+**总结一下**：要让自定义类型 `MyType` 作为无序容器的键，必须完成两件事：
+1.  **重载 `bool operator==(const MyType&, const MyType&)`**：定义相等的标准。
+2.  **特化 `std::hash<MyType>`**：提供计算哈希值的方法。
+
+只有同时满足这两个条件，编译器才能正确地使用我们的自定义类型。
+
+---
+
+好的，我们继续。接下来，我们将介绍无序容器家族的其他成员，并解决一个非常关键的问题：如何让我们自己定义的类型也能在无序容器中作为键使用。
+
+***
+
+### `unordered_set` / `unordered_multiset` / `unordered_multimap`
+
+掌握了 `std::unordered_map` 之后，理解其他无序容器就非常容易了，因为它们共享相同的底层哈希表原理和相似的接口设计。
+
+#### `std::unordered_set`：高速查找的唯一元素集合
+
+-   **定义**：`std::unordered_set`是一个只存储**键**的容器，它不包含与键关联的值。它的主要用途是快速判断一个元素是否存在于集合中。与`std::unordered_map`一样，`unordered_set`中的元素（键）也必须是**唯一的**。
+-   **与`std::unordered_map`的对比**：
+    -   **存储内容**：`unordered_map`存储`std::pair<const Key, T>`，而`unordered_set`直接存储`Key`。
+    -   **API差异**：`unordered_set`没有`[]`或`at()`这类通过键访问值的操作，因为根本没有“值”这个概念。它的核心操作是`insert()`, `erase()`, 和 `find()`。
+
+-   **基本操作示例**：
+    要使用`std::unordered_set`，需要包含头文件`<unordered_set>`。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_set>
+
+    int main() {
+        // 声明一个存储std::string的unordered_set
+        std::unordered_set<std::string> unique_words;
+
+        // 1. 插入元素
+        unique_words.insert("hello");
+        unique_words.insert("world");
+        unique_words.insert("c++");
+
+        // 尝试插入一个重复元素
+        auto result = unique_words.insert("hello");
+        if (!result.second) {
+            std::cout << "'hello' already exists in the set. Insertion failed." << std::endl;
+        }
+
+        std::cout << "Set size: " << unique_words.size() << std::endl;
+
+        // 2. 查找元素
+        std::string word_to_find = "c++";
+        if (unique_words.find(word_to_find) != unique_words.end()) {
+            std::cout << "Found '" << word_to_find << "' in the set." << std::endl;
+        }
+
+        // 3. 删除元素
+        unique_words.erase("world");
+        if (unique_words.find("world") == unique_words.end()) {
+            std::cout << "'world' has been erased." << std::endl;
+        }
+
+        // 4. 遍历 (顺序不确定)
+        std::cout << "Elements in the set: ";
+        for (const auto& word : unique_words) {
+            std::cout << word << " ";
+        }
+        std::cout << std::endl;
+
+        return 0;
+    }
+    ```
+    **输出**：
+    ```
+    'hello' already exists in the set. Insertion failed.
+    Set size: 3
+    Found 'c++' in the set.
+    'world' has been erased.
+    Elements in the set: c++ hello 
+    ```
+
+#### `unordered_multimap` 和 `unordered_multiset`：允许重复键
+
+-   **定义**：
+    -   **`std::unordered_multimap`**：与`std::unordered_map`类似，但**允许存储具有相同键的多个键值对**。
+    -   **`std::unordered_multiset`**：与`std::unordered_set`类似，但**允许存储多个相同的键**。
+
+-   **关键区别**：
+    -   **`insert()`**：在`multi`版本的容器中，`insert()`总是会成功并添加一个新元素，即使键已经存在。
+    -   **`erase(key)`**：会删除所有与指定键匹配的元素，并返回被删除元素的数量。
+    -   **`find(key)`**：会返回一个指向**第一个**匹配该键的元素的迭代器。要找到所有匹配的元素，需要使用`equal_range()`或循环。
+    -   **`count(key)`**：返回具有指定键的元素的数量。
+    -   `multi`版本的容器没有`[]`和`at()`运算符，因为对于一个键可能存在多个值，这两个运算符无法明确返回哪一个。
+
+-   **`unordered_multimap` 示例**：
+    想象一个场景，一个学生可以选修多门课程，我们想用`unordered_multimap`来存储每个学生（键）选修的所有课程（值）。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map> // multimap也在这里
+
+    int main() {
+        std::unordered_multimap<std::string, std::string> student_courses;
+
+        // 插入数据，Alice选了多门课
+        student_courses.insert({"Alice", "Math"});
+        student_courses.insert({"Bob", "History"});
+        student_courses.insert({"Alice", "Physics"}); // Alice的第二个键
+        student_courses.insert({"Charlie", "Math"});
+
+        // 统计Alice选了几门课
+        std::cout << "Alice is taking " << student_courses.count("Alice") << " courses." << std::endl;
+
+        // 查找并打印Alice的所有课程
+        std::string student_name = "Alice";
+        auto range = student_courses.equal_range(student_name); // equal_range是查找所有匹配项的标准方法
+
+        // equal_range返回一个std::pair<iterator, iterator>
+        // first 是指向第一个匹配元素的迭代器
+        // second 是指向最后一个匹配元素之后位置的迭代器
+        std::cout << "Courses for " << student_name << ":" << std::endl;
+        for (auto it = range.first; it != range.second; ++it) {
+            std::cout << "- " << it->second << std::endl; // it->second是课程名
+        }
+        
+        return 0;
+    }
+    ```
+    **输出**：
+    ```
+    Alice is taking 2 courses.
+    Courses for Alice:
+    - Physics
+    - Math
+    ```
+
+### 自定义哈希函数与键等价谓词
+到目前为止，我们使用的键都是`int`、`std::string`等基本类型。为什么它们可以直接在无序容器里使用？因为C++标准库已经为这些类型**预先定义好了哈希函数和等价比较规则**。
+
+但如果我们想使用自己定义的`struct`或`class`作为键，比如：
+```cpp
+struct Student {
+    int id;
+    std::string name;
+};
+```
+然后尝试这样做：
+`std::unordered_set<Student> class_roster;`
+
+编译器会立刻报错。错误信息会很长，但核心意思是它不知道两件事：
+1.  **如何为`Student`对象生成哈希值？** (缺少哈希函数)
+2.  **如何判断两个`Student`对象是否相等？** (缺少等价谓词)
+
+为了让自定义类型能作为无序容器的键，我们必须亲自提供这两个组件。
+
+#### 1. 提供哈希函数
+提供哈希函数最标准、最推荐的方式是**特化 `std::hash` 模板**。
+
+-   **什么是`std::hash`？**
+    `std::hash`是一个在`<functional>`头文件中定义的类模板。无序容器默认就使用`std::hash<Key>`来计算键的哈希值。标准库为`int`, `double`, `std::string`, `std::vector<bool>`, 指针类型等都提供了特化版本。我们的任务就是为我们自己的`Student`类型也提供一个特化版本。
+
+-   **如何特化？**
+    我们需要在**`std`命名空间**内，为`std::hash<Student>`定义一个结构体，并实现一个公有的、`const`的`operator()`，这个函数就是哈希函数本尊。
+
+-   **哈希函数的实现**：
+    实现一个好的哈希函数是一门艺术。对于初学者，一个简单有效的策略是**利用已有的哈希函数来组合计算**。例如，对于`Student`，我们可以分别计算其`id`和`name`的哈希值，然后将它们组合起来。
+
+-   **示例：为`Student`类型特化`std::hash`**
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_set>
+    #include <functional> // 必须包含，为了std::hash
+
+    // 自定义数据类型
+    struct Student {
+        int id;
+        std::string name;
+    };
+
+    // --- 关键步骤 ---
+    // 在std命名空间中，为我们的Student类型特化std::hash模板
+    namespace std {
+        template <> // 这表示我们正在进行模板特化
+        struct hash<Student> {
+            // size_t 是一个无符号整数类型，通常用于表示大小和索引
+            // 哈希函数的返回值类型标准要求是size_t
+            size_t operator()(const Student& s) const noexcept {
+                // 1. 获取id的哈希值
+                size_t h1 = std::hash<int>{}(s.id);
+
+                // 2. 获取name的哈希值
+                size_t h2 = std::hash<std::string>{}(s.name);
+
+                // 3. 组合两个哈希值
+                // 一个常见的组合方式。0x9e3779b9是一个“神奇”的常数，
+                // 常用于Boost库中的hash_combine，能提供较好的分布性。
+                // 简单地用 h1 ^ h2 也可以，但分布性可能稍差。
+                return h1 ^ (h2 << 1); 
+            }
+        };
+    }
+    // --- 特化结束 ---
+    ```
+
+#### 2. 提供键等价谓词
+哈希冲突是不可避免的。当两个不同的`Student`对象（比如`s1`和`s2`）碰巧哈希到了同一个桶，容器就需要一种方法来精确地区分它们。它会问：“`s1`和`s2`真的是同一个键吗？”
+
+这个判断工作由**键等价谓词 (Key Equality Predicate)** 完成。默认情况下，无序容器使用`std::equal_to<Key>`，而`std::equal_to`内部又会调用键类型的`operator==`。
+
+因此，最简单的方法就是为我们的`Student`类型**重载 `operator==`**。
+
+-   **示例：为`Student`类型重载`operator==`**
+
+    将上面的代码片段整合起来，就构成了一个完整的、使用自定义类型作为`unordered_set`键的例子。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_set>
+    #include <functional>
+
+    struct Student {
+        int id;
+        std::string name;
+    };
+
+    // 为Student重载operator==，用于判断键是否相等
+    bool operator==(const Student& lhs, const Student& rhs) {
+        return lhs.id == rhs.id && lhs.name == rhs.name;
+    }
+
+    // 在std命名空间中特化std::hash
+    namespace std {
+        template <>
+        struct hash<Student> {
+            size_t operator()(const Student& s) const noexcept {
+                size_t h1 = std::hash<int>{}(s.id);
+                size_t h2 = std::hash<std::string>{}(s.name);
+                return h1 ^ (h2 << 1); // 简单的组合哈希值
+            }
+        };
+    }
+
+    int main() {
+        std::unordered_set<Student> class_roster;
+
+        Student s1 = {101, "Alice"};
+        Student s2 = {102, "Bob"};
+        Student s3 = {101, "Alice"}; // 和s1完全相同
+
+        class_roster.insert(s1);
+        class_roster.insert(s2);
+        
+        // 尝试插入s3，因为s3 == s1，所以插入会失败
+        auto result = class_roster.insert(s3);
+
+        if (!result.second) {
+            std::cout << "Student {101, Alice} already exists. Insertion failed." << std::endl;
+        }
+
+        std::cout << "Final roster size: " << class_roster.size() << std::endl;
+        
+        // 查找
+        Student to_find = {102, "Bob"};
+        if (class_roster.count(to_find)) { // count()是另一种方便的查找方式
+            std::cout << "Found student {102, Bob}." << std::endl;
+        }
+
+        return 0;
+    }
+    ```
+    **输出**:
+    ```
+    Student {101, Alice} already exists. Insertion failed.
+    Final roster size: 2
+    Found student {102, Bob}.
+    ```
+**总结一下**：要让自定义类型 `MyType` 作为无序容器的键，必须完成两件事：
+1.  **重载 `bool operator==(const MyType&, const MyType&)`**：定义相等的标准。
+2.  **特化 `std::hash<MyType>`**：提供计算哈希值的方法。
+
+只有同时满足这两个条件，编译器才能正确地使用我们的自定义类型。
+
+---
+
+### 迭代器特性与并发修改限制
+#### 迭代器类型
+`unordered_` 系列容器的迭代器属于**前向迭代器**。它至少支持以下操作：
+-   `++it` 和 `it++`：移动到下一个元素。
+-   `*it`：解引用，获取元素值。
+-   `it->`：解引用并访问成员（对于 `unordered_map` 尤其常用）。
+-   `it1 == it2` 和 `it1 != it2`：比较两个迭代器是否相等。
+
+重要的是，它们**不支持** `it + n` 或 `it - n` 这样的算术运算，也不支持 `--it` 向后移动。你只能单向地、一个一个地向前遍历。
+
+#### 修改容器与迭代器失效
+无序容器最危险的操作是那些可能引发**重哈希 (`rehash`)** 的操作。
+
+-   **规则**：任何导致重哈希的插入操作（如 `insert`, `[]`）都会使该容器的**所有迭代器、指针和引用全部失效**。
+
+-   **哪些操作可能导致重哈希?**
+    -   `insert`, `emplace`, `[]`：当这些操作导致负载因子超过最大负载因子(`max_load_factor`)时，会触发重哈希。
+    -   `rehash(n)`, `reserve(n)`：这些函数被显式调用时。
+
+-   **安全的操作**：
+    -   对已有元素的访问（`find`, `at`, `count`）是安全的，不会使迭代器失效。
+    -   `erase` 操作有其特殊规则：它**只会使指向被删除元素的迭代器失效**。指向其他元素的迭代器、指针和引用保持有效。
+
+#### 在遍历时安全地删除元素
+我们在前面已经写过很多遍了，但重要程度值得我们再讲一遍：
+
+-   **错误示范**：
+    ```cpp
+    std::unordered_map<std::string, int> scores = {{"A", 50}, {"B", 90}, {"C", 30}};
+    for (auto it = scores.begin(); it != scores.end(); ++it) {
+        if (it->second < 60) {
+            scores.erase(it); // 错误！it在此时已失效
+            // 在下一次循环中，++it 就是对一个失效的迭代器进行操作，这是未定义行为！
+        }
+    }
+    ```
+
+-   **正确方法：使用 `erase` 的返回值**
+    `erase(iterator)`会返回一个指向**被删除元素下一个元素**的有效迭代器。我们可以利用这个返回值来继续循环。
+
+    ```cpp
+    #include <iostream>
+    #include <string>
+    #include <unordered_map>
+
+    int main() {
+        std::unordered_map<std::string, int> student_scores = {
+            {"Alice", 85}, {"Bob", 59}, {"Charlie", 92}, {"David", 40}
+        };
+        
+        std::cout << "Original scores (order may vary):" << std::endl;
+        for(const auto& p : student_scores) std::cout << p.first << ": " << p.second << std::endl;
+
+        for (auto it = student_scores.begin(); it != student_scores.end(); /* 此处没有it++ */) {
+            if (it->second < 60) {
+                // erase返回下一个有效迭代器，我们用它来更新it
+                it = student_scores.erase(it); 
+            } else {
+                // 如果不删除，就正常地将it向前移动
+                ++it;
+            }
+        }
+        
+        std::cout << "\nScores after removing failing students (order may vary):" << std::endl;
+        for(const auto& p : student_scores) std::cout << p.first << ": " << p.second << std::endl;
+
+        return 0;
+    }
+    ```
+
+**核心要点**：遍历无序容器时，**绝对不要**在循环体内进行插入操作。如果需要删除，请必须使用 `erase(it)` 的返回值来更新你的迭代器。
+
+### 与有序容器的时间、空间对比
+
+现在我们已经学习了有序容器（`map`/`set`）和无序容器（`unordered_map`/`unordered_set`），是时候对它们进行一次全面的对比，以便在实际开发中做出正确的选择。
+
+| 特性 | **有序容器 (`std::map`, `std::set`)** | **无序容器 (`std::unordered_map`, `std::unordered_set`)** |
+| :--- | :--- | :--- |
+| **底层数据结构** | 通常是**红黑树** (一种自平衡二叉搜索树) | **哈希表** |
+| **元素顺序** | 元素根据键**自动排序** | **无序**，遍历顺序不确定 |
+| **时间复杂度 (平均)** | 查找、插入、删除均为 **O(log N)** | 查找、插入、删除均为**摊还 O(1)** |
+| **时间复杂度 (最坏)** | **O(log N)** (树是平衡的) | **O(N)** (发生严重哈希冲突，退化为链表) |
+| **对键的要求** | 必须提供严格弱序比较 (通常是`operator<`) | 必须提供**哈希函数**和**等价比较** (通常是`operator==`) |
+| **内存开销** | 每个节点有数据、颜色和3个指针(父、左、右)，开销相对可观但稳定。 | 开销由**桶数组**和**链表节点**组成。通常比有序容器**更大**，尤其是在元素少而桶多时。 |
+| **迭代器类型** | **双向迭代器** (`--it` 有效) | **前向迭代器** (`--it` 无效) |
+| **特色操作** | 支持基于顺序的操作，如`lower_bound`, `upper_bound`，范围查找。 | 不支持基于顺序的操作。 |
+
+#### 如何选择？
+
+-   **当你需要以下功能时，选择`std::map` / `std::set`**：
+    1.  **需要按键排序**：如果你需要按顺序遍历元素，或者打印出排好序的结果。
+    2.  **需要进行范围查找**：例如，查找所有ID在1000到2000之间的用户。
+    3.  **需要查找邻近元素**：例如，找到大于或等于某个键的第一个元素(`lower_bound`)。
+    4.  键类型复杂，为其提供一个可靠的哈希函数很困难，但定义小于比较(`operator<`)很简单。
+    5.  对最坏情况下的性能有严格要求，不能接受O(N)的风险。
+
+-   **当你需要以下功能时，选择`std::unordered_map` / `std::unordered_set`**：
+    1.  **追求性能**：你的首要目标是尽可能快地进行单点查找、插入和删除，且不关心元素的顺序。这是它们最主要的应用场景。
+    2.  **元素顺序无关紧要**：程序的逻辑不依赖于元素的任何顺序。
+    3.  键类型是基本类型（`int`, `string`等）或可以轻松提供优质哈希函数的自定义类型。
+
+**经验法则**：如果不确定，或者没有明确的性能瓶颈，可以先从`std::map`开始，因为它的行为更可预测（没有重哈希的性能抖动，是严格的O(log N)）。当查找是性能瓶颈时，再考虑替换为`std::unordered_map`。
+
+### 章节总结
+
+在本章中，我们深入探索了C++标准库中的无序关联容器。
+-   我们从底层原理出发，理解了**哈希表**如何通过**哈希函数**将键映射到**桶**，并使用**链地址法**处理**哈希冲突**。
+-   我们学习了**负载因子**和**重哈希**机制如何动态维护哈希表的性能，确保插入、删除和查找操作的平均时间复杂度达到**摊还O(1)**。
+-   我们详细掌握了`std::unordered_map`和`std::unordered_set`的常用API，包括插入(`[]` vs `insert`)、访问(`at` vs `find`)、删除和遍历，并了解了`multi`版本的用途。
+-   一个关键技能是让我们自己的**自定义类型**能够作为键使用，这需要我们为其提供**`operator==`**和特化的**`std::hash`**模板。
+-   我们还讨论了无序容器的**迭代器特性**，特别是**迭代器失效**的风险，并学会了在遍历时安全删除元素的方法。
+-   最后，我们通过详细的**对比表格**，明确了有序容器和无序容器在性能、内存和功能上的差异，为在实际项目中做出正确的技术选型提供了依据。
+
+现在，让我们通过一个综合示例来巩固所学的知识。
+
+### 示例程序：词频统计器
+
+**目标**：编写一个程序，该程序读取一段英文文本，统计其中每个单词出现的次数，并最终按照出现频率从高到低打印出排名前10的单词。
+
+**分析与设计**：
+1.  **数据源**：为了简单起见，我们将文本硬编码在一个`std::string`中。
+2.  **单词切分与清洗**：文本中包含大写字母和标点符号。为了正确统计，"Word"、"word"和"word,"应被视为同一个单词。因此，我们需要一个函数来：
+    -   将字符串转为小写。
+    -   移除字符串首尾的标点符号。
+3.  **频率统计**：这是`std::unordered_map`的完美应用场景。我们将使用`std::unordered_map<std::string, int>`，其中键是清洗后的单词，值是该单词出现的次数。遍历所有单词，利用`map[word]++`即可快速更新计数。
+4.  **结果排序**：`unordered_map`本身是无序的。要按频率排序，我们需要：
+    -   将`unordered_map`中的所有键值对（`std::pair`）复制到一个`std::vector`中。
+5.  **输出**：遍历排序后的`vector`，打印结果。
+
+**代码实现**：
+```cpp
+#include <iostream>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+// --- 辅助函数 ---
+
+char to_lower_custom(char c) {
+    if (c >= 'A' && c <= 'Z') {
+        return c - 'A' + 'a';
+    }
+    return c;
+}
+
+bool is_alpha_custom(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
+}
+
+// --- 单词清洗函数 ---
+// 1. 将字符串转为小写
+// 2. 移除首尾的非字母字符
+std::string clean_word(const std::string& word) {
+    if (word.empty()) {
+        return "";
+    }
+
+    std::string temp_word;
+    // 1. 转为小写
+    for (char c : word) {
+        temp_word += to_lower_custom(c);
+    }
+
+    // 2. 移除首尾标点
+    size_t start = 0;
+    while (start < temp_word.length() && !is_alpha_custom(temp_word[start])) {
+        start++;
+    }
+
+    size_t end = temp_word.length();
+    while (end > start && !is_alpha_custom(temp_word[end - 1])) {
+        end--;
+    }
+
+    if (start >= end) {
+        return ""; // 如果整个单词都是非字母字符
+    }
+
+    return temp_word.substr(start, end - start);
+}
+
+// --- 排序函数 ---
+// 使用简单的冒泡排序对 vector<pair> 按频率（值）进行降序排序
+// 试着理解这个排序函数的实现，在各种排序算法中，冒泡排序是最简单的，但效率较低
+void sort_vector_by_frequency(std::vector<std::pair<std::string, int>>& vec) {
+    bool swapped;
+    int n = vec.size();
+    if (n < 2) return;
+
+    for (int i = 0; i < n - 1; ++i) {
+        swapped = false;
+        for (int j = 0; j < n - i - 1; ++j) {
+            // 如果前一个元素的频率小于后一个，则交换它们（降序）
+            if (vec[j].second < vec[j + 1].second) {
+                std::pair<std::string, int> temp = vec[j];
+                vec[j] = vec[j + 1];
+                vec[j + 1] = temp;
+                swapped = true;
+            }
+        }
+
+        if (!swapped) {
+            break;
+        }
+    }
+}
+
+
+int main() {
+    // 1. 数据源：硬编码的文本
+    std::string text = "It is a truth universally acknowledged, that a single man in "
+        "possession of a good fortune, must be in want of a wife. "
+        "However, little is known about his feelings or views on this matter, "
+        "the family of the neighbourhood consider him to be the rightful "
+        "property of some one or other of their daughters. "
+        "My dear Mr. Bennet, said his lady to him one day, "
+        "have you heard that Netherfield Park is let at last? "
+        "Mr. Bennet replied that he had not. But it is, returned she; "
+        "for Mrs. Long has just been here, and she told me all about it.";
+
+    // 3. 频率统计：使用 unordered_map
+    std::unordered_map<std::string, int> word_counts;
+
+    // 2. 单词切分与清洗
+    std::string current_word;
+    for (char ch : text) {
+        // 使用空格作为单词分隔符
+        if (ch == ' ' || ch == '\n' || ch == '\t') {
+            if (!current_word.empty()) {
+                std::string cleaned = clean_word(current_word);
+                if (!cleaned.empty()) {
+                    word_counts[cleaned]++;
+                }
+                current_word.clear();
+            }
+        }
+        else {
+            current_word += ch;
+        }
+    }
+	// 处理最后一个单词（如果有的话）
+    if (!current_word.empty()) {
+        std::string cleaned = clean_word(current_word);
+        if (!cleaned.empty()) {
+            word_counts[cleaned]++;
+        }
+    }
+
+    // 4. 结果排序
+    // 将 map 复制到 vector 中以便排序
+    std::vector<std::pair<std::string, int>> sorted_words;
+    for (const auto& pair : word_counts) {
+        sorted_words.push_back(pair);
+    }
+
+    // 使用我们自己实现的排序函数
+    sort_vector_by_frequency(sorted_words);
+
+
+    // 5. 输出结果
+    std::cout << "Top 10 most frequent words:" << std::endl;
+    std::cout << "---------------------------" << std::endl;
+
+    // 确定要打印的数量（最多10个，或者如果总词数少于10，则打印所有）
+    int count_to_print = sorted_words.size() > 10 ? 10 : sorted_words.size();
+
+    for (int i = 0; i < count_to_print; ++i) {
+        std::cout << i + 1 << ". \"" << sorted_words[i].first
+            << "\" : " << sorted_words[i].second << " times" << std::endl;
+    }
+
+    return 0;
+}
+```
+
+**输出如下：**
+```
+Top 10 most frequent words:
+---------------------------
+1. "of" : 5 times
+2. "is" : 4 times
+3. "a" : 4 times
+4. "it" : 3 times
+5. "that" : 3 times
+6. "the" : 3 times
+7. "him" : 2 times
+8. "in" : 2 times
+9. "one" : 2 times
+10. "his" : 2 times
+```
 
 ## 第38章：迭代器
 **知识点**  
