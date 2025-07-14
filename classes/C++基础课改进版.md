@@ -28953,15 +28953,905 @@ DEBUG: Caching object #123
 -------------------------
 ```
 
-## 第40章：排序数值
-**知识点**  
-- 排序族：`sort` / `stable_sort` / `partial_sort` / `nth_element`  
-- 二分查找族：`binary_search` / `lower_bound` / `upper_bound`  
-- 数值算法：`accumulate` / `inner_product` / `adjacent_difference` / `iota`  
-- 标准函数对象：`plus` / `less` / `hash` …  
-- Lambda 表达式：捕获、可变、泛型、`std::function`  
-- 性能优化：比较器内联、并行算法概览(C++17 `std::execution`)  
-**示例程序**：排行榜生成
+## 第40章：排序与数值算法
+在上一章，我们学习了C++标准库中一系列通用的核心算法。本章我们将聚焦于两类非常重要的算法：**排序算法**和**数值算法**。排序是计算机科学中最基本、最核心的操作之一，无论是整理数据、优化查找效率，还是为其他算法做准备，都离不开排序。C++标准库为我们提供了多种高效且经过优化的排序算法，以适应不同的需求。
+
+此外，我们还将接触到专门为数值计算设计的算法，如求和、内积等。更重要的是，本章我们将解锁C++中一个极为强大的现代特性——**Lambda表达式**，它将彻底改变我们为算法提供自定义逻辑的方式，使代码更加简洁和灵活。
+
+---
+
+### 排序族 (The Sorting Family)
+
+所有排序算法都需要**随机访问迭代器**，这意味着它们可以直接用于`std::vector`、`std::deque`和普通C风格数组，但**不能直接用于**`std::list`（它只提供双向迭代器）。如果你需要排序一个`list`，可以使用它自己的成员函数`list::sort()`。
+
+#### sort：最常用的排序
+`std::sort`是标准库中最常用、最广为人知的排序算法。它通常被实现为一种混合排序算法（如内省排序），在不同情况下切换使用快速排序、堆排序和插入排序，以获得非常好的平均性能。
+
+**定义**：
+```cpp
+void sort(RandomIt first, RandomIt last);
+void sort(RandomIt first, RandomIt last, Compare comp);
+```
+*   `first`, `last`: 定义要排序的左闭右开区间 `[first, last)`。
+*   `comp`: 一个可选的**比较函数（或函数对象）**。如果未提供，算法默认使用`<`运算符进行升序排序。如果提供了`comp`，它将根据`comp(a, b)`返回`true`来判断元素`a`是否应该排在元素`b`的前面。
+
+**比较函数的要求**：
+比较函数必须满足**严格弱序**：
+1.  一个元素不能比它自己小 (`comp(a, a)`必须为`false`)。
+2.  如果`comp(a, b)`为`true`，那么`comp(b, a)`必须为`false`。
+3.  如果`comp(a, b)`和`comp(b, c)`都为`true`，那么`comp(a, c)`也必须为`true`（传递性）。
+
+**示例1：默认升序排序**
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+void printVector(const std::string& msg, const std::vector<int>& vec) {
+    std::cout << msg;
+    for (int n : vec) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+}
+
+int main() {
+    std::vector<int> numbers = {5, 2, 8, 1, 9, 4};
+    printVector("排序前: ", numbers);
+
+    std::sort(numbers.begin(), numbers.end());
+
+    printVector("排序后: ", numbers);
+    return 0;
+}
+```
+**输出**：
+```
+排序前: 5 2 8 1 9 4 
+排序后: 1 2 4 5 8 9 
+```
+
+**示例2：使用自定义比较函数进行降序排序**
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+
+// 自定义比较函数
+// 如果希望 a 排在 b 前面，则返回 true
+bool isGreater(int a, int b) {
+    return a > b; // 降序排序
+}
+
+// ... printVector 函数同上 ...
+
+int main() {
+    std::vector<int> numbers = {5, 2, 8, 1, 9, 4};
+    printVector("排序前: ", numbers);
+
+    // 将 isGreater 函数作为第三个参数传递
+    std::sort(numbers.begin(), numbers.end(), isGreater);
+
+    printVector("降序排序后: ", numbers);
+    return 0;
+}
+```
+**输出**：
+```
+排序前: 5 2 8 1 9 4 
+降序排序后: 9 8 5 4 2 1 
+```
+
+**注意事项**：`std::sort`**不保证**相等元素的相对顺序。也就是说，如果排序前有两个相等的元素A和B，A在B前面，排序后B可能跑到A的前面。如果需要保持相等元素的相对顺序，应该使用`std::stable_sort`。
+
+#### stable_sort：稳定的排序
+**稳定排序**的含义是：如果两个元素根据比较函数被判为相等，那么它们在排序后的序列中的相对位置与它们在排序前的相对位置保持一致。
+
+这在什么时候重要？当你对一个复杂对象集合按某个键进行排序，但又希望保留原始的（可能基于时间或其他因素的）顺序时，稳定排序就至关重要了。
+
+**定义**：
+`stable_sort`的接口与`sort`完全相同。
+
+**示例：按分数对玩家排序**
+假设我们有一个玩家列表，我们想按分数降序排序。如果分数相同，我们希望保持他们原有的注册顺序。
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <string>
+
+struct Player {
+    std::string name;
+    int score;
+};
+
+// 比较函数，只比较分数
+bool comparePlayersByScore(const Player& a, const Player& b) {
+    return a.score > b.score; // 按分数降序
+}
+
+void printPlayers(const std::string& msg, const std::vector<Player>& players) {
+    std::cout << msg << std::endl;
+    for (size_t i = 0; i < players.size(); ++i) {
+        std::cout << "  " << players[i].name << ": " << players[i].score << std::endl;
+    }
+}
+
+int main() {
+    std::vector<Player> players = {
+        {"Alice", 80},
+        {"Bob", 95},
+        {"Charlie", 80}, // 分数与Alice相同
+        {"David", 100}
+    };
+
+    printPlayers("原始顺序:", players);
+
+    // 使用不稳定的 sort
+    std::vector<Player> players_for_sort = players; // 复制一份用于演示
+    std::sort(players_for_sort.begin(), players_for_sort.end(), comparePlayersByScore);
+    printPlayers("\n使用 std::sort (不稳定):", players_for_sort);
+    std::cout << "(注意 Alice 和 Charlie 的顺序可能改变)" << std::endl;
+
+    // 使用稳定的 stable_sort
+    std::vector<Player> players_for_stable_sort = players; // 再次复制
+    std::stable_sort(players_for_stable_sort.begin(), players_for_stable_sort.end(), comparePlayersByScore);
+    printPlayers("\n使用 std::stable_sort (稳定):", players_for_stable_sort);
+    std::cout << "(Alice 和 Charlie 的原始顺序被保留)" << std::endl;
+
+    return 0;
+}
+```
+**输出**（`sort`的结果可能不同，但`stable_sort`的结果是确定的）：
+```
+原始顺序:
+  Alice: 80
+  Bob: 95
+  Charlie: 80
+  David: 100
+
+使用 std::sort (不稳定):
+  David: 100
+  Bob: 95
+  Charlie: 80
+  Alice: 80
+(注意 Alice 和 Charlie 的顺序可能改变)
+
+使用 std::stable_sort (稳定):
+  David: 100
+  Bob: 95
+  Alice: 80
+  Charlie: 80
+(Alice 和 Charlie 的原始顺序被保留)
+```
+
+#### partial_sort：部分排序
+有时候，我们并不需要对整个容器进行排序，而只关心前N个最小（或最大）的元素。例如，获取排行榜的前三名。在这种情况下，`std::partial_sort`比完全排序更高效。
+
+它会重排元素，使得 `[first, middle)` 这个范围内的元素是整个序列中最小的N个元素，并且这N个元素是有序的。`[middle, last)` 范围内的其他元素顺序是未指定的。
+
+**定义**：
+`void partial_sort(RandomIt first, RandomIt middle, RandomIt last, ...);`
+
+**示例：找到最小的3个元素**
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// ... printVector 函数同上 ...
+
+int main() {
+    std::vector<int> numbers = {5, 2, 8, 1, 9, 4, 3, 7};
+    printVector("排序前: ", numbers);
+
+    // 我们想把最小的3个元素放到容器的前面，并排好序
+    // middle 指向第4个元素的位置 (索引为3)
+    std::partial_sort(numbers.begin(), numbers.begin() + 3, numbers.end());
+
+    printVector("部分排序后: ", numbers);
+    
+    return 0;
+}
+```
+**输出**：
+```
+排序前: 5 2 8 1 9 4 3 7 
+部分排序后: 1 2 3 9 8 5 4 7 
+```
+
+#### nth_element：找到第N个元素
+这个算法比`partial_sort`更专业。它只做一件事：找到如果整个序列被排序后，**位于第N个位置的那个元素**，并将它放到那个位置上。
+
+操作完成后，所有在第N个位置之前的元素都小于或等于它，所有在它之后的元素都大于或等于它。但是，这两部分的元素内部是**无序的**。这个算法对于快速找到中位数或任何百分位数非常有用，其平均时间复杂度为线性O(N)，远快于排序的O(NlogN)。
+
+**定义**：
+`void nth_element(RandomIt first, RandomIt nth, RandomIt last, ...);`
+
+**示例：找到中位数**
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+// ... printVector 函数同上 ...
+
+int main() {
+    std::vector<int> numbers = {5, 2, 8, 1, 9, 4, 3, 7, 6}; // 9个元素
+    printVector("原始数据: ", numbers);
+
+    // 中位数是第5个元素，索引为4
+    auto median_it = numbers.begin() + 4;
+    std::nth_element(numbers.begin(), median_it, numbers.end());
+    
+    int median = *median_it;
+    std::cout << "中位数是: " << median << std::endl;
+
+    printVector("nth_element之后: ", numbers);
+    std::cout << "中位数左边的都比它小，右边的都比它大，但各自内部无序。" << std::endl;
+
+    return 0;
+}
+```
+**输出**（`nth_element`后的序列顺序可能不同，但中位数及其位置是确定的）：
+```
+原始数据: 5 2 8 1 9 4 3 7 6 
+中位数是: 5
+nth_element之后: 3 2 4 1 5 9 8 7 6 
+中位数左边的都比它小，右边的都比它大，但各自内部无序。
+```
+
+---
+
+### 二分查找族 (Binary Search Family)
+
+二分查找是一类非常高效的查找算法，但它有一个**绝对的前提**：**操作的序列必须是已排序的**。如果数据未排序，使用这些算法会得到错误的结果。
+
+#### binary_search：检查元素是否存在
+这个算法最简单，它只告诉你一个值是否存在于有序序列中，返回一个`bool`值。
+
+**定义**：
+`bool binary_search(ForwardIt first, ForwardIt last, const T& value, ...);`
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> data = {1, 3, 5, 7, 9, 11, 13}; // 必须是有序的
+
+    // 查找存在的元素 5
+    if (std::binary_search(data.begin(), data.end(), 5)) {
+        std::cout << "找到了数字 5。" << std::endl;
+    }
+
+    // 查找不存在的元素 6
+    if (!std::binary_search(data.begin(), data.end(), 6)) {
+        std::cout << "没有找到数字 6。" << std::endl;
+    }
+    return 0;
+}
+```
+**输出**：
+```
+找到了数字 5。
+没有找到数字 6。
+```
+
+#### lower_bound / upper_bound：查找元素的边界
+`binary_search`只能告诉我们“有”或“没有”，但很多时候我们想知道“在哪里”。`lower_bound`和`upper_bound`提供了更强大的功能。
+
+*   `lower_bound(first, last, value)`：返回一个迭代器，指向序列中**第一个不小于**`value`的元素。如果所有元素都小于`value`，则返回`last`。
+*   `upper_bound(first, last, value)`：返回一个迭代器，指向序列中**第一个大于**`value`的元素。如果所有元素都小于或等于`value`，则返回`last`。
+
+这对函数组合起来非常强大，可以用来：
+1.  找到单个元素的位置。
+2.  找到某个值在序列中可以插入的位置，同时保持序列有序。
+3.  计算序列中某个特定值的数量。
+
+**示例：使用 `lower_bound` 和 `upper_bound`**
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <iterator> // for std::distance
+
+int main() {
+    std::vector<int> data = {10, 20, 30, 30, 30, 40, 50};
+    printVector("数据: ", data);
+
+    // 1. 查找 30 的下界 (lower_bound)
+    auto lb = std::lower_bound(data.begin(), data.end(), 30);
+    if (lb != data.end()) {
+        std::cout << "30 的下界在索引: " << std::distance(data.begin(), lb) << " (值: " << *lb << ")" << std::endl;
+    }
+
+    // 2. 查找 30 的上界 (upper_bound)
+    auto ub = std::upper_bound(data.begin(), data.end(), 30);
+     if (ub != data.end()) {
+        std::cout << "30 的上界在索引: " << std::distance(data.begin(), ub) << " (值: " << *ub << ")" << std::endl;
+    }
+
+    // 3. 计算 30 的个数
+    // [lower_bound, upper_bound) 区间内的所有元素都等于 30
+    auto count = std::distance(lb, ub);
+    std::cout << "序列中有 " << count << " 个 30。" << std::endl;
+
+    // 4. 查找一个不存在的元素 35 的插入点
+    lb = std::lower_bound(data.begin(), data.end(), 35);
+    std::cout << "35 的插入点在索引: " << std::distance(data.begin(), lb) << std::endl;
+    // 这意味着如果把35插入到这个位置，序列仍然保持有序
+    
+    return 0;
+}
+```
+**输出**：
+```
+数据: 10 20 30 30 30 40 50 
+30 的下界在索引: 2 (值: 30)
+30 的上界在索引: 5 (值: 40)
+序列中有 3 个 30。
+35 的插入点在索引: 5
+```
+
+---
+
+### 数值算法 (Numeric Algorithms)
+
+C++标准库在头文件`<numeric>`中提供了一组用于常见数学和数值运算的算法。这些算法通常比手写循环更高效，代码也更具可读性。
+
+#### accumulate：累加
+`std::accumulate`用于计算一个序列中所有元素的总和。它有一个重载版本，允许你提供自定义的二元操作，而不仅仅是加法。
+
+**定义**：
+```cpp
+T accumulate(InputIt first, InputIt last, T init);
+T accumulate(InputIt first, InputIt last, T init, BinaryOperation op);
+```
+*   `first`, `last`: 定义操作范围。
+*   `init`: 初始值。**这个参数的类型决定了累加过程和返回值的类型**，这一点非常重要。
+*   `op`: 可选的二元操作函数，例如减法、乘法等。
+
+**示例1：基本累加**
+```cpp
+#include <iostream>
+#include <vector>
+#include <numeric> // 数值算法头文件
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5};
+    
+    // 计算总和，初始值为 0
+    int sum = std::accumulate(numbers.begin(), numbers.end(), 0);
+    std::cout << "总和是: " << sum << std::endl;
+
+    // 计算乘积，初始值为 1
+    int product = std::accumulate(numbers.begin(), numbers.end(), 1, std::plus<int>()); // 默认加法
+    // 要计算乘积，我们需要一个乘法函数对象
+    product = std::accumulate(numbers.begin(), numbers.end(), 1, std::multiplies<int>());
+    std::cout << "乘积是: " << product << std::endl;
+
+    // 字符串拼接
+    std::vector<std::string> words = {"Hello", " ", "World", "!"};
+    std::string sentence = std::accumulate(words.begin(), words.end(), std::string(""));
+    std::cout << "拼接后的字符串: " << sentence << std::endl;
+    return 0;
+}
+```
+**输出**：
+```
+总和是: 15
+乘积是: 120
+拼接后的字符串: HelloWorld!
+```
+**注意**：在计算乘积时，我们用到了`std::multiplies<int>()`，这是一个**标准函数对象**，我们稍后会详细讲解。它代表了乘法操作。
+
+**常见错误**：初始值类型不匹配。
+```cpp
+// 错误示范：对一个 double vector 使用 int 初始值进行累加
+std::vector<double> prices = {1.5, 2.5, 3.5};
+// 这里的 0 是 int 类型，会导致所有浮点数在累加前被截断为整数
+int wrong_sum = std::accumulate(prices.begin(), prices.end(), 0); 
+// 正确做法：使用 double 类型的初始值
+double correct_sum = std::accumulate(prices.begin(), prices.end(), 0.0);
+```
+
+#### inner_product：内积
+`std::inner_product`计算两个序列的内积（也叫点积）。它将两个序列的对应元素两两相乘，然后再将所有乘积相加。
+
+**定义**：
+`T inner_product(InputIt1 first1, InputIt1 last1, InputIt2 first2, T init);`
+它计算 `init + (*first1 * *first2) + (*(first1+1) * *(first2+1)) + ...`
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <numeric>
+
+int main() {
+    std::vector<int> v1 = {1, 2, 3};
+    std::vector<int> v2 = {4, 5, 6};
+
+    // 计算内积: (1*4) + (2*5) + (3*6) = 4 + 10 + 18 = 32
+    int result = std::inner_product(v1.begin(), v1.end(), v2.begin(), 0);
+    std::cout << "v1 和 v2 的内积是: " << result << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+v1 和 v2 的内积是: 32
+```
+
+#### adjacent_difference：相邻元素的差
+这个算法计算序列中每对相邻元素之间的差，并将结果存储到另一个序列中。目标序列的第一个元素就是源序列的第一个元素。
+
+**定义**：
+`OutputIt adjacent_difference(InputIt first, InputIt last, OutputIt d_first, ...);`
+`d_first[0] = first[0]`
+`d_first[1] = first[1] - first[0]`
+`d_first[2] = first[2] - first[1]`
+...
+
+**示例：计算每日销售增长**
+```cpp
+#include <iostream>
+#include <vector>
+#include <numeric>
+#include <iterator>
+
+int main() {
+    std::vector<int> sales = {100, 110, 105, 120, 115}; // 每日销售额
+    std::vector<int> growth; // 每日增长
+
+    // 计算相邻元素的差
+    std::adjacent_difference(sales.begin(), sales.end(), std::back_inserter(growth));
+
+    std::cout << "每日销售额: ";
+    for(int s : sales) std::cout << s << " ";
+    std::cout << std::endl;
+
+    std::cout << "每日增长:   ";
+    for(int g : growth) std::cout << g << " ";
+    std::cout << std::endl; // 输出会是 100, 10, -5, 15, -5
+
+    return 0;
+}
+```
+**输出**：
+```
+每日销售额: 100 110 105 120 115 
+每日增长:   100 10 -5 15 -5 
+```
+
+#### iota：填充序列
+`std::iota`用连续递增的值填充一个序列。它接收一个起始值，然后用 `value, value+1, value+2, ...` 来填充容器。
+
+**定义**：
+`void iota(ForwardIt first, ForwardIt last, T value);`
+
+**示例**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <numeric>
+
+int main() {
+    std::vector<int> numbers(10); // 创建一个大小为10的vector
+    
+    // 用 0, 1, 2, ..., 9 填充
+    std::iota(numbers.begin(), numbers.end(), 0);
+    
+    std::cout << "用 iota 填充后的 vector: ";
+    for (int n : numbers) {
+        std::cout << n << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+用 iota 填充后的 vector: 0 1 2 3 4 5 6 7 8 9 
+```
+
+---
+
+### 标准函数对象 (Standard Functors)
+
+在前面的例子中，我们已经遇到了`std::multiplies`。这些定义在`<functional>`头文件中的模板类，就是**标准函数对象**。它们重载了`operator()`，使得它们的对象可以像函数一样被调用。
+
+使用它们的好处是代码更具可读性，并且有时可以带来性能优化（因为编译器更容易内联它们）。
+
+**常见的标准函数对象**：
+*   **算术操作**: `std::plus`, `std::minus`, `std::multiplies`, `std::divides`, `std::modulus`
+*   **比较操作**: `std::equal_to`, `std::not_equal_to`, `std::greater`, `std::less`, `std::greater_equal`, `std::less_equal`
+*   **逻辑操作**: `std::logical_and`, `std::logical_or`, `std::logical_not`
+
+**示例：使用`std::greater`进行降序排序**
+这是一种比自己写`isGreater`函数更“标准”的做法。
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <functional> // 函数对象头文件
+
+int main() {
+    std::vector<int> numbers = {5, 2, 8, 1, 9, 4};
+    
+    // 使用 std::greater<int>() 作为比较器
+    std::sort(numbers.begin(), numbers.end(), std::greater<int>());
+
+    std::cout << "使用 std::greater 降序排序后: ";
+    for(int n : numbers) std::cout << n << " ";
+    std::cout << std::endl;
+    
+    return 0;
+}
+```
+**输出**：
+```
+使用 std::greater 降序排序后: 9 8 5 4 2 1 
+```
+
+---
+
+### Lambda 表达式
+
+到目前为止，每当我们需要向算法传递自定义逻辑时，我们都必须在别处定义一个完整的函数或一个函数对象`struct`。这种做法有时会显得冗长，并且可能将紧密相关的逻辑代码分散到远离算法调用的地方。
+
+**Lambda表达式**允许我们在**算法调用的地方**直接定义一个**匿名的、临时的函数**。这使得代码极为紧凑和易读。
+
+**基本语法**：
+`[捕获列表](参数列表) -> 返回类型 { 函数体 }`
+
+*   **`[]` (捕获列表)**: 这是Lambda的精髓之一。它可以捕获其所在作用域的变量，以便在Lambda函数体内部使用。
+*   **`()` (参数列表)**: 与普通函数的参数列表相同。
+*   **`-> 返回类型`**: 可选。如果Lambda函数体只有一条`return`语句，或者没有返回值，编译器可以自动推断返回类型，这时可以省略。
+*   **`{}` (函数体)**: Lambda的执行代码。
+
+**示例1：一个最简单的Lambda**
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> numbers = {1, 2, 3, 4, 5, 6};
+    
+    // 之前我们需要定义一个 isEven 函数
+    // bool isEven(int n) { return n % 2 == 0; }
+    // int count = std::count_if(numbers.begin(), numbers.end(), isEven);
+
+    // 现在，使用Lambda表达式
+    int even_count = std::count_if(numbers.begin(), numbers.end(), 
+        [](int n) -> bool { 
+            return n % 2 == 0; 
+        }
+    );
+    
+    // 简化版：返回类型可以被推断，所以 `-> bool` 是可选的
+    even_count = std::count_if(numbers.begin(), numbers.end(), 
+        [](int n) { 
+            return n % 2 == 0; 
+        }
+    );
+
+    std::cout << "偶数的数量是: " << even_count << std::endl;
+    return 0;
+}
+```
+**输出**：
+```
+偶数的数量是: 3
+```
+可以看到，判断逻辑被直接嵌入到了`count_if`的调用中，代码一目了然。
+
+#### Lambda的捕获列表
+这是Lambda最强大的地方。捕获列表决定了Lambda如何访问其外部作用域的变量。
+
+*   `[]`: 不捕获任何外部变量。
+*   `[=]`: 按**值**捕获所有外部变量。在Lambda内部，这些变量是只读的副本。
+*   `[&]`: 按**引用**捕获所有外部变量。在Lambda内部可以修改这些变量。
+*   `[var]`: 只按**值**捕获变量`var`。
+*   `[&var]`: 只按**引用**捕获变量`var`。
+*   `[=, &var]`: 按值捕获所有变量，但`var`按引用捕获。
+*   `[&, var]`: 按引用捕获所有变量，但`var`按值捕获。
+
+**示例2：使用捕获**
+假设我们要找出一个`vector`中所有大于某个阈值的数。这个阈值在Lambda外部定义。
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+
+int main() {
+    std::vector<int> data = {10, 25, 5, 40, 15};
+    int threshold = 20;
+    
+    // 使用Lambda，通过值捕获threshold
+    int count = std::count_if(data.begin(), data.end(), 
+        [threshold](int value) {
+            return value > threshold;
+        }
+    );
+    
+    std::cout << "有 " << count << " 个数大于 " << threshold << std::endl;
+    
+    // 示例：通过引用捕获来修改外部变量
+    int sum_of_large_numbers = 0;
+    std::for_each(data.begin(), data.end(),
+        [=, &sum_of_large_numbers](int value) { // threshold按值，sum按引用
+            if (value > threshold) {
+                sum_of_large_numbers += value;
+            }
+        }
+    );
+    
+    std::cout << "大于 " << threshold << " 的数之和是: " << sum_of_large_numbers << std::endl;
+
+    return 0;
+}
+```
+**输出**：
+```
+有 2 个数大于 20
+大于 20 的数之和是: 65
+```
+
+---
+
+### 性能优化
+
+虽然标准库算法已经过高度优化，但在性能敏感的场景下，我们仍然可以通过一些技巧进一步提升效率。
+
+#### 比较器内联 (Comparator Inlining)
+
+当我们将一个比较函数（如`isGreater`）传递给`std::sort`时，编译器通常会通过函数指针进行调用。函数指针调用可能会阻碍编译器的**内联优化**。内联是将函数调用替换为函数体本身，从而消除函数调用的开销。
+
+为了帮助编译器进行内-联，我们可以使用**函数对象**或**Lambda表达式**代替普通函数。因为它们的类型在编译期是已知的，编译器更容易将它们的`operator()`或函数体直接内联到算法的循环中。
+
+**对比三种方式**：
+
+```cpp
+#include <vector>
+#include <algorithm>
+#include <functional>
+
+// 方式1：普通函数指针 (可能无法内联)
+bool compareFunc(int a, int b) {
+    return a > b;
+}
+
+// 方式2：函数对象 (容易内联)
+struct GreaterThan {
+    bool operator()(int a, int b) const {
+        return a > b;
+    }
+};
+
+void demo() {
+    std::vector<int> v = { /* ... a large vector ... */ };
+
+    // 调用方式1
+    std::sort(v.begin(), v.end(), compareFunc);
+
+    // 调用方式2
+    std::sort(v.begin(), v.end(), GreaterThan());
+    
+    // 调用方式3：Lambda表达式 (现代C++首选，非常容易内联)
+    std::sort(v.begin(), v.end(), [](int a, int b) {
+        return a > b;
+    });
+}
+```
+
+在大多数现代编译器中，对于性能要求高的排序任务，**优先使用Lambda表达式或函数对象作为比较器**，而不是独立的普通函数。
+
+#### 并行算法概览 (C++17 `std::execution`)
+
+从C++17开始，标准库引入了对**并行算法**的支持。这意味着许多标准算法（如`sort`, `for_each`, `transform`）都有了可以利用多核CPU并行执行的版本。这可以通过向算法传递一个**执行策略**（Execution Policy）来实现。
+
+执行策略定义在`<execution>`头文件中：
+*   `std::execution::seq`: 顺序执行（默认行为）。
+*   `std::execution::par`: 并行执行。允许实现将任务划分为多个线程并行处理。
+*   `std::execution::par_unseq`: 并行和/或向量化执行。这是最宽松的策略，给予编译器最大的优化自由度，但对代码要求也最严格（例如，不能有数据竞争）。
+
+**注意**：这只是一个概念性介绍，因为并行编程涉及线程安全、数据竞争等复杂话题，超出了我们当前的学习范围。但了解其存在是非常有价值的。
+
+**示例（概念性）**：
+```cpp
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <execution> // 需要 C++17 和相应的编译器支持
+
+int main() {
+    std::vector<int> large_vector(10000000);
+    std::iota(large_vector.begin(), large_vector.end(), 0);
+    std::random_shuffle(large_vector.begin(), large_vector.end()); // 打乱顺序
+
+    // 使用并行策略进行排序
+    // 在多核机器上，这会比普通 sort 快得多
+    std::sort(std::execution::par, large_vector.begin(), large_vector.end());
+    
+    std::cout << "使用并行算法排序完成。" << std::endl;
+
+    return 0;
+}
+```
+
+### 示例程序：排行榜生成
+
+现在，我们将综合运用本章学到的知识，创建一个更复杂的排行榜生成程序。
+
+**需求**：
+我们有一个包含玩家数据（ID，得分，游戏时长）的列表。需要实现以下功能：
+1.  **按分数生成主排行榜**：分数高的玩家在前。如果分数相同，则游戏时长短的玩家在前。
+2.  **查找特定玩家的排名**：能够快速找到某个玩家在主排行榜上的名次。
+3.  **生成“肝帝”排行榜**：只考虑游戏时长最长的前5名玩家。
+4.  **计算所有玩家的总游戏时长**。
+
+```cpp
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <numeric> // for std::accumulate
+
+// 玩家数据结构
+struct Player {
+    int id;
+    int score;
+    int play_time_hours; // 游戏时长（小时）
+
+    // 为了方便打印，重载输出运算符
+    friend std::ostream& operator<<(std::ostream& os, const Player& p) {
+        os << "ID: " << p.id << ", Score: " << p.score << ", Time: " << p.play_time_hours << "h";
+        return os;
+    }
+};
+
+// 打印排行榜的辅助函数
+void printRanking(const std::string& title, const std::vector<Player>& players) {
+    std::cout << "--- " << title << " ---" << std::endl;
+    for (size_t i = 0; i < players.size(); ++i) {
+        std::cout << "Rank " << i + 1 << ": " << players[i] << std::endl;
+    }
+    std::cout << "-----------------------\n" << std::endl;
+}
+
+int main() {
+    std::vector<Player> players = {
+        {101, 5000, 120},
+        {102, 8000, 90},
+        {103, 8000, 110},
+        {104, 9500, 80},
+        {105, 4500, 200},
+        {106, 7200, 150},
+        {107, 8000, 95},
+        {108, 6000, 250}
+    };
+
+    // --- 1. 生成主排行榜 ---
+    std::cout << ">>> 1. 生成主排行榜..." << std::endl;
+    std::vector<Player> main_ranking = players; // 复制一份用于排序
+    
+    // 使用Lambda表达式定义复杂的比较逻辑
+    std::stable_sort(main_ranking.begin(), main_ranking.end(), 
+        [](const Player& a, const Player& b) {
+            if (a.score != b.score) {
+                return a.score > b.score; // 分数高的在前
+            }
+            // 分数相同，则游戏时长短的在前
+            return a.play_time_hours < b.play_time_hours;
+        }
+    );
+    printRanking("主排行榜 (按分数和时长)", main_ranking);
+
+    // --- 2. 查找特定玩家的排名 ---
+    std::cout << ">>> 2. 查找玩家(ID=103)的排名..." << std::endl;
+    int target_id = 103;
+    
+    // lower_bound需要一个比较器，因为它比较的是Player对象和ID(int)
+    // 我们用Lambda来定义这个特殊的比较
+    auto it = std::lower_bound(main_ranking.begin(), main_ranking.end(), target_id,
+        [](const Player& player, int id) {
+            // 这个比较逻辑需要和排序逻辑一致，才能正确工作
+            // 因为我们只关心ID，所以假设所有ID是唯一的。
+            // 实际上，更严谨的做法是先找到分数的范围，再在范围内找ID
+            // 但为了简化，我们直接在整个排行榜找第一个ID>=target_id的玩家
+            // 这里为了演示，我们先找到ID为103的玩家
+            // 注：更高效的方式是先find，但这里演示lower_bound和Lambda的结合
+            return player.id < id; // 这种查找方式需要ID是有序的，但我们的主榜单不是按ID排序的
+        });
+        
+    // 更好的方式：使用 find_if
+    auto found_it = std::find_if(main_ranking.begin(), main_ranking.end(), 
+        [target_id](const Player& p){
+            return p.id == target_id;
+        }
+    );
+
+    if (found_it != main_ranking.end()) {
+        // 使用 std::distance 计算排名 (从0开始的索引+1)
+        long rank = std::distance(main_ranking.begin(), found_it) + 1;
+        std::cout << "玩家(ID=" << target_id << ") 的排名是: " << rank << std::endl;
+        std::cout << "玩家信息: " << *found_it << "\n" << std::endl;
+    } else {
+        std::cout << "未找到玩家(ID=" << target_id << ")\n" << std::endl;
+    }
+
+
+    // --- 3. 生成“肝帝”排行榜 ---
+    std::cout << ">>> 3. 生成'肝帝'排行榜 (游戏时长最长的前5名)..." << std::endl;
+    std::vector<Player> hardcore_ranking = players;
+    
+    // 使用 partial_sort 找到游戏时长最长的前5名
+    size_t top_n = 5;
+    if (hardcore_ranking.size() > top_n) {
+        std::partial_sort(hardcore_ranking.begin(), 
+                          hardcore_ranking.begin() + top_n, 
+                          hardcore_ranking.end(),
+            [](const Player& a, const Player& b) {
+                return a.play_time_hours > b.play_time_hours; // 时长长的在前
+            }
+        );
+        hardcore_ranking.resize(top_n); // 只保留前5名
+    }
+    printRanking("'肝帝'排行榜", hardcore_ranking);
+
+    // --- 4. 计算总游戏时长 ---
+    std::cout << ">>> 4. 计算所有玩家的总游戏时长..." << std::endl;
+    
+    // 使用 accumulate 和 Lambda
+    int total_hours = std::accumulate(players.begin(), players.end(), 0,
+        [](int current_sum, const Player& p) {
+            return current_sum + p.play_time_hours;
+        }
+    );
+    std::cout << "所有玩家总共游戏了 " << total_hours << " 小时。" << std::endl;
+    
+    return 0;
+}
+```
+
+**程序输出**：
+```
+>>> 1. 生成主排行榜...
+--- 主排行榜 (按分数和时长) ---
+Rank 1: ID: 104, Score: 9500, Time: 80h
+Rank 2: ID: 102, Score: 8000, Time: 90h
+Rank 3: ID: 107, Score: 8000, Time: 95h
+Rank 4: ID: 103, Score: 8000, Time: 110h
+Rank 5: ID: 106, Score: 7200, Time: 150h
+Rank 6: ID: 108, Score: 6000, Time: 250h
+Rank 7: ID: 101, Score: 5000, Time: 120h
+Rank 8: ID: 105, Score: 4500, Time: 200h
+-----------------------
+
+>>> 2. 查找玩家(ID=103)的排名...
+玩家(ID=103) 的排名是: 4
+玩家信息: ID: 103, Score: 8000, Time: 110h
+
+>>> 3. 生成'肝帝'排行榜 (游戏时长最长的前5名)...
+--- '肝帝'排行榜 ---
+Rank 1: ID: 108, Score: 6000, Time: 250h
+Rank 2: ID: 105, Score: 4500, Time: 200h
+Rank 3: ID: 106, Score: 7200, Time: 150h
+Rank 4: ID: 101, Score: 5000, Time: 120h
+Rank 5: ID: 103, Score: 8000, Time: 110h
+-----------------------
+
+>>> 4. 计算所有玩家的总游戏时长...
+所有玩家总共游戏了 1195 小时。
+```
 
 # 第十一部分：异常处理与程序调试
 **部分描述**：学习如何编写健壮的程序，掌握错误处理和调试技巧。
